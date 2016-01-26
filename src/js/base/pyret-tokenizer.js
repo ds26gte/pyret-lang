@@ -135,6 +135,9 @@ define(["../../../lib/jglr/jglr"], function(E) {
                           "[" + extended_letter + "0-9]*" +
                           "(?:-+[" + extended_letter + "0-9]+)*", STICKY_REGEXP);
 
+  const quoted_symbol = new RegExp("^\u2019[" + extended_letter + "0-9]+" +
+                    "(?:-+[" + extended_letter + "0-9]+)*", STICKY_REGEXP)
+
   //const number = new RegExp("^[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
 
   //const badNumber = new RegExp("^~?[+-]?\\.[0-9]+(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
@@ -340,6 +343,7 @@ define(["../../../lib/jglr/jglr"], function(E) {
     {name: "LONG_STRING", val: tquot_str},
     {name: "STRING", val: dquot_str},
     {name: "STRING", val: squot_str},
+    {name: "QUOTEDSYMBOL", val: quoted_symbol},
 
     {name: "CARET", val: oppcaret, parenIsForExp: true},
     {name: "PLUS", val: opplus, parenIsForExp: true},

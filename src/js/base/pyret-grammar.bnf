@@ -126,12 +126,13 @@ paren-expr: PARENSPACE binop-expr RPAREN
 id-expr: NAME
 
 #prim-expr: num-expr | frac-expr | bool-expr | string-expr
-prim-expr: num-expr | bool-expr | string-expr
+prim-expr: num-expr | bool-expr | string-expr | symbol-expr
 
 num-expr: NUMBER
 #frac-expr: RATIONAL
 bool-expr: TRUE | FALSE
 string-expr: STRING
+symbol-expr: QUOTEDSYMBOL
 
 lambda-expr: LAM fun-header COLON doc-string block where-clause end
 
