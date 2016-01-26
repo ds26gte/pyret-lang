@@ -48,6 +48,9 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
           else
             return RUNTIME.makeString(tok.value.slice(1, -1));
         }
+        function qsymbol(tok) {
+          return RUNTIME.makeString(tok.value.slice(1))
+        }
         function number(tok) { return RUNTIME.makeNumberFromString(tok.value); }
         const translators = {
           'program': function(node) {
@@ -919,8 +922,8 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
               .app(pos(node.pos), string(node.kids[0]));
           },
           'symbol-expr': function(node) {
-            return RUNTIME.getField(ast, 's-str')
-              .app(pos(node.pos), string(node.kids[0]));
+            return RUNTIME.getField(ast, 's-qsym')
+              .app(pos(node.pos), qsymbol(node.kids[0]));
           },
           'ann-field': function(node) {
             // (ann-field n COLON ann) or (ann-field n COLONCOLON ann)
