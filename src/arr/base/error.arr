@@ -284,7 +284,7 @@ data ParseError:
           [ED.para: ED.text("Typical reasons for getting this error are")],
           [ED.bulleted: missing, extra]]]
     end
-  | spyret-parse-error(loc, msg, args, locs) with:
+  | spyret-parse-error(msg, args, locs) with:
     render-reason(self):
       msg-split = string-split-all(self.msg, ",,")
       msg-first = msg-split.take(1).map(ED.text)
@@ -292,7 +292,6 @@ data ParseError:
       msg-rest-clumps = ED.map3(lam(a, b, c): [ED.list: ED.loc-display(a, "check-highlight", ED.styled(ED.text(b),"check-highlight")), ED.text(c)] end, self.locs, self.args, msg-rest)
       final-msg = msg-rest-clumps.foldl(lam(cur, bas): bas.append(cur) end, msg-first)
       [ED.error:
-        [ED.para: ED.text("Spyret error:"), draw-and-highlight(self.loc)],
         ED.h-sequence(final-msg, " ")
         ]
     end
