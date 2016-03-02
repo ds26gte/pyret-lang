@@ -3258,6 +3258,66 @@ function isMethod(obj) { return obj instanceof PMethod; }
       if(DEBUGLOG) { console.log.apply(console, arguments); }
     }
 
+    var spyret_plus = function() {
+      var result = 0;
+      var i, j;
+      for (i = 0; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.add(result, j);
+      }
+      return result;
+    };
+
+    var spyret_minus = function(n) {
+      if (arguments.length < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["_spyret_minus"], 1, []);
+      }
+      if (arguments.length === 1) {
+        thisRuntime.checkNumber(n);
+        return jsnums.subtract(0, n);
+      }
+      thisRuntime.checkNumber(n);
+      var result = n;
+      var i, j;
+      for (i = 1; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.subtract(result, j);
+      }
+      return result;
+    };
+
+    var spyret_times = function() {
+      var result = 1;
+      var i, j;
+      for (i = 0; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.multiply(result, j);
+      }
+      return result;
+    };
+
+    var spyret_divide = function(n) {
+      if (arguments.length < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["_spyret_divide"], 1, []);
+      }
+      if (arguments.length === 1) {
+        thisRuntime.checkNumber(n);
+        return jsnums.divide(1, n);
+      }
+      thisRuntime.checkNumber(n);
+      var result = n;
+      var i, j;
+      for (i = 1; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.divide(result, j);
+      }
+      return result;
+    };
+
     var plus = function(l, r) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_plus"], 2, $a); }
       if (thisRuntime.isNumber(l) && thisRuntime.isNumber(r)) {
@@ -3272,13 +3332,6 @@ function isMethod(obj) { return obj instanceof PMethod; }
         ffi.throwNumStringBinopError(l, r, "+", "Plus", "_plus");
       }
     };
-
-    var spyret_plus_numeric = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_spyret_plus_numeric"], 2, $a); }
-      thisRuntime.checkNumber(l)
-      thisRuntime.checkNumber(r)
-      return thisRuntime.makeNumberBig(jsnums.add(l, r))
-    }
 
     var minus = function(l, r) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_minus"], 2, $a); }
@@ -3504,6 +3557,14 @@ function isMethod(obj) { return obj instanceof PMethod; }
       }
       return thisRuntime.makeString(s.substring(jsnums.toFixnum(min), jsnums.toFixnum(max)));
     }
+
+    var spyret_substring = function(s, min, max) {
+      if (max === undefined) {
+        max = string_length(s);
+      }
+      return string_substring(s, min, max)
+    }
+
     var string_replace = function(s, find, replace) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-replace"], 3, $a); }
       thisRuntime.checkString(s);
@@ -4351,7 +4412,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
           'random': makeFunction(random),
 
           '_plus': makeFunction(plus),
-          '_spyret_plus_numeric': makeFunction(spyret_plus_numeric),
+          "_spyret_plus": makeFunction(spyret_plus),
+          "_spyret_minus": makeFunction(spyret_minus),
+          "_spyret_times": makeFunction(spyret_times),
+          "_spyret_divide": makeFunction(spyret_divide),
+          '_spyret_substring': makeFunction(spyret_substring),
           '_minus': makeFunction(minus),
           '_times': makeFunction(times),
           '_divide': makeFunction(divide),
