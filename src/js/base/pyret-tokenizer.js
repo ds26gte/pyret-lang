@@ -151,10 +151,19 @@ define(["../../../lib/jglr/jglr"], function(E) {
 
   const unsigned_rational_part = "[0-9]+/[0-9]+"
 
+  const unsigned_mixedfrac_part = "[0-9]+[_]" + unsigned_rational_part;
+
   const unsigned_rational_or_decimal_part = "(?:" + unsigned_rational_part + "|" +
     unsigned_decimal_part + ")"
 
-  const rational_or_decimal_string = "^[-+]?" + unsigned_rational_or_decimal_part
+  const unsigned_mixedfrac_rational_or_decimal_part = "(?:" +
+    unsigned_mixedfrac_part + "|" +
+    unsigned_rational_part + "|" +
+    unsigned_decimal_part + ")";
+
+  //const rational_or_decimal_string = "^[-+]?" + unsigned_rational_or_decimal_part
+
+  const rational_or_decimal_string = "^[-+]?" + unsigned_mixedfrac_rational_or_decimal_part;
 
   const roughnum_string = "^~[-+]?" + unsigned_decimal_part
 

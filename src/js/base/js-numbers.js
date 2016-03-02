@@ -1437,7 +1437,7 @@ define(function() {
     this.d = d;
   };
 
-  Rational.makeInstance = function(n, d) {
+  Rational.makeInstance = function(n, d, i) {
     if (n === undefined)
       throwRuntimeError("n undefined", n, d);
 
@@ -1455,6 +1455,13 @@ define(function() {
     var divisor = _integerGcd(abs(n), abs(d));
     n = _integerQuotient(n, divisor);
     d = _integerQuotient(d, divisor);
+
+    if (i !== undefined) {
+      if (_integerLessThan(i, 0)) {
+        n = negate(n);
+      }
+      n = _integerAdd(n, _integerMultiply(i, d));
+    }
 
     // Optimization: if we can get around construction the rational
     // in favor of just returning n, do it:
@@ -2805,6 +2812,7 @@ define(function() {
   //
 
   var rationalRegexp = new RegExp("^([+-]?\\d+)/(\\d+)$");
+  var mixedfracRegexp = new RegExp("^([+-]?\\d+)[_](\\d+)/(\\d+)$");
   var digitRegexp = new RegExp("^[+-]?\\d+$");
   var flonumRegexp = new RegExp("^([-+]?)(\\d+\)((?:\\.\\d*)?)((?:[Ee][-+]?\\d+)?)$");
   var roughnumRegexp = new RegExp("^~([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)$");
@@ -2836,6 +2844,12 @@ define(function() {
     if (aMatch) {
       return Rational.makeInstance(fromString(aMatch[1]),
                                    fromString(aMatch[2]));
+    }
+
+    aMatch = x.match(mixedfracRegexp);
+    if (aMatch) {
+      return Rational.makeInstance(fromString(aMatch[2]),
+        fromString(aMatch[3]), fromString(aMatch[1]));
     }
 
     aMatch = x.match(flonumRegexp);
