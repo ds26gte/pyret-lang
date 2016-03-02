@@ -2939,6 +2939,10 @@ define(function() {
 
     function schemeRationalRegexp(digits) { return new RegExp("^([+-]?["+digits+"]+)/(["+digits+"]+)$"); }
 
+    function schemeMixedFracRegexp(digits) {
+      return new RegExp("^([-+]?[" + digits + "]+)_([" + digits + "]+)/([" + digits + "]+)$");
+    }
+
     function matchComplexRegexp(radix, x) {
 	var sign = "[+-]";
 	var maybeSign = "[+-]?";
@@ -3095,7 +3099,6 @@ define(function() {
                                                                                              radix,
                                                                                              exactness),
                                                                                              cMatch[2]);
-          //throw "Complex Numbers are not supported in Pyret";
 	}
         return fromSchemeStringRawNoComplex(x, radix, exactness, mustBeANumberp)
     }
@@ -3112,6 +3115,13 @@ define(function() {
                                                                 , exactness
                                                                 ));
 	}
+
+        aMatch = x.match(schemeMixedFracRegexp(digitsForRadix(radix)));
+        if (aMatch) {
+          return Rational.makeInstance(fromSchemeStringRawNoComplex(aMatch[2], radix, exactness),
+            fromSchemeStringRawNoComplex(aMatch[3], radix, exactness),
+            fromSchemeStringRawNoComplex(aMatch[1], radix, exactness));
+        }
 
         if (x === '+nan.0' ||
             x === '-nan.0' ||
