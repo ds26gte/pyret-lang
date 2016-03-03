@@ -797,7 +797,8 @@ standard-imports = extra-imports(
           "list-rest",
           "list-ref",
           "list-length",
-          "list-member"
+          "list-member",
+          "build-list"
         ],
         [list: "List"]),
       extra-import(builtin("option"), "option", [list:

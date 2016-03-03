@@ -783,28 +783,45 @@ fun shuffle<a>(lst :: List<a>) -> List<a>:
   end
 end
 
+#for spyret
 fun list-first<a>(lst :: List<a>) -> a:
   if is-empty(lst): raise("taking first of empty list")
   else: lst.first
   end
 end
 
+#for spyret
 fun list-rest<a>(lst :: List<a>) -> List<a>:
   if is-empty(lst): raise("taking rest of empty list")
   else: lst.rest
   end
 end
 
+#for spyret
 fun list-ref<a>(lst :: List<a>, ix :: Number) -> a:
   lst.get(ix)
 end
 
+#for spyret
 fun list-length<a>(lst :: List<a>) -> Number:
   lst.length()
 end
 
+#for spyret
 fun list-member<a>(e :: a, lst :: List<a>) -> Boolean:
   member-now(lst, e)
+end
+
+#for spyret
+fun build-list(n :: Number, f :: (Number -> Any)) -> List:
+  fun build-list-helper(m :: Number):
+    if m == n:
+      empty
+    else:
+      build-list-helper(m + 1).push(f(m))
+    end
+  end
+  build-list-helper(0)
 end
 
 index = get
