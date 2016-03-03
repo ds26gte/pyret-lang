@@ -611,6 +611,7 @@ runtime-builtins = [string-dict:
   "run-task", T.t-top,
   "_spyret_void", T.t-top,
   "_spyret_check_expect", T.t-top,
+  "_spyret_check_within", T.t-top,
   "_spyret_plus", T.t-top,
   "_spyret_minus", T.t-top,
   "_spyret_times", T.t-top,

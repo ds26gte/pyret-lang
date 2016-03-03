@@ -3274,6 +3274,15 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return nothing;
     };
 
+    var spyret_check_within = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-substring"], 3, $a); }
+      if (!(equalWithin(absTol).app(actVal, expVal))) {
+        displayFunc("check-within: actual value " + actVal +
+        " is not within " + absTol + " of expected value " + expVal);
+      }
+      return nothing;
+    };
+
     var spyret_plus = function() {
       var result = 0;
       var i, j;
@@ -4429,6 +4438,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
 
           "_spyret_void": makeFunction(spyret_void),
           "_spyret_check_expect": makeFunction(spyret_check_expect),
+          "_spyret_check_within": makeFunction(spyret_check_within),
           "_spyret_plus": makeFunction(spyret_plus),
           "_spyret_minus": makeFunction(spyret_minus),
           "_spyret_times": makeFunction(spyret_times),
