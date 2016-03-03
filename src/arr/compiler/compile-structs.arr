@@ -617,6 +617,8 @@ runtime-builtins = [string-dict:
   "_spyret_times", T.t-top,
   "_spyret_divide", T.t-top,
   "_spyret_substring", T.t-top,
+  "_spyret_char_to_integer", T.t-top,
+  "_spyret_integer_to_char", T.t-top,
   "_plus", T.t-top,
   "_minus", T.t-top,
   "_times", T.t-top,

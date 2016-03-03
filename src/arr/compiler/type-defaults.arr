@@ -133,6 +133,8 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_times").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_divide").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_substring").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_char_to_integer").key(), t-arrow([list: t-string], t-number))
+  default-typs.set-now(A.s-global("_spyret_integer_to_char").key(), t-arrow([list: t-number], t-string))
   default-typs.set-now(A.s-global("_times").key(), t-number-binop)
   default-typs.set-now(A.s-global("_minus").key(), t-number-binop)
   default-typs.set-now(A.s-global("_divide").key(), t-number-binop)

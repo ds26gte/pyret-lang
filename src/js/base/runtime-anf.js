@@ -3588,7 +3588,22 @@ function isMethod(obj) { return obj instanceof PMethod; }
         max = string_length(s);
       }
       return string_substring(s, min, max)
-    }
+    };
+
+    var spyret_char_to_integer = function(s) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-to-integer"], 1, $a); }
+      thisRuntime.checkString(s);
+      if (s.length !== 1) {
+        ffi.throwMessageException("char-to-integer: " + s + " is not a 1-character string");
+      }
+      return thisRuntime.makeNumber(s.charCodeAt(0));
+    };
+
+    var spyret_integer_to_char = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-to-integer"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeString(String.fromCharCode(n));
+    };
 
     var string_replace = function(s, find, replace) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-replace"], 3, $a); }
@@ -4449,6 +4464,8 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_times": makeFunction(spyret_times),
           "_spyret_divide": makeFunction(spyret_divide),
           '_spyret_substring': makeFunction(spyret_substring),
+          "_spyret_char_to_integer": makeFunction(spyret_char_to_integer),
+          "_spyret_integer_to_char": makeFunction(spyret_integer_to_char),
 
           '_plus': makeFunction(plus),
           '_minus': makeFunction(minus),
