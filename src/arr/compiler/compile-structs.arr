@@ -692,6 +692,7 @@ runtime-builtins = [string-dict:
   "num-is-negative", t-number-pred1,
   "num-is-non-positive", t-number-pred1,
   "num-is-non-negative", t-number-pred1,
+  "num-is-zero", t-number-pred1,
   "num-is-integer", t-number-pred1,
   "num-is-fixnum", t-number-pred1,
   "num-is-rational", t-number-pred1,

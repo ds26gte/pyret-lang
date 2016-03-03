@@ -4107,6 +4107,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
       thisRuntime.checkNumber(n);
       return thisRuntime.makeBoolean(jsnums.isNonNegative(n))
     }
+    var num_is_zero = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-is-zero"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
+    };
     var num_is_fixnum = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-is-fixnum"], 1, $a); }
       thisRuntime.checkNumber(n);
@@ -4500,6 +4505,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           'num-is-negative': makeFunction(num_is_negative),
           'num-is-non-positive': makeFunction(num_is_non_positive),
           'num-is-non-negative': makeFunction(num_is_non_negative),
+          "num-is-zero": makeFunction(num_is_zero),
           'num-is-fixnum': makeFunction(num_is_fixnum),
           'num-expt': makeFunction(num_expt),
           'num-tostring': makeFunction(num_tostring),
