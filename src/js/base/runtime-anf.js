@@ -1499,14 +1499,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
         });
     });
 
-    var display = makeFunction(
-    /**
-      Prints the value to the world by passing the repr to stdout
-      @param {!PBase} val
-
-      @return {!PBase} the value given in
-    */
-       function(val){
+    var displayFunc = function(val){
         if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["display"], 1, $a); }
         if (isString(val)) {
           theOutsideWorld.stdout(val);
@@ -1520,7 +1513,16 @@ function isMethod(obj) { return obj instanceof PMethod; }
             return val;
           });
         }
-    });
+    };
+
+    var display = makeFunction(
+    /**
+      Prints the value to the world by passing the repr to stdout
+      @param {!PBase} val
+
+      @return {!PBase} the value given in
+    */
+       displayFunc);
 
     var print_error = makeFunction(
     /**
@@ -3258,6 +3260,20 @@ function isMethod(obj) { return obj instanceof PMethod; }
       if(DEBUGLOG) { console.log.apply(console, arguments); }
     }
 
+    var spyret_void = function() {
+      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_spyret_void"], 0, $a); }
+      return nothing;
+    };
+
+    var spyret_check_expect = function(actVal, expVal) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_plus"], 2, $a); }
+      if (!equalAlways(actVal, expVal)) {
+        displayFunc("check-expect: actual value " + actVal +
+        " differs from " + expVal + ", the expected value.");
+      }
+      return nothing;
+    };
+
     var spyret_plus = function() {
       var result = 0;
       var i, j;
@@ -4411,12 +4427,15 @@ function isMethod(obj) { return obj instanceof PMethod; }
           'gensym': gensym,
           'random': makeFunction(random),
 
-          '_plus': makeFunction(plus),
+          "_spyret_void": makeFunction(spyret_void),
+          "_spyret_check_expect": makeFunction(spyret_check_expect),
           "_spyret_plus": makeFunction(spyret_plus),
           "_spyret_minus": makeFunction(spyret_minus),
           "_spyret_times": makeFunction(spyret_times),
           "_spyret_divide": makeFunction(spyret_divide),
           '_spyret_substring': makeFunction(spyret_substring),
+
+          '_plus': makeFunction(plus),
           '_minus': makeFunction(minus),
           '_times': makeFunction(times),
           '_divide': makeFunction(divide),
