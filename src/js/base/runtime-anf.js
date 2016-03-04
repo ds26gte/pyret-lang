@@ -2077,7 +2077,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
 
     var equalRoughlyPy = makeFunction(function(left, right) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal-roughly"], 2, $a); }
-      var hardWiredRelTol = 0.001; // say
+      var hardWiredRelTol = 0.01; // say
       return makeBoolean(equalWithinRel(makeNumber(hardWiredRelTol)).app(left, right));
     });
 
