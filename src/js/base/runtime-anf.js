@@ -3260,89 +3260,6 @@ function isMethod(obj) { return obj instanceof PMethod; }
       if(DEBUGLOG) { console.log.apply(console, arguments); }
     }
 
-    var spyret_void = function() {
-      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_spyret_void"], 0, $a); }
-      return nothing;
-    };
-
-    var spyret_check_expect = function(actVal, expVal) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_plus"], 2, $a); }
-      if (!equalAlways(actVal, expVal)) {
-        displayFunc("check-expect: actual value " + actVal +
-        " differs from " + expVal + ", the expected value.");
-      }
-      return nothing;
-    };
-
-    var spyret_check_within = function(actVal, expVal, absTol) {
-      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-substring"], 3, $a); }
-      if (!(equalWithin(absTol).app(actVal, expVal))) {
-        displayFunc("check-within: actual value " + actVal +
-        " is not within " + absTol + " of expected value " + expVal);
-      }
-      return nothing;
-    };
-
-    var spyret_plus = function() {
-      var result = 0;
-      var i, j;
-      for (i = 0; i < arguments.length; i++) {
-        j = arguments[i];
-        thisRuntime.checkNumber(j);
-        result = jsnums.add(result, j);
-      }
-      return result;
-    };
-
-    var spyret_minus = function(n) {
-      if (arguments.length < 1) {
-        throw thisRuntime.ffi.throwArityErrorC(["_spyret_minus"], 1, []);
-      }
-      if (arguments.length === 1) {
-        thisRuntime.checkNumber(n);
-        return jsnums.subtract(0, n);
-      }
-      thisRuntime.checkNumber(n);
-      var result = n;
-      var i, j;
-      for (i = 1; i < arguments.length; i++) {
-        j = arguments[i];
-        thisRuntime.checkNumber(j);
-        result = jsnums.subtract(result, j);
-      }
-      return result;
-    };
-
-    var spyret_times = function() {
-      var result = 1;
-      var i, j;
-      for (i = 0; i < arguments.length; i++) {
-        j = arguments[i];
-        thisRuntime.checkNumber(j);
-        result = jsnums.multiply(result, j);
-      }
-      return result;
-    };
-
-    var spyret_divide = function(n) {
-      if (arguments.length < 1) {
-        throw thisRuntime.ffi.throwArityErrorC(["_spyret_divide"], 1, []);
-      }
-      if (arguments.length === 1) {
-        thisRuntime.checkNumber(n);
-        return jsnums.divide(1, n);
-      }
-      thisRuntime.checkNumber(n);
-      var result = n;
-      var i, j;
-      for (i = 1; i < arguments.length; i++) {
-        j = arguments[i];
-        thisRuntime.checkNumber(j);
-        result = jsnums.divide(result, j);
-      }
-      return result;
-    };
-
     var plus = function(l, r) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_plus"], 2, $a); }
       if (thisRuntime.isNumber(l) && thisRuntime.isNumber(r)) {
@@ -3582,28 +3499,6 @@ function isMethod(obj) { return obj instanceof PMethod; }
       }
       return thisRuntime.makeString(s.substring(jsnums.toFixnum(min), jsnums.toFixnum(max)));
     }
-
-    var spyret_substring = function(s, min, max) {
-      if (max === undefined) {
-        max = string_length(s);
-      }
-      return string_substring(s, min, max)
-    };
-
-    var spyret_char_to_integer = function(s) {
-      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-to-integer"], 1, $a); }
-      thisRuntime.checkString(s);
-      if (s.length !== 1) {
-        ffi.throwMessageException("char-to-integer: " + s + " is not a 1-character string");
-      }
-      return thisRuntime.makeNumber(s.charCodeAt(0));
-    };
-
-    var spyret_integer_to_char = function(n) {
-      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-to-integer"], 1, $a); }
-      thisRuntime.checkNumber(n);
-      return thisRuntime.makeString(String.fromCharCode(n));
-    };
 
     var string_replace = function(s, find, replace) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-replace"], 3, $a); }
@@ -4122,11 +4017,6 @@ function isMethod(obj) { return obj instanceof PMethod; }
       thisRuntime.checkNumber(n);
       return thisRuntime.makeBoolean(jsnums.isNonNegative(n))
     }
-    var num_is_zero = function(n) {
-      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-is-zero"], 1, $a); }
-      thisRuntime.checkNumber(n);
-      return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
-    };
     var num_is_fixnum = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-is-fixnum"], 1, $a); }
       thisRuntime.checkNumber(n);
@@ -4172,6 +4062,124 @@ function isMethod(obj) { return obj instanceof PMethod; }
       if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["time-now"], 0, $a); }
       return new Date().getTime();
     }
+
+    // primitives for Spyret
+
+    var spyret_void = function() {
+      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["void"], 0, $a); }
+      return nothing;
+    };
+
+    var spyret_check_expect = function(actVal, expVal) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-expect"], 2, $a); }
+      if (!equalAlways(actVal, expVal)) {
+        displayFunc("check-expect: actual value " + actVal +
+        " differs from " + expVal + ", the expected value.");
+      }
+      return nothing;
+    };
+
+    var spyret_check_within = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-within"], 3, $a); }
+      if (!(equalWithin(absTol).app(actVal, expVal))) {
+        displayFunc("check-within: actual value " + actVal +
+        " is not within " + absTol + " of expected value " + expVal);
+      }
+      return nothing;
+    };
+
+    var spyret_zero_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["zero?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
+    };
+
+    var spyret_plus = function() {
+      var result = 0;
+      var i, j;
+      for (i = 0; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.add(result, j);
+      }
+      return result;
+    };
+
+    var spyret_minus = function(n) {
+      if (arguments.length < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["-"], 1, []);
+      }
+      if (arguments.length === 1) {
+        thisRuntime.checkNumber(n);
+        return jsnums.subtract(0, n);
+      }
+      thisRuntime.checkNumber(n);
+      var result = n;
+      var i, j;
+      for (i = 1; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.subtract(result, j);
+      }
+      return result;
+    };
+
+    var spyret_times = function() {
+      var result = 1;
+      var i, j;
+      for (i = 0; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.multiply(result, j);
+      }
+      return result;
+    };
+
+    var spyret_divide = function(n) {
+      if (arguments.length < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["/"], 1, []);
+      }
+      if (arguments.length === 1) {
+        thisRuntime.checkNumber(n);
+        return jsnums.divide(1, n);
+      }
+      thisRuntime.checkNumber(n);
+      var result = n;
+      var i, j;
+      for (i = 1; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.divide(result, j);
+      }
+      return result;
+    };
+
+    var spyret_substring = function(s, min, max) {
+      if (max === undefined) {
+        max = string_length(s);
+      }
+      return string_substring(s, min, max)
+    };
+
+    var spyret_char_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char?"], 1, $a); }
+      return (typeof c === "string" && c.length === 1);
+    };
+
+    var spyret_char_to_integer = function(s) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char->integer"], 1, $a); }
+      thisRuntime.checkString(s);
+      if (s.length !== 1) {
+        ffi.throwMessageException("char->integer: " + s + " is not a 1-character string");
+      }
+      return thisRuntime.makeNumber(s.charCodeAt(0));
+    };
+
+    var spyret_integer_to_char = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["integer->char"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeString(String.fromCharCode(n));
+    };
 
     function loadBuiltinModules(modules, startName, withModules) {
       function loadWorklist(startMod) {
@@ -4459,11 +4467,13 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_void": makeFunction(spyret_void),
           "_spyret_check_expect": makeFunction(spyret_check_expect),
           "_spyret_check_within": makeFunction(spyret_check_within),
+          "_spyret_zero_p": makeFunction(spyret_zero_p),
           "_spyret_plus": makeFunction(spyret_plus),
           "_spyret_minus": makeFunction(spyret_minus),
           "_spyret_times": makeFunction(spyret_times),
           "_spyret_divide": makeFunction(spyret_divide),
           '_spyret_substring': makeFunction(spyret_substring),
+          "_spyret_char_p": makeFunction(spyret_char_p),
           "_spyret_char_to_integer": makeFunction(spyret_char_to_integer),
           "_spyret_integer_to_char": makeFunction(spyret_integer_to_char),
 
@@ -4522,7 +4532,6 @@ function isMethod(obj) { return obj instanceof PMethod; }
           'num-is-negative': makeFunction(num_is_negative),
           'num-is-non-positive': makeFunction(num_is_non_positive),
           'num-is-non-negative': makeFunction(num_is_non_negative),
-          "num-is-zero": makeFunction(num_is_zero),
           'num-is-fixnum': makeFunction(num_is_fixnum),
           'num-expt': makeFunction(num_expt),
           'num-tostring': makeFunction(num_tostring),
