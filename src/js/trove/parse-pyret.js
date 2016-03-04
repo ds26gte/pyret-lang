@@ -1002,6 +1002,7 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
         "or":  RUNTIME.makeString("opor"),
 
         "is":            RUNTIME.getField(ast, "s-op-is"),
+        "is-roughly":    RUNTIME.getField(ast, "s-op-is-op").app("op=roughly"),
         "is==":          RUNTIME.getField(ast, "s-op-is-op").app("op=="),
         "is=~":          RUNTIME.getField(ast, "s-op-is-op").app("op=~"),
         "is<=>":         RUNTIME.getField(ast, "s-op-is-op").app("op<=>"),

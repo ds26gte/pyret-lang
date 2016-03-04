@@ -122,6 +122,7 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("raise").key(), t-arrow([list: t-top], t-bot))
   default-typs.set-now(A.s-global("equal-always").key(), t-arrow([list: t-top, t-top], t-boolean))
   default-typs.set-now(A.s-global("equal-now").key(), t-arrow([list: t-top, t-top], t-boolean))
+  default-typs.set-now(A.s-global("equal-roughly").key(), t-arrow([list: t-top, t-top], t-boolean))
   default-typs.set-now(A.s-global("identical").key(), t-arrow([list: t-top, t-top], t-boolean))
   default-typs.set-now("hasField", t-arrow([list: t-record(empty), t-string], t-boolean))
   default-typs.set-now(A.s-global("tostring").key(), t-arrow([list: t-top], t-string))

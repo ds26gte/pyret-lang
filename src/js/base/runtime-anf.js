@@ -2075,6 +2075,12 @@ function isMethod(obj) { return obj instanceof PMethod; }
       });
     });
 
+    var equalRoughlyPy = makeFunction(function(left, right) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal-roughly"], 2, $a); }
+      var hardWiredRelTol = 0.001; // say
+      return makeBoolean(equalWithinRel(makeNumber(hardWiredRelTol)).app(left, right));
+    });
+
     // JS function from Pyret values to Pyret equality answers
     function equalAlways3(left, right) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal-always3"], 2, $a); }
@@ -4594,6 +4600,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           'equal-now': equalNowPy,
           'equal-always3': makeFunction(equalAlways3),
           'equal-always': equalAlwaysPy,
+          "equal-roughly": equalRoughlyPy,
 
           'within-abs-now3' : makeFunction(equalWithinAbsNow3),
           'within-rel-now3' : makeFunction(equalWithinRelNow3),

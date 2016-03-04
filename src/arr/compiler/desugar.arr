@@ -414,6 +414,7 @@ fun desugar-expr(expr :: A.Expr):
               end)
           end
           if op == "op==": eq-op("equal-always")
+          else if op == "op=roughly": eq-op("equal-roughly")
           else if op == "op=~": eq-op("equal-now")
           else if op == "op<=>": eq-op("identical")
           else if op == "op<>":

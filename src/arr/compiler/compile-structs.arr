@@ -731,6 +731,7 @@ runtime-builtins = [string-dict:
   "equal-always3", T.t-top,
   "equal-now", t-pred2,
   "equal-now3", T.t-top,
+  "equal-roughly", T.t-top,
   "identical", t-pred2,
   "identical3", T.t-top,
   "exn-unwrap", T.t-top,

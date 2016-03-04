@@ -241,8 +241,8 @@ data RuntimeError:
     render-reason(self):
       [ED.error:
         [ED.para: ED.text("Attempted to compare the following two incomparable values:")],
-        ED.embed(self.value1),
-        ED.embed(self.value2),
+        [ED.para: ED.embed(self.value1)],
+        [ED.para: ED.embed(self.value2)],
         [ED.para: ED.text(self.reason)]]
     end
 
