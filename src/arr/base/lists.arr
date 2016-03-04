@@ -813,6 +813,11 @@ fun list-member<a>(e :: a, lst :: List<a>) -> Boolean:
 end
 
 #for spyret
+fun list-assoc(k, lst):
+  lst.find(lam(c): c.first == k end).or-else(false)
+end
+
+#for spyret
 fun build-list(n :: Number, f :: (Number -> Any)) -> List:
   fun build-list-helper(m :: Number):
     if m == n:

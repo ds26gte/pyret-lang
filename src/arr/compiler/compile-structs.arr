@@ -803,6 +803,7 @@ standard-imports = extra-imports(
           "list-ref",
           "list-length",
           "list-member",
+          "list-assoc",
           "build-list"
         ],
         [list: "List"]),

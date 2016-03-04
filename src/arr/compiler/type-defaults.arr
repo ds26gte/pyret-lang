@@ -473,6 +473,7 @@ module-const-lists = t-module("pyret-builtin://lists",
     t-member("list-ref", t-top),
     t-member("list-length", t-top),
     t-member("list-member", t-top),
+    t-member("list-assoc", t-top),
     t-member("build-list", t-top),
     t-member("list", let tva = s-atom("A", 160), tv = t-var(tva):
         t-record([list: t-member("make", t-forall([list: t-variable(A.dummy-loc, tva, t-top, invariant)], t-arrow([list: t-array(tv)], mk-list(tv))))])
