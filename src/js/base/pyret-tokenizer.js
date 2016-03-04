@@ -244,6 +244,7 @@ define(["../../../lib/jglr/jglr"], function(E) {
   const opiseqnow = new RegExp(kw("is=~"), STICKY_REGEXP);
   const opisidentical = new RegExp(kw("is<=>"), STICKY_REGEXP);
   const opis = new RegExp(kw("is"), STICKY_REGEXP);
+  const opisroughly = new RegExp(kw("is-roughly"), STICKY_REGEXP);
   const opisnoteq = new RegExp(kw("is-not=="), STICKY_REGEXP);
   const opisnoteqnow = new RegExp(kw("is-not=~"), STICKY_REGEXP);
   const opisnotidentical = new RegExp(kw("is-not<=>"), STICKY_REGEXP);
@@ -372,6 +373,7 @@ define(["../../../lib/jglr/jglr"], function(E) {
     {name: "ISEQUALEQUAL", val: opiseq, parenIsForExp: true},
     {name: "ISEQUALTILDE", val: opiseqnow, parenIsForExp: true},
     {name: "ISSPACESHIP", val: opisidentical, parenIsForExp: true},
+    {name: "ISROUGHLY", val: opisroughly, parenIsForExp: true},
     {name: "IS", val: opis, parenIsForExp: true},
     {name: "SATISFIESNOT", val: opsatisfiesnot, parenIsForExp: true},
     {name: "SATISFIES", val: opsatisfies, parenIsForExp: true},
