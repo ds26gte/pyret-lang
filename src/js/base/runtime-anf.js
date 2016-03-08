@@ -3520,63 +3520,6 @@ function isMethod(obj) { return obj instanceof PMethod; }
       thisRuntime.checkString(r);
       return thisRuntime.makeBoolean(l === r);
     }
-    var string_lessthan = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-less"], 2, $a); }
-      thisRuntime.checkString(l);
-      thisRuntime.checkString(r);
-      return thisRuntime.makeBoolean(l < r);
-    }
-    var string_greaterthan = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-greater"], 2, $a); }
-      thisRuntime.checkString(l);
-      thisRuntime.checkString(r);
-      return thisRuntime.makeBoolean(l > r);
-    }
-    var string_lessequal = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-less-equal"], 2, $a); }
-      thisRuntime.checkString(l);
-      thisRuntime.checkString(r);
-      return thisRuntime.makeBoolean(l <= r);
-    }
-    var string_greaterequal = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-greater-equal"], 2, $a); }
-      thisRuntime.checkString(l);
-      thisRuntime.checkString(r);
-      return thisRuntime.makeBoolean(l >= r);
-    }
-
-    var string_ci_equal = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-ci-equals"], 2, $a); }
-      thisRuntime.checkString(l);
-      thisRuntime.checkString(r);
-      return thisRuntime.makeBoolean(l.toLowerCase() === r.toLowerCase());
-    }
-
-    var string_ci_lessthan = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-ci-less"], 2, $a); }
-      thisRuntime.checkString(l);
-      thisRuntime.checkString(r);
-      return thisRuntime.makeBoolean(l.toLowerCase() < r.toLowerCase());
-    }
-    var string_ci_greaterthan = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-ci-greater"], 2, $a); }
-      thisRuntime.checkString(l);
-      thisRuntime.checkString(r);
-      return thisRuntime.makeBoolean(l.toLowerCase() > r.toLowerCase());
-    }
-
-    var string_ci_lessequal = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-ci-less-equal"], 2, $a); }
-      thisRuntime.checkString(l);
-      thisRuntime.checkString(r);
-      return thisRuntime.makeBoolean(l.toLowerCase() <= r.toLowerCase());
-    }
-    var string_ci_greaterequal = function(l, r) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-ci-greater-equal"], 2, $a); }
-      thisRuntime.checkString(l);
-      thisRuntime.checkString(r);
-      return thisRuntime.makeBoolean(l.toLowerCase() >= r.toLowerCase());
-    }
 
     var string_append = function(l, r) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-append"], 2, $a); }
@@ -4160,6 +4103,216 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return result;
     };
 
+    var spyret_eq = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["="], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.equals(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_lt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["<"], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.lessThan(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_gt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC([">"], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.greaterThan(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_le = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["<="], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.lessThanOrEqual(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_ge = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC([">="], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.greaterThanOrEqual(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_eq = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (arguments[i] !== arguments[i+1]) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_lt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string<?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] < arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_gt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string>?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] > arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_le = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string<=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] <= arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_ge = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string>=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] >= arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_ci_eq = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (arguments[i].toLowerCase() !== arguments[i+1].toLowerCase()) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_ci_lt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci<?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() < arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_ci_gt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci>?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() > arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_ci_le = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci<=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() <= arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var spyret_string_ci_ge = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci>=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() >= arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
     var spyret_substring = function(s, min, max) {
       if (max === undefined) {
         max = string_length(s);
@@ -4478,6 +4631,21 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_minus": makeFunction(spyret_minus),
           "_spyret_times": makeFunction(spyret_times),
           "_spyret_divide": makeFunction(spyret_divide),
+          "_spyret_eq": makeFunction(spyret_eq),
+          "_spyret_lt": makeFunction(spyret_lt),
+          "_spyret_gt": makeFunction(spyret_gt),
+          "_spyret_le": makeFunction(spyret_le),
+          "_spyret_ge": makeFunction(spyret_ge),
+          "_spyret_string_eq": makeFunction(spyret_string_eq),
+          "_spyret_string_lt": makeFunction(spyret_string_lt),
+          "_spyret_string_gt": makeFunction(spyret_string_gt),
+          "_spyret_string_le": makeFunction(spyret_string_le),
+          "_spyret_string_ge": makeFunction(spyret_string_ge),
+          "_spyret_string_ci_eq": makeFunction(spyret_string_ci_eq),
+          "_spyret_string_ci_lt": makeFunction(spyret_string_ci_lt),
+          "_spyret_string_ci_gt": makeFunction(spyret_string_ci_gt),
+          "_spyret_string_ci_le": makeFunction(spyret_string_ci_le),
+          "_spyret_string_ci_ge": makeFunction(spyret_string_ci_ge),
           '_spyret_substring': makeFunction(spyret_substring),
           "_spyret_char_p": makeFunction(spyret_char_p),
           "_spyret_char_to_integer": makeFunction(spyret_char_to_integer),
@@ -4545,15 +4713,6 @@ function isMethod(obj) { return obj instanceof PMethod; }
           'num-to-string-digits': makeFunction(num_tostring_digits),
 
           'string-equal': makeFunction(string_equal),
-          'string-less' : makeFunction(string_lessthan),
-          'string-greater' : makeFunction(string_greaterthan),
-          'string-less-equal' : makeFunction(string_lessequal),
-          'string-greater-equal' : makeFunction(string_greaterequal),
-          'string-ci-equal': makeFunction(string_ci_equal),
-          'string-ci-less' : makeFunction(string_ci_lessthan),
-          'string-ci-greater' : makeFunction(string_ci_greaterthan),
-          'string-ci-less-equal' : makeFunction(string_ci_lessequal),
-          'string-ci-greater-equal' : makeFunction(string_ci_greaterequal),
           'string-contains': makeFunction(string_contains),
           'string-append': makeFunction(string_append),
           'string-length': makeFunction(string_length),
