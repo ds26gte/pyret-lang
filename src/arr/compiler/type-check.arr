@@ -501,8 +501,8 @@ fun _checking(e :: A.Expr, expect-loc :: A.Loc, expect-typ :: Type, context :: C
       check-synthesis(e, expect-typ, l, context)
     | s-num(l, n) =>
       check-synthesis(e, expect-typ, l, context)
-    | s-frac(l, num, den) =>
-      check-synthesis(e, expect-typ, l, context)
+#   | s-frac(l, num, den) =>
+#     check-synthesis(e, expect-typ, l, context)
     | s-bool(l, b) =>
       check-synthesis(e, expect-typ, l, context)
     | s-str(l, s) =>
