@@ -1,6 +1,5 @@
-define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/pyret-tokenizer", "js/pyret-parser"], function(util, ffi, astLib, srclocLib, tokenizer, parser) {
+define(["js/runtime-util", "trove/ast", "trove/srcloc", "js/pyret-tokenizer", "js/pyret-parser"], function(util, astLib, srclocLib, tokenizer, parser) {
   return util.memoModule("parse-pyret", function(RUNTIME, NAMESPACE) {
-    var F = ffi(RUNTIME, NAMESPACE);
     return RUNTIME.loadModulesNew(NAMESPACE, [srclocLib, astLib], function(srclocLib, astLib) {
       var srcloc = RUNTIME.getField(srclocLib, "values");
       var ast = RUNTIME.getField(astLib, "values");
@@ -32,7 +31,7 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
           return translators[node.name](node);
         }
         var pos = function(p) { return makePyretPos(fileName, p); };
-        var makeList = F.makeList;
+        var makeList = RUNTIME.ffi.makeList;
         function name(tok) {
           if (tok.value === "_")
             return RUNTIME.getField(ast, 's-underscore').app(pos(tok.pos));
@@ -197,30 +196,6 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
                 .app(pos(node.pos), constr.pos, constr.name, constr.args, tr(node.kids[1]));
             }
           },
-          'datatype-variant': function(node) {
-            if (node.kids[1].value !== undefined) {
-              // (datatype-variant PIPE NAME constructor)
-              return RUNTIME.getField(ast, 's-datatype-singleton-variant')
-                .app(pos(node.pos), symbol(node.kids[1]), tr(node.kids[2]));
-            } else {
-              // (datatype-variant PIPE variant-constructor constructor)
-              var constr = tr(node.kids[1])
-              return RUNTIME.getField(ast, 's-datatype-variant')
-                .app(pos(node.pos), constr.pos, constr.name, constr.args, tr(node.kids[2]));
-            }
-          },
-          'first-datatype-variant': function(node) {
-            if (node.kids[0].value !== undefined) {
-              // (datatype-variant NAME constructor)
-              return RUNTIME.getField(ast, 's-datatype-singleton-variant')
-                .app(pos(node.pos), symbol(node.kids[0]), tr(node.kids[1]));
-            } else {
-              // (datatype-variant variant-constructor constructor)
-              var constr = tr(node.kids[0])
-              return RUNTIME.getField(ast, 's-datatype-variant')
-                .app(pos(node.pos), constr.pos, constr.name, constr.args, tr(node.kids[1]));
-            }
-          },
           'data-sharing': function(node) {
             if (node.kids.length === 2) {
               // (data-sharing SHARING fields)
@@ -229,11 +204,6 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
               // (data-sharing)
               return makeList([]);
             }
-          },
-          'constructor-clause': function(node) {
-            // (constructor-clause WITHCONSTRUCTOR LPAREN NAME RPAREN COLON block END)
-            return RUNTIME.getField(ast, 's-datatype-constructor')
-              .app(pos(node.pos), symbol(node.kids[2]), tr(node.kids[5]));
           },
           'type-expr': function(node) {
             return RUNTIME.getField(ast, 's-type')
@@ -362,13 +332,6 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
                    tr(node.kids[node.kids.length - 3]),
                    tr(node.kids[node.kids.length - 2]));
           },
-          'datatype-expr': function(node) {
-            // (datatype-expr DATATYPE NAME params COLON variant ... check END)
-            return RUNTIME.getField(ast, 's-datatype')
-              .app(pos(node.pos), symbol(node.kids[1]), tr(node.kids[2]),
-                   makeList(node.kids.slice(4, -2).map(tr)),
-                   tr(node.kids[node.kids.length - 2]));
-          },
           'assign-expr': function(node) {
             // (assign-expr id COLONEQUAL e)
             return RUNTIME.getField(ast, 's-assign')
@@ -383,12 +346,12 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
             if (node.kids.length === 3) {
               // (check-expr CHECKCOLON body END)
               return RUNTIME.getField(ast, 's-check')
-                .app(pos(node.pos), F.makeNone(), tr(node.kids[1]),
+                .app(pos(node.pos), RUNTIME.ffi.makeNone(), tr(node.kids[1]),
                      RUNTIME.makeBoolean(node.kids[0].name === "CHECKCOLON"));
             } else {
               // (check-expr CHECK STRING COLON body END)
               return RUNTIME.getField(ast, 's-check')
-                .app(pos(node.pos), F.makeSome(string(node.kids[1])), tr(node.kids[3]),
+                .app(pos(node.pos), RUNTIME.ffi.makeSome(string(node.kids[1])), tr(node.kids[3]),
                      RUNTIME.makeBoolean(node.kids[0].name === "CHECK"));
             }
           },
@@ -401,18 +364,18 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
               // (check-test left op)
               //             0    1
               return RUNTIME.getField(ast, 's-check-test')
-                .app(pos(node.pos), tr(kids[1]), F.makeNone(), tr(kids[0]), F.makeNone());
+                .app(pos(node.pos), tr(kids[1]), RUNTIME.ffi.makeNone(), tr(kids[0]), RUNTIME.ffi.makeNone());
             } else if (kids.length === 3) {
               // (check-test left op right)
               //             0    1  2
               return RUNTIME.getField(ast, 's-check-test')
-                .app(pos(node.pos), tr(kids[1]), F.makeNone(), tr(kids[0]), F.makeSome(tr(kids[2])));
+                .app(pos(node.pos), tr(kids[1]), RUNTIME.ffi.makeNone(), tr(kids[0]), RUNTIME.ffi.makeSome(tr(kids[2])));
             }
             else {
               // (check-test left op PERCENT LPAREN refinement RPAREN right)
               //             0    1                 4                 6
               return RUNTIME.getField(ast, 's-check-test')
-                .app(pos(node.pos), tr(kids[1]), F.makeSome(tr(kids[4])), tr(kids[0]), F.makeSome(tr(kids[6])));
+                .app(pos(node.pos), tr(kids[1]), RUNTIME.ffi.makeSome(tr(kids[4])), tr(kids[0]), RUNTIME.ffi.makeSome(tr(kids[6])));
             }
           },
           'binop-expr': function(node) {
@@ -440,10 +403,10 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
           'where-clause': function(node) {
             if (node.kids.length === 0) {
               // (where-clause)
-              return F.makeNone();
+              return RUNTIME.ffi.makeNone();
             } else {
               // (where-clause WHERE block)
-              return F.makeSome(tr(node.kids[1]));
+              return RUNTIME.ffi.makeSome(tr(node.kids[1]));
             }
           },
           'check-op': function(node) {
@@ -1083,7 +1046,7 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
       }
 
       function parsePyret(data, fileName) {
-        F.checkArity(2, arguments, "surface-parse");
+        RUNTIME.ffi.checkArity(2, arguments, "surface-parse");
         //console.log('parsePyret ' + data + ', ' + fileName);
         RUNTIME.checkString(data);
         RUNTIME.checkString(fileName);
@@ -1091,7 +1054,7 @@ define(["js/runtime-util", "js/ffi-helpers", "trove/ast", "trove/srcloc", "js/py
       }
 
       function parseSpyret(data, fileName) {
-        F.checkArity(2, arguments, "spyret-surface-parse");
+        RUNTIME.ffi.checkArity(2, arguments, "spyret-surface-parse");
         RUNTIME.checkString(data);
         RUNTIME.checkString(fileName);
         var data_unser = JSON.parse(RUNTIME.unwrap(data));
