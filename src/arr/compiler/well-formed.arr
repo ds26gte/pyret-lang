@@ -490,12 +490,12 @@ well-formed-visitor = A.default-iter-visitor.{
     ensure-unique-cases(branches)
     typ.visit(self) and val.visit(self) and lists.all(_.visit(self), branches) and _else.visit(self)
   end,
-#  s-frac(self, l, num, den):
-#    when den == 0:
-#      add-error(C.zero-fraction(l, num))
-#    end
-#    true
-#  end,
+  s-frac(self, l, num, den):
+    when den == 0:
+      add-error(C.zero-fraction(l, num))
+    end
+    true
+  end,
   s-id(self, l, id):
     when (reserved-names.has-key(id.tosourcestring())):
       reserved-name(l, id.tosourcestring())
@@ -715,9 +715,9 @@ top-level-visitor = A.default-iter-visitor.{
   s-prim-app(_, l :: Loc, _fun :: String, args :: List<A.Expr>):
     well-formed-visitor.s-prim-app(l, _fun, args)
   end,
-#  s-frac(_, l :: Loc, num, den):
-#    well-formed-visitor.s-frac(l, num, den)
-#  end,
+  s-frac(_, l :: Loc, num, den):
+    well-formed-visitor.s-frac(l, num, den)
+  end,
   s-id(_, l :: Loc, id :: A.Name):
     well-formed-visitor.s-id(l, id)
   end,

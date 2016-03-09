@@ -501,8 +501,8 @@ fun _checking(e :: A.Expr, expect-loc :: A.Loc, expect-typ :: Type, context :: C
       check-synthesis(e, expect-typ, l, context)
     | s-num(l, n) =>
       check-synthesis(e, expect-typ, l, context)
-#   | s-frac(l, num, den) =>
-#     check-synthesis(e, expect-typ, l, context)
+    | s-frac(l, num, den) =>
+      check-synthesis(e, expect-typ, l, context)
     | s-bool(l, b) =>
       check-synthesis(e, expect-typ, l, context)
     | s-str(l, s) =>
@@ -723,8 +723,8 @@ fun _synthesis(e :: A.Expr, context :: Context) -> SynthesisResult:
       synthesis-result(e, l, t-srcloc(l), context)
     | s-num(l, n) =>
       synthesis-result(e, l, t-number(l), context)
-#    | s-frac(l, num, den) =>           # reinstate? --ds26gte
-#      synthesis-result(e, l, t-number(l))
+    | s-frac(l, num, den) =>           # reinstate? --ds26gte
+      synthesis-result(e, l, t-number(l))
     | s-bool(l, b) =>
       synthesis-result(e, l, t-boolean(l), context)
     | s-str(l, s) =>
