@@ -48,13 +48,10 @@ t-module                  = TS.t-module
 type Pair                 = TS.Pair
 pair                      = TS.pair
 
-<<<<<<< HEAD
-=======
 type Either               = E.Either
 left                      = E.left
 right                     = E.right
 
->>>>>>> horizon
 t-number                  = TS.t-number
 t-string                  = TS.t-string
 t-boolean                 = TS.t-boolean
@@ -424,86 +421,6 @@ fun _checking(e :: A.Expr, expect-loc :: A.Loc, expect-typ :: Type, context :: C
           | else =>
             checking-err([list: C.incorrect-type(tostring(id-typ), l, tostring(t-ref(id-typ, l)), l)])
         end
-<<<<<<< HEAD
-      | s-newtype-bind(l, name, namet) =>
-        typ = t-name(none, namet)
-        namet-key = namet.key()
-        info.branders.set-now(namet-key, typ)
-        info.aliases.set-now(name.key(), typ)
-        info.typs.set-now(namet-key, t-record([list:
-          t-member("test", t-arrow([list: t-top], t-boolean)),
-          t-member("brand", t-arrow([list: t-top], typ))
-        ]))
-        fold-result(typ)
-    end
-  end
-end
-
-fun process-binding(arg :: A.Bind, default-typ :: Type, info :: TCInfo):
-  for bind(arg-typ from to-type(arg.ann, info).map(_.or-else(default-typ))):
-    info.typs.set-now(arg.id.key(), arg-typ)
-    fold-result(arg-typ)
-  end
-end
-
-fun process-letrec-binding(lrb :: A.LetrecBind, default-typ :: Type, info :: TCInfo):
-  process-binding(lrb.b, default-typ, info)
-end
-
-fun synthesis-fun(
-  l :: A.Loc, body :: A.Expr, params :: List<A.Name>, args :: List<A.Bind>, ret-ann :: A.Ann,
-  recreate :: (List<A.Bind>, A.Ann, A.Expr -> A.Expr), info :: TCInfo
-) -> SynthesisResult:
-  new-info = params.foldl(TCS.add-binding(_, t-top, _), info)
-  for synth-bind(arg-typs from map-result(process-binding(_, t-top, new-info), args)):
-    fun process(new-body :: A.Expr, _ :: A.Loc, ret-typ :: Type) -> SynthesisResult:
-      tmp-arrow = t-arrow(arg-typs, ret-typ)
-      forall = for map(param from params):
-        t-variable(A.dummy-loc, param, t-top, TC.determine-variance(tmp-arrow, param, new-info))
-      end
-      arrow-typ = mk-arrow(l, forall, arg-typs, ret-typ)
-      new-fun = recreate(args, ret-ann, new-body)
-      synthesis-result(new-fun, l, arrow-typ)
-    end
-
-    for synth-bind(maybe-ret from to-type(ret-ann, new-info)):
-      cases(Option<Type>) maybe-ret:
-        | some(ret-typ) =>
-          ret-loc = ann-loc(ret-ann, l)
-          checking(body, ret-loc, ret-typ, new-info).synth-bind(process(_, ret-loc, ret-typ))
-        | none =>
-          synthesis(body, new-info).bind(process)
-      end
-    end
-  end
-end
-
-fun bind-arg(info :: TCInfo, arg :: A.Bind, tm-loc :: A.Loc, tm :: TypeMember) -> FoldResult<TCInfo>:
-  for bind(maybe-declared from to-type(arg.ann, info)):
-    typ = tm.typ
-    cases(Option<Type>) maybe-declared:
-      | some(declared-typ) =>
-        declared-loc = ann-loc(arg.ann, A.dummy-loc)
-        if satisfies-type(typ, declared-typ, info):
-          info.typs.set-now(arg.id.key(), declared-typ)
-          fold-result(info)
-        else:
-          fold-errors([list: C.incorrect-type(tostring(declared-typ), declared-loc, tostring(typ), tm-loc)])
-        end
-      | none =>
-        info.typs.set-now(arg.id.key(), typ)
-        fold-result(info)
-    end
-  end
-end
-
-fun handle-if-branch(branch :: A.IfBranch, info :: TCInfo) -> FoldResult<Pair<A.IfBranch,Type>>:
-  for fold-bind(new-test from checking(branch.test, branch.l, t-boolean, info)):
-    synthesis(branch.body, info).fold-bind(
-      lam(new-body, _, body-typ):
-        new-branch = A.s-if-branch(branch.l, new-test, new-body)
-        fold-result(pair(new-branch, body-typ))
-=======
       end
     | s-if-pipe(l, branches) =>
       raise("s-if-pipe should have already been desugared")
@@ -520,7 +437,6 @@ fun handle-if-branch(branch :: A.IfBranch, info :: TCInfo) -> FoldResult<Pair<A.
         end)
       end.check-bind(lam(new-branches):
         checking(_else, expect-loc, expect-typ, context).map(A.s-if-else(l, new-branches, _))
->>>>>>> horizon
       end)
     | s-cases(l, typ, val, branches) =>
       checking-cases(l, typ, val, branches, none, expect-loc, expect-typ, context)
@@ -562,129 +478,6 @@ fun handle-if-branch(branch :: A.IfBranch, info :: TCInfo) -> FoldResult<Pair<A.
         | else =>
           fold-errors([list: C.incorrect-type("a raw array", l, tostring(expect-typ), expect-loc)])
       end
-<<<<<<< HEAD
-    | none =>
-      fold-errors([list: C.unneccesary-branch(branch.name, branch.l, data-type.name, cases-loc)])
-  end
-end
-
-fun meet-branch-typs(branch-typs :: List<Type>, info :: TCInfo) -> Type:
-  branch-typs.foldl(least-upper-bound(_, _, info), t-bot)
-end
-
-fun track-branches(data-type :: DataType) ->
-  { remove :: (String -> Set<String>), get :: (-> Set<String>) }:
-  var unhandled-branches = data-type.variants.foldl(lam(b, s): s.add(b.name);, [set:])
-  {
-    remove: lam(b-name :: String):
-      unhandled-branches := unhandled-branches.remove(b-name)
-    end,
-    get: lam() -> Set<String>:
-      unhandled-branches
-    end
-  }
-end
-
-fun handle-cases<B>(l :: A.Loc, ann :: A.Ann, val :: A.Expr, branches :: List<A.CasesBranch>,
-                    maybe-else :: Option<A.Expr>, expect-loc :: A.Loc, maybe-expect :: Option<Type>,
-                    info :: TCInfo, bind-direction, create-err :: (List<C.CompileError> -> B),
-                    has-else, no-else) -> B:
-  for bind-direction(typ from to-type-std(ann, info)):
-    cases(Option<DataType>) TCS.get-data-type(typ, info):
-      | some(data-type) =>
-        for bind-direction(new-val from checking(val, l, typ, info)):
-          branch-tracker = track-branches(data-type)
-          for bind-direction(result from map-result(handle-branch(data-type, l, _, expect-loc, maybe-expect, branch-tracker.remove, info), branches)):
-            split-result = split(result)
-            remaining-branches = branch-tracker.get().to-list()
-            cases(Option<A.Expr>) maybe-else:
-              | some(_else) =>
-                if is-empty(remaining-branches):
-                  create-err([list: C.unneccesary-else-branch(data-type.name, l)])
-                else:
-                  has-else(l, ann, new-val, split-result, _else, info)
-                end
-              | none =>
-                if is-empty(remaining-branches):
-                  no-else(l, ann, new-val, split-result, info)
-                else:
-                  create-err([list: C.non-exhaustive-pattern(remaining-branches, data-type.name, l)])
-                end
-            end
-          end
-        end
-      | none =>
-        create-err([list: C.cant-match-on(tostring(typ), l)])
-    end
-  end
-end
-
-fun synthesis-cases-has-else(l :: A.Loc, ann :: A.Ann, new-val :: A.Expr, split-result :: Pair<List<A.CasesBranch>,List<Type>>, _else :: A.Expr, info :: TCInfo) -> SynthesisResult:
-  synthesis(_else, info).bind(
-    lam(new-else, _, else-typ):
-      branches-typ = meet-branch-typs(link(else-typ, split-result.right), info)
-      new-cases = A.s-cases-else(l, ann, new-val, split-result.left, new-else)
-      synthesis-result(new-cases, l, branches-typ)
-    end)
-end
-
-fun synthesis-cases-no-else(l :: A.Loc, ann :: A.Ann, new-val :: A.Expr, split-result :: Pair<List<A.CasesBranch>,List<Type>>, info :: TCInfo) -> SynthesisResult:
-  branches-typ = meet-branch-typs(split-result.right, info)
-  new-cases = A.s-cases(l, ann, new-val, split-result.left)
-  synthesis-result(new-cases, l, branches-typ)
-end
-
-fun checking-cases-has-else(expect-loc :: A.Loc, expect-typ :: Type):
-  lam(l :: A.Loc, ann :: A.Ann, new-val :: A.Expr, split-result :: Pair<List<A.CasesBranch>,List<Type>>, _else :: A.Expr, info :: TCInfo) -> CheckingResult:
-    for bind(new-else from checking(_else, expect-loc, expect-typ, info)):
-      new-cases = A.s-cases-else(l, ann, new-val, split-result.left, new-else)
-      checking-result(new-cases)
-    end
-  end
-end
-
-fun checking-cases-no-else(l :: A.Loc, ann :: A.Ann, new-val :: A.Expr, split-result :: Pair<List<A.CasesBranch>,List<Type>>, info :: TCInfo) -> CheckingResult:
-  new-cases = A.s-cases(l, ann, new-val, split-result.left)
-  checking-result(new-cases)
-end
-
-fun synthesis-cases(l :: A.Loc, ann :: A.Ann, val :: A.Expr, branches :: List<A.CasesBranch>, maybe-else :: Option<A.Expr>, info :: TCInfo) -> SynthesisResult:
-  handle-cases(l, ann, val, branches, maybe-else, A.dummy-loc, none, info, synth-bind, synthesis-err, synthesis-cases-has-else, synthesis-cases-no-else)
-end
-
-fun checking-cases(l :: A.Loc, ann :: A.Ann, val :: A.Expr, branches :: List<A.CasesBranch>, maybe-else :: Option<A.Expr>, expect-loc :: A.Loc, expect-typ :: Type, info :: TCInfo) -> CheckingResult:
-  handle-cases(l, ann, val, branches, maybe-else, expect-loc, some(expect-typ), info, check-bind, checking-err, checking-cases-has-else(expect-loc, expect-typ), checking-cases-no-else)
-end
-
-fun lookup-id(blame-loc :: A.Loc, id, info :: TCInfo) -> FoldResult<Type>:
-  id-key = if is-string(id):
-             id
-           else if A.is-Name(id):
-             id.key()
-           else:
-             raise("I don't know how to lookup your id! Received: " + torepr(id))
-           end
-  if info.typs.has-key-now(id-key):
-    fold-result(info.typs.get-value-now(id-key))
-  else:
-    id-expr = if is-string(id):
-                A.s-id(blame-loc, A.s-global(id))
-              else if A.is-Name(id):
-                A.s-id(blame-loc, id)
-              else:
-                A.s-id(blame-loc, A.s-global(tostring(id)))
-              end
-    fold-errors([list: C.unbound-id(id-expr)])
-  end
-end
-
-fun remove-foralls(l :: A.Loc, forall :: List<TypeVariable>, onto :: Type, replacements :: List<Type>, info :: TCInfo) -> Option<Type>:
-  for fold2-strict(curr from onto, variable from forall, replacement from replacements):
-    to-replace  = t-var(variable.id)
-    upper       = variable.upper-bound
-    new-curr    = curr.substitute(to-replace, replacement)
-    check-and-log(l, replacement, variable.l, upper, new-curr, info)
-=======
       for check-bind(new-context-and-values from wrapped):
         checking-result(A.s-array(l, new-context-and-values.right), new-context-and-values.left)
       end
@@ -728,7 +521,6 @@ fun remove-foralls(l :: A.Loc, forall :: List<TypeVariable>, onto :: Type, repla
       raise("s-for should have already been desugared")
     | s-check(l, name, body, keyword-check) =>
       checking-result(e, context)
->>>>>>> horizon
   end
 end
 
@@ -1935,65 +1727,6 @@ fun record-view(access-loc :: Loc, obj-typ-loc :: A.Loc, obj-typ :: Type,
           handle(obj-typ-loc, some(data-typ.fields))
         | none => non-obj-err
       end
-<<<<<<< HEAD
-    | s-id-letrec(l, id, safe) =>
-      for check-bind(id-typ from lookup-id(l, id, info)):
-        check-and-return(l, id-typ, expect-loc, expect-typ, e, info)
-      end
-    | s-undefined(l) =>
-      raise("s-undefined not yet handled")
-    | s-srcloc(l, loc) =>
-      check-and-return(l, t-srcloc, expect-loc, expect-typ, e, info)
-    | s-num(l, n) =>
-      check-and-return(l, t-number, expect-loc, expect-typ, e, info)
-#    | s-frac(l, num, den) =>
-#      check-and-return(l, t-number, expect-loc, expect-typ, e, info)
-    | s-bool(l, b) =>
-      check-and-return(l, t-boolean, expect-loc, expect-typ, e, info)
-    | s-str(l, s) =>
-      check-and-return(l, t-string, expect-loc, expect-typ, e, info)
-    | s-dot(l, obj, field-name) =>
-      synthesis(obj, info).bind(synthesis-field(l, _, _, _, field-name, A.s-dot, info)).check-bind(
-      lam(new-s-dot, s-dot-loc, s-dot-typ):
-        check-and-return(s-dot-loc, s-dot-typ, expect-loc, expect-typ, new-s-dot, info)
-      end)
-    | s-get-bang(l, obj, field-name) =>
-      synthesis(obj, info).bind(synthesis-field(l, _, _, _, field-name, A.s-get-bang, info)).check-bind(
-      lam(new-get-bang, field-typ-loc, field-typ):
-        cases(Type) field-typ:
-          | t-ref(typ) =>
-            check-and-return(field-typ-loc, typ, expect-loc, expect-typ, e, info)
-          | else =>
-            checking-err([list: C.incorrect-type(tostring(field-typ), field-typ-loc, tostring(t-ref(expect-typ)), l)])
-        end
-      end)
-    | s-bracket(l, obj, field) =>
-      raise("s-bracket not yet handled")
-    | s-data-expr(l,
-        name,
-        namet,
-        params, # type params
-        mixins, variants, shared-members, _check) =>
-      synthesis-datatype(l, name, namet, params, mixins, variants, shared-members, _check, info).check-bind(
-      lam(new-s-data-expr, s-data-expr-loc, s-data-expr-typ):
-        check-and-return(s-data-expr-loc, s-data-expr-typ, expect-loc, expect-typ, new-s-data-expr, info)
-      end)
-    # Check information kept around for future purposes
-    | s-check(_, _, _, _)           => checking-result(e)
-    | s-check-test(_, _, _, _)      => checking-result(e)
-    | s-data(_, _, _, _, _, _, _)   => raise("s-data should have been desugared")
-    | s-let(_, _, _, _)             => raise("s-let should have already been desugared")
-    | s-var(_, _, _)                => raise("s-var should have already been desugared")
-    | s-user-block(_, _)            => raise("s-user-block should have already been desugared")
-    | s-if-pipe(_, _)               => raise("s-if-pipe should have already been desugared")
-    | s-if-pipe-else(_, _, _)       => raise("s-if-pipe-else should have already been desugared")
-    | s-if(_, _)                    => raise("s-if should have already been desugared")
-    | s-fun(_, _, _, _, _, _, _, _) => raise("s-fun should have already been desugared")
-    | s-when(_, _, _)               => raise("s-when should have already been desugared")
-    | s-for(_, _, _, _, _)          => raise("s-for should have already been desugared")
-    | s-paren(_, _)                 => raise("s-paren should have already been desugared")
-=======
->>>>>>> horizon
   end
 end
 

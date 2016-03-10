@@ -186,14 +186,13 @@ check "Worklist generation (Cycle)":
   CL.compile-worklist(dfind, floc, {}) raises "cycle"
 end
 
-
 check "Multiple includes":
   modules = SD.make-mutable-string-dict()
   modules.set-now("A",
     ```
     provide *
     provide-types *
-    
+
     data D:
       | d(x)
     end
@@ -222,6 +221,7 @@ check "Multiple includes":
 
   fun string-to-locator(name :: String):
     {
+      dialect(self): "pyret" end,
       needs-compile(self, provs): true end,
       get-module(self): CL.pyret-string(modules.get-value-now(name)) end,
       get-extra-imports(self): CM.standard-imports end,
