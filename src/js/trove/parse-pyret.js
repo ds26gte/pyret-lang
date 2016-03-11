@@ -1054,7 +1054,7 @@ define(["js/runtime-util", "trove/ast", "trove/srcloc", "js/pyret-tokenizer", "j
       }
 
       function parseSpyret(data, fileName) {
-        F.checkArity(2, arguments, "spyret-surface-parse");
+        RUNTIME.ffi.checkArity(2, arguments, "spyret-surface-parse");
         RUNTIME.checkString(data);
         RUNTIME.checkString(fileName);
         var data_unser = JSON.parse(RUNTIME.unwrap(data));
