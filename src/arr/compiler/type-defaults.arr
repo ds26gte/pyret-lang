@@ -150,6 +150,8 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_string_append").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_list_to_string").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_char_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_char_upper_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_char_lower_p").key(), t-arrow([list: t-top], t-boolean))
   default-typs.set-now(A.s-global("_spyret_char_alphabetic_p").key(), t-arrow([list: t-top], t-boolean))
   default-typs.set-now(A.s-global("_spyret_char_numeric_p").key(), t-arrow([list: t-top], t-boolean))
   default-typs.set-now(A.s-global("_spyret_char_to_integer").key(), t-arrow([list: t-string], t-number))

@@ -4393,6 +4393,18 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
     };
 
+    var _spyret_char_lower_case_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-lower-case?"], 1, $a); }
+      checkSpyretCharacter(c);
+      return (c >= 'a' && c <= 'z');
+    };
+
+    var _spyret_char_upper_case_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-upper-case?"], 1, $a); }
+      checkSpyretCharacter(c);
+      return (c >= 'A' && c <= 'Z');
+    };
+
     var _spyret_char_numeric_p = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-numeric?"], 1, $a); }
       checkSpyretCharacter(c);
@@ -4736,10 +4748,13 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_string_append": makeFunction(_spyret_string_append),
           "_spyret_list_to_string": makeFunction(_spyret_list_to_string),
 
-          "_spyret_char_p": makeFunction(_spyret_char_p),
           "_spyret_char_alphabetic_p": makeFunction(_spyret_char_alphabetic_p),
+          "_spyret_char_lower_case_p": makeFunction(_spyret_char_lower_case_p),
           "_spyret_char_numeric_p": makeFunction(_spyret_char_numeric_p),
+          "_spyret_char_p": makeFunction(_spyret_char_p),
           "_spyret_char_to_integer": makeFunction(_spyret_char_to_integer),
+          "_spyret_char_upper_case_p": makeFunction(_spyret_char_upper_case_p),
+          "_spyret_char_upper_case_p": makeFunction(_spyret_char_upper_case_p),
           "_spyret_integer_to_char": makeFunction(_spyret_integer_to_char),
 
           "_spyret_append": makeFunction(_spyret_append),
