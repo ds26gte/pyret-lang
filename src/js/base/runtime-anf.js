@@ -4214,6 +4214,16 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return jsnums.lcm(1, $a);
     };
 
+    var _spyret_sinh = function(x) {
+      thisRuntime.checkNumber(x);
+      return jsnums.halve(jsnums.subtract(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
+    };
+
+    var _spyret_cosh = function(x) {
+      thisRuntime.checkNumber(x);
+      return jsnums.halve(jsnums.add(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
+    };
+
     var _spyret_string_eq = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
@@ -4728,18 +4738,20 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_check_expect": makeFunction(_spyret_check_expect),
           "_spyret_check_within": makeFunction(_spyret_check_within),
 
-          "_spyret_zero_p": makeFunction(_spyret_zero_p),
-          "_spyret_plus": makeFunction(_spyret_plus),
-          "_spyret_minus": makeFunction(_spyret_minus),
-          "_spyret_times": makeFunction(_spyret_times),
+          "_spyret_cosh": makeFunction(_spyret_cosh),
           "_spyret_divide": makeFunction(_spyret_divide),
           "_spyret_eq": makeFunction(_spyret_eq),
-          "_spyret_lt": makeFunction(_spyret_lt),
-          "_spyret_gt": makeFunction(_spyret_gt),
-          "_spyret_le": makeFunction(_spyret_le),
-          "_spyret_ge": makeFunction(_spyret_ge),
           "_spyret_gcd": makeFunction(_spyret_gcd),
+          "_spyret_ge": makeFunction(_spyret_ge),
+          "_spyret_gt": makeFunction(_spyret_gt),
           "_spyret_lcm": makeFunction(_spyret_lcm),
+          "_spyret_le": makeFunction(_spyret_le),
+          "_spyret_lt": makeFunction(_spyret_lt),
+          "_spyret_minus": makeFunction(_spyret_minus),
+          "_spyret_plus": makeFunction(_spyret_plus),
+          "_spyret_sinh": makeFunction(_spyret_sinh),
+          "_spyret_times": makeFunction(_spyret_times),
+          "_spyret_zero_p": makeFunction(_spyret_zero_p),
 
           "_spyret_string_eq": makeFunction(_spyret_string_eq),
           "_spyret_string_lt": makeFunction(_spyret_string_lt),
@@ -4758,11 +4770,10 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_char_alphabetic_p": makeFunction(_spyret_char_alphabetic_p),
           "_spyret_char_lower_case_p": makeFunction(_spyret_char_lower_case_p),
           "_spyret_char_numeric_p": makeFunction(_spyret_char_numeric_p),
-          "_spyret_char_whitespace_p": makeFunction(_spyret_char_whitespace_p),
           "_spyret_char_p": makeFunction(_spyret_char_p),
           "_spyret_char_to_integer": makeFunction(_spyret_char_to_integer),
           "_spyret_char_upper_case_p": makeFunction(_spyret_char_upper_case_p),
-          "_spyret_char_upper_case_p": makeFunction(_spyret_char_upper_case_p),
+          "_spyret_char_whitespace_p": makeFunction(_spyret_char_whitespace_p),
           "_spyret_integer_to_char": makeFunction(_spyret_integer_to_char),
 
           "_spyret_append": makeFunction(_spyret_append),
