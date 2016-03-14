@@ -681,6 +681,8 @@ runtime-builtins = [string-dict:
   "_spyret_gt", t-top,
   "_spyret_le", t-top,
   "_spyret_ge", t-top,
+  "_spyret_gcd", t-top,
+  "_spyret_lcm", t-top,
   "_spyret_string_eq", t-top,
   "_spyret_string_lt", t-top,
   "_spyret_string_gt", t-top,
