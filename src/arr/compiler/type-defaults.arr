@@ -134,6 +134,7 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_gt").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_le").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_ge").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_sgn").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_gcd").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_lcm").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_cosh").key(), t-top)

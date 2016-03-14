@@ -4192,6 +4192,18 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return thisRuntime.makeBoolean(true);
     };
 
+    var _spyret_sgn = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["sgn"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      if (jsnums.equalsAnyZero(n)) {
+        return 0;
+      } else if (jsnums.isPositive(n)) {
+        return 1;
+      } else {
+        return -1;
+      }
+    };
+
     var _spyret_gcd = function() {
       var $a = new Array(arguments.length);
       var j;
@@ -4741,6 +4753,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_cosh": makeFunction(_spyret_cosh),
           "_spyret_divide": makeFunction(_spyret_divide),
           "_spyret_eq": makeFunction(_spyret_eq),
+          "_spyret_sgn": makeFunction(_spyret_sgn),
           "_spyret_gcd": makeFunction(_spyret_gcd),
           "_spyret_ge": makeFunction(_spyret_ge),
           "_spyret_gt": makeFunction(_spyret_gt),
