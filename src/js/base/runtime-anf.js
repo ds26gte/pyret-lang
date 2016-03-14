@@ -534,6 +534,11 @@ function isString(obj) {
   return typeof obj === 'string';
 }
 
+//for Spyret
+function _spyret_single_char_string_p(obj) {
+  return isString(obj) && obj.length === 1;
+}
+
 /**Makes a PString using the given s
 
   @param {string} s the string the PString will contain
@@ -1132,6 +1137,9 @@ function isMethod(obj) { return obj instanceof PMethod; }
     var checkMethod = makeCheckType(isMethod, "Method");
     var checkOpaque = makeCheckType(isOpaque, "Opaque");
     var checkPyretVal = makeCheckType(isPyretVal, "Pyret Value");
+
+    //for Spyret
+    var checkSpyretCharacter = makeCheckType(_spyret_single_char_string_p, "Character");
 
     var checkWrapBoolean = function(val) {
       checkBoolean(val);
@@ -4342,10 +4350,6 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return thisRuntime.makeString(result);
     };
 
-    var _spyret_single_char_string_p = function(s) {
-      return (typeof s === "string" && s.length === 1);
-    };
-
     var _spyret_list_to_string = function(L) {
       thisRuntime.checkList(L);
       var ra = ffi.toArray(L);
@@ -4361,13 +4365,22 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return _spyret_single_char_string_p(c);
     };
 
-    var _spyret_char_to_integer = function(s) {
+    var _spyret_char_alphabetic_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-alphabetic?"], 1, $a); }
+      checkSpyretCharacter(c);
+      return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
+    };
+
+    var _spyret_char_numeric_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-numeric?"], 1, $a); }
+      checkSpyretCharacter(c);
+      return (c >= '0' && c <= '9');
+    };
+
+    var _spyret_char_to_integer = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char->integer"], 1, $a); }
-      thisRuntime.checkString(s);
-      if (s.length !== 1) {
-        ffi.throwMessageException("char->integer: " + s + " is not a 1-character string");
-      }
-      return thisRuntime.makeNumber(s.charCodeAt(0));
+      checkSpyretCharacter(c);
+      return thisRuntime.makeNumber(c.charCodeAt(0));
     };
 
     var _spyret_integer_to_char = function(n) {
@@ -4700,6 +4713,8 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_list_to_string": makeFunction(_spyret_list_to_string),
 
           "_spyret_char_p": makeFunction(_spyret_char_p),
+          "_spyret_char_alphabetic_p": makeFunction(_spyret_char_alphabetic_p),
+          "_spyret_char_numeric_p": makeFunction(_spyret_char_numeric_p),
           "_spyret_char_to_integer": makeFunction(_spyret_char_to_integer),
           "_spyret_integer_to_char": makeFunction(_spyret_integer_to_char),
 
