@@ -4411,6 +4411,13 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return (c >= '0' && c <= '9');
     };
 
+    var _spyret_char_whitespace_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-whitespace?"], 1, $a); }
+      checkSpyretCharacter(c);
+      var n = c.charCodeAt(0);
+      return (n===9 || n===10 || n===12 || n===13 || n===32);
+    };
+
     var _spyret_char_to_integer = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char->integer"], 1, $a); }
       checkSpyretCharacter(c);
@@ -4751,6 +4758,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_char_alphabetic_p": makeFunction(_spyret_char_alphabetic_p),
           "_spyret_char_lower_case_p": makeFunction(_spyret_char_lower_case_p),
           "_spyret_char_numeric_p": makeFunction(_spyret_char_numeric_p),
+          "_spyret_char_whitespace_p": makeFunction(_spyret_char_whitespace_p),
           "_spyret_char_p": makeFunction(_spyret_char_p),
           "_spyret_char_to_integer": makeFunction(_spyret_char_to_integer),
           "_spyret_char_upper_case_p": makeFunction(_spyret_char_upper_case_p),

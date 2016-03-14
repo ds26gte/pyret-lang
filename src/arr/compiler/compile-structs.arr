@@ -701,6 +701,7 @@ runtime-builtins = [string-dict:
   "_spyret_char_lower_case_p", t-top,
   "_spyret_char_alphabetic_p", t-top,
   "_spyret_char_numeric_p", t-top,
+  "_spyret_char_whitespace_p", t-top,
   "_spyret_char_to_integer", t-top,
   "_spyret_integer_to_char", t-top,
   "_spyret_append", t-top,
