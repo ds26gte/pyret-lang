@@ -4883,6 +4883,8 @@ define(function() {
   Numbers['subtract'] = subtract;
   Numbers['multiply'] = multiply;
   Numbers['divide'] = divide;
+  Numbers['negate'] = negate;
+  Numbers['halve'] = halve;
   Numbers['equals'] = equals;
   Numbers['equalsAnyZero'] = equalsAnyZero;
   Numbers['eqv'] = eqv; // why is this being exported?
