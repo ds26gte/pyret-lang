@@ -4067,6 +4067,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
     };
 
+    var _spyret_false_p = function(x) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["false?"], 1, $a); }
+      return !x;
+    };
+
     var _spyret_plus = function() {
       var result = 0;
       var i, j;
@@ -4771,6 +4776,8 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_sinh": makeFunction(_spyret_sinh),
           "_spyret_times": makeFunction(_spyret_times),
           "_spyret_zero_p": makeFunction(_spyret_zero_p),
+
+          "_spyret_false_p": makeFunction(_spyret_false_p),
 
           "_spyret_string_eq": makeFunction(_spyret_string_eq),
           "_spyret_string_lt": makeFunction(_spyret_string_lt),
