@@ -122,6 +122,7 @@ fun make-default-typs():
   default-typs.set-now("hasField", t-arrow([list: t-record(empty), t-string], t-boolean))
   default-typs.set-now(A.s-global("tostring").key(), t-arrow([list: t-top], t-string))
   default-typs.set-now(A.s-global("_spyret_void").key(), t-arrow([list: ], t-nothing))
+  default-typs.set-now(A.s-global("_spyret_identity").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_check_expect").key(), t-arrow([list: t-top, t-top], t-nothing))
   default-typs.set-now(A.s-global("_spyret_check_within").key(), t-arrow([list: t-top, t-top, t-top], t-nothing))
   default-typs.set-now(A.s-global("_spyret_zero_p").key(), t-arrow([list: t-number], t-boolean))

@@ -4047,6 +4047,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return nothing;
     };
 
+    var _spyret_identity = function(x) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["identity"], 1, $a); }
+      return x;
+    };
+
     var _spyret_check_within = function(actVal, expVal, absTol) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-within"], 3, $a); }
       if (!(equalWithin(absTol).app(actVal, expVal))) {
@@ -4746,9 +4751,10 @@ function isMethod(obj) { return obj instanceof PMethod; }
           'gensym': gensym,
           'random': makeFunction(random),
 
-          "_spyret_void": makeFunction(_spyret_void),
           "_spyret_check_expect": makeFunction(_spyret_check_expect),
           "_spyret_check_within": makeFunction(_spyret_check_within),
+          "_spyret_identity": makeFunction(_spyret_identity),
+          "_spyret_void": makeFunction(_spyret_void),
 
           "_spyret_cosh": makeFunction(_spyret_cosh),
           "_spyret_divide": makeFunction(_spyret_divide),
