@@ -669,6 +669,8 @@ runtime-builtins = [string-dict:
   "random", t-top,
   "run-task", t-top,
   "_spyret_void", t-top,
+  "_spyret_equal_tilde", t-top,
+  "_spyret_num_equal_tilde", t-top,
   "_spyret_identity", t-top,
   "_spyret_check_expect", t-top,
   "_spyret_check_within", t-top,

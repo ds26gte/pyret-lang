@@ -4054,6 +4054,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
 
     var _spyret_check_within = function(actVal, expVal, absTol) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-within"], 3, $a); }
+      checkNumNonNegative(absTol);
       if (!(equalWithin(absTol).app(actVal, expVal))) {
         displayFunc("check-within: actual value " + actVal +
         " is not within " + absTol + " of expected value " + expVal);
@@ -4061,15 +4062,29 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return nothing;
     };
 
-    var _spyret_zero_p = function(n) {
-      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["zero?"], 1, $a); }
-      thisRuntime.checkNumber(n);
-      return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
+    var _spyret_equal_tilde = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal~?"], 3, $a); }
+      checkNumNonNegative(absTol);
+      return equalWithin(absTol).app(actVal, expVal);
     };
 
     var _spyret_false_p = function(x) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["false?"], 1, $a); }
       return !x;
+    };
+
+    var _spyret_num_equal_tilde = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["=~"], 3, $a); }
+      thisRuntime.checkNumber(actVal);
+      thisRuntime.checkNumber(expVal);
+      checkNumNonNegative(absTol);
+      return jsnums.roughlyEquals(actVal, expVal, absTol);
+    };
+
+    var _spyret_zero_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["zero?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
     };
 
     var _spyret_plus = function() {
@@ -4760,7 +4775,9 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_check_within": makeFunction(_spyret_check_within),
           "_spyret_identity": makeFunction(_spyret_identity),
           "_spyret_void": makeFunction(_spyret_void),
+          "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde),
 
+          "_spyret_num_equal_tilde": makeFunction(_spyret_num_equal_tilde),
           "_spyret_cosh": makeFunction(_spyret_cosh),
           "_spyret_divide": makeFunction(_spyret_divide),
           "_spyret_eq": makeFunction(_spyret_eq),
