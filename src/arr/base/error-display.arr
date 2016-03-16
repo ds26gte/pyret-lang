@@ -22,7 +22,6 @@ data ErrorDisplay:
   | optional(contents :: ErrorDisplay)
 end
 
-
 shadow error = {
   make:  lam(arr):           v-sequence(raw-array-to-list(arr)) end,
   make0: lam():              v-sequence(raw-array-to-list([raw-array: ])) end,
@@ -78,7 +77,13 @@ opt = {
   make5: lam(a, b, c, d, e): optional(v-sequence(raw-array-to-list([raw-array: a, b, c, d, e]))) end
 }
 list = {
-  make: lam(arr): raw-array-to-list(arr) end
+  make:  lam(arr):            raw-array-to-list(arr) end,
+  make0: lam():              raw-array-to-list([raw-array: ]) end,
+  make1: lam(a):             raw-array-to-list([raw-array: a]) end,
+  make2: lam(a, b):          raw-array-to-list([raw-array: a, b]) end,
+  make3: lam(a, b, c):       raw-array-to-list([raw-array: a, b, c]) end,
+  make4: lam(a, b, c, d):    raw-array-to-list([raw-array: a, b, c, d]) end,
+  make5: lam(a, b, c, d, e): raw-array-to-list([raw-array: a, b, c, d, e]) end,
 }
 fun map3(f, la, lb, lc):
   if la.length() == 0:
