@@ -4477,6 +4477,44 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return thisRuntime.makeString(String.fromCharCode(n));
     };
 
+    var _spyret_format = function(f) {
+      var argsn = arguments.length;
+      if (argsn === 0) {
+        throw thisRuntime.ffi.throwArityErrorC(["format"], 1, []);
+      }
+      checkString(f);
+      var n = f.length;
+      var j = 1;
+      var s = "";
+      var i = 0;
+      var c;
+      while (i < n) {
+        c = f[i];
+        if (c === '~') {
+          i++;
+          if (i === n) {
+            throwMessageException("format: format " + f + " too short");
+          }
+          c = f[i];
+          if (c === '~') {
+            s += c;
+          } else if (j >= argsn) {
+            throwMessageException("format: format " + f + " too long");
+          } else if (c === 'a') {
+            s += arguments[j]; j++;
+          } else if (c === 's') {
+            s += "\"" + arguments[j] + "\""; j++;
+          } else {
+            throwMessageException("format: unknown directive " + c);
+          }
+        } else {
+          s += c;
+        }
+        i++;
+      }
+      return s;
+    };
+
     var _spyret_append = function() {
       var result = [];
       var L;
@@ -4818,6 +4856,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_char_upper_case_p": makeFunction(_spyret_char_upper_case_p),
           "_spyret_char_whitespace_p": makeFunction(_spyret_char_whitespace_p),
           "_spyret_integer_to_char": makeFunction(_spyret_integer_to_char),
+          "_spyret_format": makeFunction(_spyret_format),
 
           "_spyret_append": makeFunction(_spyret_append),
 

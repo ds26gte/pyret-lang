@@ -164,6 +164,7 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_char_whitespace_p").key(), t-arrow([list: t-top], t-boolean))
   default-typs.set-now(A.s-global("_spyret_char_to_integer").key(), t-arrow([list: t-string], t-number))
   default-typs.set-now(A.s-global("_spyret_integer_to_char").key(), t-arrow([list: t-number], t-string))
+  default-typs.set-now(A.s-global("_spyret_format").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_append").key(), t-top)
   default-typs.set-now(A.s-global("_times").key(), t-number-binop)
   default-typs.set-now(A.s-global("_minus").key(), t-number-binop)
