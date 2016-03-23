@@ -4084,6 +4084,21 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return (x === y);
     };
 
+    var _spyret_integer_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["integer?"], 1, $a); }
+      return isNumber(n) && jsnums.isInteger(n);
+    };
+
+    var _spyret_rational_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["rational?"], 1, $a); }
+      return isNumber(n) && jsnums.isRational(n);
+    };
+
+    var _spyret_real_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["real?"], 1, $a); }
+      return isNumber(n) && jsnums.isReal(n);
+    };
+
     var _spyret_num_equal_tilde = function(actVal, expVal, absTol) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["=~"], 3, $a); }
       thisRuntime.checkNumber(actVal);
@@ -4981,6 +4996,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_gcd": makeFunction(_spyret_gcd),
           "_spyret_ge": makeFunction(_spyret_ge),
           "_spyret_gt": makeFunction(_spyret_gt),
+          "_spyret_integer_p": makeFunction(_spyret_integer_p),
           "_spyret_lcm": makeFunction(_spyret_lcm),
           "_spyret_le": makeFunction(_spyret_le),
           "_spyret_lt": makeFunction(_spyret_lt),
@@ -4990,12 +5006,15 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_odd_p": makeFunction(_spyret_odd_p),
           "_spyret_plus": makeFunction(_spyret_plus),
           "_spyret_random": makeFunction(_spyret_random),
+          "_spyret_rational_p": makeFunction(_spyret_rational_p),
+          "_spyret_real_p": makeFunction(_spyret_real_p),
           "_spyret_sgn": makeFunction(_spyret_sgn),
           "_spyret_sinh": makeFunction(_spyret_sinh),
           "_spyret_times": makeFunction(_spyret_times),
           "_spyret_zero_p": makeFunction(_spyret_zero_p),
 
           "_spyret_false_p": makeFunction(_spyret_false_p),
+          "_spyret_boolean_p": makeFunction(_spyret_boolean_p),
           "_spyret_boolean_eq": makeFunction(_spyret_boolean_eq),
 
           "_spyret_string_eq": makeFunction(_spyret_string_eq),
