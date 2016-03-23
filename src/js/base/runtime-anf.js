@@ -4262,6 +4262,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return jsnums.lcm(1, $a);
     };
 
+    var _spyret_current_seconds = function() {
+      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["current-seconds"], 0, $a); }
+      return makeNumber(Math.floor(Date.now()/1000));
+    };
+
     var _spyret_sinh = function(x) {
       thisRuntime.checkNumber(x);
       return jsnums.halve(jsnums.subtract(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
@@ -4924,11 +4929,10 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_void": makeFunction(_spyret_void),
           "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde),
 
-          "_spyret_num_equal_tilde": makeFunction(_spyret_num_equal_tilde),
           "_spyret_cosh": makeFunction(_spyret_cosh),
+          "_spyret_current_seconds": makeFunction(_spyret_current_seconds),
           "_spyret_divide": makeFunction(_spyret_divide),
           "_spyret_eq": makeFunction(_spyret_eq),
-          "_spyret_sgn": makeFunction(_spyret_sgn),
           "_spyret_gcd": makeFunction(_spyret_gcd),
           "_spyret_ge": makeFunction(_spyret_ge),
           "_spyret_gt": makeFunction(_spyret_gt),
@@ -4936,7 +4940,9 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_le": makeFunction(_spyret_le),
           "_spyret_lt": makeFunction(_spyret_lt),
           "_spyret_minus": makeFunction(_spyret_minus),
+          "_spyret_num_equal_tilde": makeFunction(_spyret_num_equal_tilde),
           "_spyret_plus": makeFunction(_spyret_plus),
+          "_spyret_sgn": makeFunction(_spyret_sgn),
           "_spyret_sinh": makeFunction(_spyret_sinh),
           "_spyret_times": makeFunction(_spyret_times),
           "_spyret_zero_p": makeFunction(_spyret_zero_p),
