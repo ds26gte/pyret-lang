@@ -4098,6 +4098,24 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
     };
 
+    var _spyret_even_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["even?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      if (!jsnums.isInteger(n)) {
+        ffi.throwMessageException("even?: " + n + " is not an integer");
+      }
+      return jsnums.equalsAnyZero(jsnums.modulo(n, 2));
+    };
+
+    var _spyret_odd_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["odd?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      if (!jsnums.isInteger(n)) {
+        ffi.throwMessageException("odd?: " + n + " is not an integer");
+      }
+      return !jsnums.equalsAnyZero(jsnums.modulo(n, 2));
+    };
+
     var _spyret_plus = function() {
       var result = 0;
       var i, j;
@@ -4946,6 +4964,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_denominator": makeFunction(_spyret_denominator),
           "_spyret_divide": makeFunction(_spyret_divide),
           "_spyret_eq": makeFunction(_spyret_eq),
+          "_spyret_even_p": makeFunction(_spyret_even_p),
           "_spyret_gcd": makeFunction(_spyret_gcd),
           "_spyret_ge": makeFunction(_spyret_ge),
           "_spyret_gt": makeFunction(_spyret_gt),
@@ -4955,6 +4974,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_minus": makeFunction(_spyret_minus),
           "_spyret_num_equal_tilde": makeFunction(_spyret_num_equal_tilde),
           "_spyret_numerator": makeFunction(_spyret_numerator),
+          "_spyret_odd_p": makeFunction(_spyret_odd_p),
           "_spyret_plus": makeFunction(_spyret_plus),
           "_spyret_sgn": makeFunction(_spyret_sgn),
           "_spyret_sinh": makeFunction(_spyret_sinh),

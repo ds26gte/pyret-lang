@@ -676,6 +676,8 @@ runtime-builtins = [string-dict:
   "_spyret_check_within", t-top,
   "_spyret_zero_p", t-number-pred1,
   "_spyret_false_p", t-top,
+  "_spyret_odd_p", t-arrow([list: t-number], t-boolean),
+  "_spyret_even_p", t-arrow([list: t-number], t-boolean),
   "_spyret_boolean_p", t-arrow([list: t-top], t-boolean),
   "_spyret_boolean_eq", t-arrow([list: t-boolean, t-boolean], t-boolean),
   "_spyret_plus", t-top,
