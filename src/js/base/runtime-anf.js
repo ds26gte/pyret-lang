@@ -4526,6 +4526,104 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return ffi.makeList(result);
     };
 
+    var _spyret_apply_variadic_fun = function(f, args) {
+      var result;
+      switch (args.length) {
+        case 0: result = f.app(); break;
+        case 1: result = f.app(args[0]); break;
+        case 2: result = f.app(args[0], args[1]); break;
+        case 3: result = f.app(args[0], args[1], args[2]); break;
+        case 4: result = f.app(args[0], args[1], args[2], args[3]); break;
+        case 5: result = f.app(args[0], args[1], args[2], args[3], args[4]); break;
+        case 6: result = f.app(args[0], args[1], args[2], args[3], args[4], args[5]); break;
+        case 7: result = f.app(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break;
+        case 8: result = f.app(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); break;
+        default: ffi.throwArityErrorC(["_spyret_apply_variadic_fun"], 8, args);
+      }
+      return result;
+    };
+
+    var _spyret_map = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["map"], 1, [f]);
+      }
+      /* can't do this!!
+      if (f.arity !== num_arg_arrays) {
+        throw makeMessageException("map: function arity " + f.arity + " does not match number of arguments " +
+        num_arg_arrays);
+      }
+      */
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length; // check each arg array same length?
+      var result = new Array(arg_array_length);
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        result[j] = _spyret_apply_variadic_fun(f, jth_arg_selection);
+      }
+      return ffi.makeList(result);
+    };
+
+    var _spyret_andmap = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["andmap"], 1, [f]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var result = true;
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        result = result && _spyret_apply_variadic_fun(f, jth_arg_selection);
+        if (!result) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    var _spyret_ormap = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["ormap"], 1, [f]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var result = false;
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        result = result || _spyret_apply_variadic_fun(f, jth_arg_selection);
+        if (result) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     function loadBuiltinModules(modules, startName, withModules) {
       function loadWorklist(startMod) {
         function addMod(curMod, curPath, curName) {
@@ -4859,6 +4957,9 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_format": makeFunction(_spyret_format),
 
           "_spyret_append": makeFunction(_spyret_append),
+          "_spyret_map": makeFunction(_spyret_map),
+          "_spyret_andmap": makeFunction(_spyret_andmap),
+          "_spyret_ormap": makeFunction(_spyret_ormap),
 
           '_plus': makeFunction(plus),
           '_minus': makeFunction(minus),
