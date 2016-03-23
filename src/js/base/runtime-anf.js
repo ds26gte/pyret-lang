@@ -4073,6 +4073,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return !x;
     };
 
+    var _spyret_boolean_p = function(x) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["boolean?"], 1, $a); }
+      return isBoolean(x);
+    };
+
     var _spyret_boolean_eq = function(x, y) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["boolean=?"], 2, $a); }
       checkBoolean(x); checkBoolean(y);
