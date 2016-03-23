@@ -4262,6 +4262,18 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return jsnums.lcm(1, $a);
     };
 
+    var _spyret_numerator = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["numerator"], 1, $a); }
+      checkNumber(n);
+      return jsnums.numerator(n);
+    };
+
+    var _spyret_denominator = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["denominator"], 1, $a); }
+      checkNumber(n);
+      return jsnums.denominator(n);
+    };
+
     var _spyret_current_seconds = function() {
       if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["current-seconds"], 0, $a); }
       return makeNumber(Math.floor(Date.now()/1000));
@@ -4931,6 +4943,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
 
           "_spyret_cosh": makeFunction(_spyret_cosh),
           "_spyret_current_seconds": makeFunction(_spyret_current_seconds),
+          "_spyret_denominator": makeFunction(_spyret_denominator),
           "_spyret_divide": makeFunction(_spyret_divide),
           "_spyret_eq": makeFunction(_spyret_eq),
           "_spyret_gcd": makeFunction(_spyret_gcd),
@@ -4941,6 +4954,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_lt": makeFunction(_spyret_lt),
           "_spyret_minus": makeFunction(_spyret_minus),
           "_spyret_num_equal_tilde": makeFunction(_spyret_num_equal_tilde),
+          "_spyret_numerator": makeFunction(_spyret_numerator),
           "_spyret_plus": makeFunction(_spyret_plus),
           "_spyret_sgn": makeFunction(_spyret_sgn),
           "_spyret_sinh": makeFunction(_spyret_sinh),

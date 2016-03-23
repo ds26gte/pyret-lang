@@ -690,6 +690,8 @@ runtime-builtins = [string-dict:
   "_spyret_sgn", t-top,
   "_spyret_gcd", t-top,
   "_spyret_lcm", t-top,
+  "_spyret_numerator", t-arrow([list: t-number], t-number),
+  "_spyret_denominator", t-arrow([list: t-number], t-number),
   "_spyret_current_seconds", t-arrow([list: ], t-number),
   "_spyret_cosh", t-top,
   "_spyret_sinh", t-top,
