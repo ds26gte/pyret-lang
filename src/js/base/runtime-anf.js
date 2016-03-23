@@ -4297,6 +4297,19 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return makeNumber(Math.floor(Date.now()/1000));
     };
 
+    var _spyret_random = function(n) {
+      if (arguments.length > 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["random"], 0, $a); }
+      if (n) {
+        checkNumber(n);
+        if (!(jsnums.isInteger(n) && jsnums.isPositive(n))) {
+          ffi.throwMessageException("random: " + n + " is not a positive integer")
+        }
+        return makeNumber(Math.floor(jsnums.toFixnum(n) * rng()));
+      } else {
+        return makeNumber(rng());
+      }
+    };
+
     var _spyret_sinh = function(x) {
       thisRuntime.checkNumber(x);
       return jsnums.halve(jsnums.subtract(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
@@ -4976,6 +4989,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_numerator": makeFunction(_spyret_numerator),
           "_spyret_odd_p": makeFunction(_spyret_odd_p),
           "_spyret_plus": makeFunction(_spyret_plus),
+          "_spyret_random": makeFunction(_spyret_random),
           "_spyret_sgn": makeFunction(_spyret_sgn),
           "_spyret_sinh": makeFunction(_spyret_sinh),
           "_spyret_times": makeFunction(_spyret_times),

@@ -148,6 +148,7 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_numerator").key(), t-arrow([list: t-number], t-number))
   default-typs.set-now(A.s-global("_spyret_denominator").key(), t-arrow([list: t-number], t-number))
   default-typs.set-now(A.s-global("_spyret_current_seconds").key(), t-arrow([list: ], t-number))
+  default-typs.set-now(A.s-global("_spyret_random").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_cosh").key(), t-arrow([list: t-number], t-number))
   default-typs.set-now(A.s-global("_spyret_sinh").key(), t-arrow([list: t-number], t-number))
   default-typs.set-now(A.s-global("_spyret_string_eq").key(), t-top)
