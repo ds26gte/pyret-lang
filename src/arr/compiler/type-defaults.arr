@@ -129,6 +129,7 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_check_within").key(), t-arrow([list: t-top, t-top, t-number], t-nothing))
   default-typs.set-now(A.s-global("_spyret_zero_p").key(), t-arrow([list: t-number], t-boolean))
   default-typs.set-now(A.s-global("_spyret_false_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_boolean_eq").key(), t-arrow([list: t-boolean, t-boolean], t-boolean))
   default-typs.set-now(A.s-global("_spyret_plus").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_minus").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_times").key(), t-top)

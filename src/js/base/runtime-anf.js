@@ -4073,6 +4073,12 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return !x;
     };
 
+    var _spyret_boolean_eq = function(x, y) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["boolean=?"], 2, $a); }
+      checkBoolean(x); checkBoolean(y);
+      return (x === y);
+    };
+
     var _spyret_num_equal_tilde = function(actVal, expVal, absTol) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["=~"], 3, $a); }
       thisRuntime.checkNumber(actVal);
@@ -4931,6 +4937,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_zero_p": makeFunction(_spyret_zero_p),
 
           "_spyret_false_p": makeFunction(_spyret_false_p),
+          "_spyret_boolean_eq": makeFunction(_spyret_boolean_eq),
 
           "_spyret_string_eq": makeFunction(_spyret_string_eq),
           "_spyret_string_lt": makeFunction(_spyret_string_lt),
