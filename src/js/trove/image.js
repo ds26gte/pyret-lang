@@ -356,13 +356,13 @@ define([
             }),
             "is-image": f(function(maybeImage) {
               checkArity(1, arguments, "is-image");
-              runtime.confirm(maybeImage, runtime.isOpaque);
-              return runtime.wrap(image.isImage(maybeImage.val));
+             // runtime.confirm(maybeImage, runtime.isOpaque);
+              return (runtime.isOpaque(maybeImage) &&
+                      runtime.wrap(image.isImage(maybeImage.val)));
             }),
             "is-color": f(function(maybeColor) {
               checkArity(1, arguments, "is-color");
-              runtime.confirm(maybeColor, runtime.isOpaque);
-              return runtime.wrap(image.isColor(maybeColor.val));
+              return runtime.wrap(image.isColor(maybeColor));
             }),
             "make-color": f(function(maybeRed,maybeGreen,maybeBlue,maybeAlpha) {
               checkArity(4, arguments, "make-color");
