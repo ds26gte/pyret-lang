@@ -29,6 +29,12 @@ define([
         "is-side-count": numpred,
         "is-step-count": numpred,
         "is-image": Fun([t.any], t.boolean),
+        "is-color": Fun([t.any], t.boolean),
+        "make-color": Fun([Num, Num, Num, Num], t.any),
+        "color-red": Fun([t.any], Num),
+        "color-green": Fun([t.any], Num),
+        "color-blue": Fun([t.any], Num),
+        "color-alpha": Fun([t.any], Num),
         "bitmap-url": Fun([Str], TImage),
         "open-image-url": Fun([Str], TImage),
         "image-url": Fun([Str], TImage),
@@ -94,7 +100,7 @@ define([
         Scene: t.dataType("Scene", [], [], {})
       },
       aliases: {
-        Image: t.localType("Image") 
+        Image: t.localType("Image")
       }
     },
     function(runtime, namespace) {
@@ -193,7 +199,6 @@ define([
           return runtime.isNumber(val) && jsnums.isReal(val) && jsnums.greaterThanOrEqual(val, 0);
         }, "Non-negative Real Number");
 
-
         var _checkColor = p(image.isColorOrColorString, "Color");
 
         var checkColor = function(val) {
@@ -235,9 +240,7 @@ define([
 
         var checkPlaceY = p(isPlaceY, "Y Place");
 
-
         var checkAngle = p(image.isAngle, "Angle");
-
 
         var checkMode = p(isMode, "Mode");
 
@@ -355,6 +358,41 @@ define([
               checkArity(1, arguments, "is-image");
               runtime.confirm(maybeImage, runtime.isOpaque);
               return runtime.wrap(image.isImage(maybeImage.val));
+            }),
+            "is-color": f(function(maybeColor) {
+              checkArity(1, arguments, "is-color");
+              runtime.confirm(maybeColor, runtime.isOpaque);
+              return runtime.wrap(image.isColor(maybeColor.val));
+            }),
+            "make-color": f(function(maybeRed,maybeGreen,maybeBlue,maybeAlpha) {
+              checkArity(4, arguments, "make-color");
+              var red = checkByte(maybeRed);
+              var green = checkByte(maybeGreen);
+              var blue = checkByte(maybeBlue);
+              var alpha = checkByte(maybeAlpha);
+              return runtime.wrap(image.makeColor(
+              jsnums.toFixnum(red),jsnums.toFixnum(green),jsnums.toFixnum(blue),
+              jsnums.toFixnum(alpha)));
+            }),
+            "color-red": f(function(maybeColor) {
+              checkArity(1, arguments, "color-red");
+              runtime.confirm(maybeColor, runtime.isOpaque);
+              return runtime.wrap(image.colorRed(maybeColor.val));
+            }),
+            "color-green": f(function(maybeColor) {
+              checkArity(1, arguments, "color-green");
+              runtime.confirm(maybeColor, runtime.isOpaque);
+              return runtime.wrap(image.colorGreen(maybeColor.val));
+            }),
+            "color-blue": f(function(maybeColor) {
+              checkArity(1, arguments, "color-blue");
+              runtime.confirm(maybeColor, runtime.isOpaque);
+              return runtime.wrap(image.colorBlue(maybeColor.val));
+            }),
+            "color-alpha": f(function(maybeColor) {
+              checkArity(1, arguments, "color-alpha");
+              runtime.confirm(maybeColor, runtime.isOpaque);
+              return runtime.wrap(image.colorAlpha(maybeColor.val));
             }),
             "bitmap-url": bitmapURL,
             "open-image-url": bitmapURL,
@@ -708,7 +746,7 @@ define([
                   if (less(sideA + sideC, sideB) ||
                       less(sideB + sideC, sideA) ||
                       less(sideA + sideB, sideC)) {
-                    throwMessage("The given side, angle and side will not form a triangle: " 
+                    throwMessage("The given side, angle and side will not form a triangle: "
                                  + sideA + ", " + angleB + ", " + sideC);
                   }
                 }
