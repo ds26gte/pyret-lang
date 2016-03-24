@@ -4482,6 +4482,32 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return string_substring(s, min, max)
     };
 
+    var _spyret_string_to_number = function(s, b) {
+      if (arguments.length > 2) {
+        var $a = new Array(arguments.length);
+        for (var $i = 0; $i < arguments.length; $i++) {
+          $a[$i] = arguments[$i];
+        }
+        throw thisRuntime.ffi.throwArityErrorC(["string->number"], 2, $a);
+      }
+      checkString(s);
+      if (!b) {
+        b = 10;
+      }
+      checkNumber(b);
+      if (jsnums.equals(b, 2)) {
+        s = "#b" + s;
+      } else if (jsnums.equals(b, 8)) {
+        s = "#o" + s;
+      } else if (jsnums.equals(b, 16)) {
+        s = "#x" + s;
+      } else if (!jsnums.equals(b, 10)) {
+        ffi.throwMessageException("string->number: base " + b + " is not 2, 8, 10, or 16");
+      }
+      return jsnums.fromSchemeString(s);
+
+    };
+
     var _spyret_string_append = function() {
       var result = "";
       var s;
@@ -5027,7 +5053,8 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_string_ci_gt": makeFunction(_spyret_string_ci_gt),
           "_spyret_string_ci_le": makeFunction(_spyret_string_ci_le),
           "_spyret_string_ci_ge": makeFunction(_spyret_string_ci_ge),
-          '_spyret_substring': makeFunction(_spyret_substring),
+          "_spyret_substring": makeFunction(_spyret_substring),
+          "_spyret_string_to_number": makeFunction(_spyret_string_to_number),
           "_spyret_string_append": makeFunction(_spyret_string_append),
           "_spyret_list_to_string": makeFunction(_spyret_list_to_string),
 
