@@ -4191,6 +4191,18 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return result;
     };
 
+    var _spyret_quotient = function(x, y) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["quotient"], 2, $a); }
+      checkNumber(x); checkNumber(y);
+      return thisRuntime.makeNumber(jsnums.quotient(x, y));
+    };
+
+    var _spyret_remainder = function(x, y) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["remainder"], 2, $a); }
+      checkNumber(x); checkNumber(y);
+      return thisRuntime.makeNumber(jsnums.remainder(x, y));
+    };
+
     var _spyret_eq = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
@@ -5042,9 +5054,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_numerator": makeFunction(_spyret_numerator),
           "_spyret_odd_p": makeFunction(_spyret_odd_p),
           "_spyret_plus": makeFunction(_spyret_plus),
+          "_spyret_quotient": makeFunction(_spyret_quotient),
           "_spyret_random": makeFunction(_spyret_random),
           "_spyret_rational_p": makeFunction(_spyret_rational_p),
           "_spyret_real_p": makeFunction(_spyret_real_p),
+          "_spyret_remainder": makeFunction(_spyret_remainder),
           "_spyret_sgn": makeFunction(_spyret_sgn),
           "_spyret_sinh": makeFunction(_spyret_sinh),
           "_spyret_times": makeFunction(_spyret_times),

@@ -687,6 +687,8 @@ runtime-builtins = [string-dict:
   "_spyret_minus", t-top,
   "_spyret_times", t-top,
   "_spyret_divide", t-top,
+  "_spyret_quotient", t-arrow([list: t-number, t-number], t-number),
+  "_spyret_remainder", t-arrow([list: t-number, t-number], t-number),
   "_spyret_eq", t-top,
   "_spyret_lt", t-top,
   "_spyret_gt", t-top,

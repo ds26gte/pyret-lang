@@ -140,6 +140,8 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_minus").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_times").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_divide").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_quotient").key(), t-arrow([list: t-number, t-number], t-number))
+  default-typs.set-now(A.s-global("_spyret_remainder").key(), t-arrow([list: t-number, t-number], t-number))
   default-typs.set-now(A.s-global("_spyret_eq").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_lt").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_gt").key(), t-top)
