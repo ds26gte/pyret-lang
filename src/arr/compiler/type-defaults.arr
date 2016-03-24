@@ -166,6 +166,7 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_string_ci_ge").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_substring").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_string_to_number").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_string_append").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_list_to_string").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_char_p").key(), t-arrow([list: t-top], t-boolean))

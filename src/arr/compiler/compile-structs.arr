@@ -713,6 +713,7 @@ runtime-builtins = [string-dict:
   "_spyret_string_ci_ge", t-top,
   "_spyret_substring", t-top,
   "_spyret_string_to_number", t-top,
+  "_spyret_string", t-top,
   "_spyret_string_append", t-top,
   "_spyret_list_to_string", t-top,
   "_spyret_char_p", t-top,

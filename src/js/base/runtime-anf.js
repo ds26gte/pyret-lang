@@ -4508,6 +4508,17 @@ function isMethod(obj) { return obj instanceof PMethod; }
 
     };
 
+    var _spyret_string = function() {
+      var result = "";
+      var c;
+      for (var i = 0; i < arguments.length; i++) {
+        c = arguments[i];
+        checkSpyretCharacter(c);
+        result = result.concat(c);
+      }
+      return thisRuntime.makeString(result);
+    };
+
     var _spyret_string_append = function() {
       var result = "";
       var s;
@@ -5043,20 +5054,21 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_boolean_p": makeFunction(_spyret_boolean_p),
           "_spyret_boolean_eq": makeFunction(_spyret_boolean_eq),
 
-          "_spyret_string_eq": makeFunction(_spyret_string_eq),
-          "_spyret_string_lt": makeFunction(_spyret_string_lt),
-          "_spyret_string_gt": makeFunction(_spyret_string_gt),
-          "_spyret_string_le": makeFunction(_spyret_string_le),
-          "_spyret_string_ge": makeFunction(_spyret_string_ge),
+          "_spyret_list_to_string": makeFunction(_spyret_list_to_string),
+          "_spyret_string": makeFunction(_spyret_string),
+          "_spyret_string_append": makeFunction(_spyret_string_append),
           "_spyret_string_ci_eq": makeFunction(_spyret_string_ci_eq),
-          "_spyret_string_ci_lt": makeFunction(_spyret_string_ci_lt),
+          "_spyret_string_ci_ge": makeFunction(_spyret_string_ci_ge),
           "_spyret_string_ci_gt": makeFunction(_spyret_string_ci_gt),
           "_spyret_string_ci_le": makeFunction(_spyret_string_ci_le),
-          "_spyret_string_ci_ge": makeFunction(_spyret_string_ci_ge),
-          "_spyret_substring": makeFunction(_spyret_substring),
+          "_spyret_string_ci_lt": makeFunction(_spyret_string_ci_lt),
+          "_spyret_string_eq": makeFunction(_spyret_string_eq),
+          "_spyret_string_ge": makeFunction(_spyret_string_ge),
+          "_spyret_string_gt": makeFunction(_spyret_string_gt),
+          "_spyret_string_le": makeFunction(_spyret_string_le),
+          "_spyret_string_lt": makeFunction(_spyret_string_lt),
           "_spyret_string_to_number": makeFunction(_spyret_string_to_number),
-          "_spyret_string_append": makeFunction(_spyret_string_append),
-          "_spyret_list_to_string": makeFunction(_spyret_list_to_string),
+          "_spyret_substring": makeFunction(_spyret_substring),
 
           "_spyret_char_alphabetic_p": makeFunction(_spyret_char_alphabetic_p),
           "_spyret_char_lower_case_p": makeFunction(_spyret_char_lower_case_p),
