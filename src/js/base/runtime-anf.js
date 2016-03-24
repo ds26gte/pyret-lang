@@ -4638,6 +4638,27 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return s;
     };
 
+    var _spyret_make_cxr = function(s_rev) {
+      var s = s_rev.split("").reverse().join("");
+      return makeFunction(function(l) {
+        if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["cxr"], 1, $a); }
+        thisRuntime.checkList(l);
+        var x, ign;
+        while (s !== "") {
+          x = s[0];
+          s = s.substring(1);
+          if (!ffi.isList(l)) {
+            throwMessageException("cxr: " + l + " is not a list");
+          } else if (x === "a") {
+            l = thisRuntime.getField(l, "first");
+          } else if (x === "d") {
+            l = thisRuntime.getField(l, "rest");
+          }
+        }
+        return l;
+      });
+    };
+
     var _spyret_append = function() {
       var result = [];
       var L;
@@ -5093,6 +5114,21 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_char_whitespace_p": makeFunction(_spyret_char_whitespace_p),
           "_spyret_integer_to_char": makeFunction(_spyret_integer_to_char),
           "_spyret_format": makeFunction(_spyret_format),
+
+          "_spyret_caaar": _spyret_make_cxr("aaa"),
+          "_spyret_caadr": _spyret_make_cxr("aad"),
+          "_spyret_caar": _spyret_make_cxr("aa"),
+          "_spyret_cadar": _spyret_make_cxr("ada"),
+          "_spyret_caddr": _spyret_make_cxr("add"),
+          "_spyret_cadr": _spyret_make_cxr("ad"),
+          "_spyret_car": _spyret_make_cxr("a"),
+          "_spyret_cdaar": _spyret_make_cxr("daa"),
+          "_spyret_cdadr": _spyret_make_cxr("dad"),
+          "_spyret_cdar": _spyret_make_cxr("da"),
+          "_spyret_cddar": _spyret_make_cxr("dda"),
+          "_spyret_cdddr": _spyret_make_cxr("ddd"),
+          "_spyret_cddr": _spyret_make_cxr("dd"),
+          "_spyret_cdr": _spyret_make_cxr("d"),
 
           "_spyret_append": makeFunction(_spyret_append),
           "_spyret_map": makeFunction(_spyret_map),
