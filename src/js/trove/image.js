@@ -365,11 +365,11 @@ define([
               return runtime.wrap(image.isColor(maybeColor));
             }),
             "make-color": f(function(maybeRed,maybeGreen,maybeBlue,maybeAlpha) {
-              checkArity(4, arguments, "make-color");
+              checkArity(arguments.length <= 3? 3: 4, arguments, "make-color");
               var red = checkByte(maybeRed);
               var green = checkByte(maybeGreen);
               var blue = checkByte(maybeBlue);
-              var alpha = checkByte(maybeAlpha);
+              var alpha = maybeAlpha? checkByte(maybeAlpha): 255;
               return runtime.wrap(image.makeColor(
               jsnums.toFixnum(red),jsnums.toFixnum(green),jsnums.toFixnum(blue),
               jsnums.toFixnum(alpha)));
