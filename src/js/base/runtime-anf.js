@@ -5130,6 +5130,12 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_cddr": _spyret_make_cxr("dd"),
           "_spyret_cdr": _spyret_make_cxr("d"),
 
+          "_spyret_fourth":  _spyret_make_cxr("addd"),
+          "_spyret_fifth":   _spyret_make_cxr("adddd"),
+          "_spyret_sixth":   _spyret_make_cxr("addddd"),
+          "_spyret_seventh": _spyret_make_cxr("adddddd"),
+          "_spyret_eighth":  _spyret_make_cxr("addddddd"),
+
           "_spyret_append": makeFunction(_spyret_append),
           "_spyret_map": makeFunction(_spyret_map),
           "_spyret_andmap": makeFunction(_spyret_andmap),
