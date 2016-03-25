@@ -16,6 +16,8 @@ define([
         var image = gf(imageImp, "values");
         var color = gf(image, "color");
         var colorPred = gf(image, "Color");
+        var posn = gf(image, "posn");
+        var posnPred = gf(image, "Posn");
         var isNum = function(n) { return typeof n === "number"; }
         var unwrap = runtime.unwrap;
 
@@ -41,6 +43,20 @@ define([
             }
             return c;
         };
+
+        //////////////////////////////////////////////////////////////////////
+        var makePosn = function(x,y) {
+          if (!(isNum(x) && isNum(y))) {
+            throw new Error("Internal error: non-number in makePosn argList ", [x,y]);
+          }
+          return posn.app(
+            runtime.wrap(x),
+            runtime.wrap(y)
+            );
+        };
+        var isPosn = function(p) { return unwrap(posnPred.app(p)); };
+        var posnX = function(p) { return unwrap(gf(p, "x")); };
+        var posnY = function(p) { return unwrap(gf(p, "y")); };
 
         //////////////////////////////////////////////////////////////////////
         var makeColor = function(r,g,b,a) {
@@ -966,6 +982,34 @@ define([
         };
 
         //////////////////////////////////////////////////////////////////////
+        // PosnImage: Vertices Mode Color -> Image
+        var PosnImage = function(lop, style, color) {
+          BaseImage.call(this);
+          var jsLop = ffi.toArray(lop);
+          var xs = jsLop.map(posnX);
+          var ys = jsLop.map(posnY);
+          var vertices = zipVertices(xs, ys);
+
+          this.width  = Math.max.apply(Math, xs) - Math.min.apply(Math, xs);
+          this.height = Math.max.apply(Math, ys) - Math.min.apply(Math, ys);
+          this.style  = style;
+          this.color  = color;
+
+          var xOffset = Math.min.apply(Math, xs);
+          var yOffset = Math.min.apply(Math, ys);
+
+          for (var i = 0; i < vertices.length; i++) {
+            vertices[i].x -= xOffset;
+            vertices[i].y -= yOffset;
+          }
+
+          this.vertices = vertices;
+
+        };
+
+        PosnImage.prototype = heir(BaseImage.prototype);
+
+        //////////////////////////////////////////////////////////////////////
         // TextImage: String Number Color String String String String any/c -> Image
         var TextImage = function(msg, size, color, face, family, style, weight, underline) {
           BaseImage.call(this);
@@ -1268,6 +1312,9 @@ define([
         var makePolygonImage = function(length, count, step, style, color) {
             return new PolygonImage(length, count, step, style, color);
         };
+        var makePosnImage = function(vertices, style, color) {
+          return new PosnImage(vertices, style, color);
+        };
         var makeSquareImage = function(length, style, color) {
             return new RectangleImage(length, length, style, color);
         };
@@ -1317,6 +1364,7 @@ define([
         var isStarImage	= function(x) { return x instanceof StarImage; };
         var isRectangleImage=function(x) { return x instanceof RectangleImage; };
         var isPolygonImage = function(x) { return x instanceof PolygonImage; };
+        var isPosnImage = function(x) { return x instanceof PosnImage; };
         var isRhombusImage = function(x) { return x instanceof RhombusImage; };
         var isSquareImage	= function(x) { return x instanceof SquareImage; };
         var isTriangleImage= function(x) { return x instanceof TriangleImage; };
@@ -1553,6 +1601,7 @@ define([
           RhombusImage: RhombusImage,
           ImageDataImage: ImageDataImage,
           PolygonImage: PolygonImage,
+          PosnImage: PosnImage,
           TextImage: TextImage,
           StarImage: StarImage,
           TriangleImage: TriangleImage,
@@ -1570,6 +1619,7 @@ define([
           makeRectangleImage: makeRectangleImage,
           makeRhombusImage: makeRhombusImage,
           makePolygonImage: makePolygonImage,
+          makePosnImage: makePosnImage,
           makeSquareImage: makeSquareImage,
           makeTriangleImage: makeTriangleImage,
           makeEllipseImage: makeEllipseImage,
@@ -1601,6 +1651,7 @@ define([
           isStarImage: isStarImage,
           isRectangleImage: isRectangleImage,
           isPolygonImage: isPolygonImage,
+          isPosnImage: isPosnImage,
           isRhombusImage: isRhombusImage,
           isSquareImage: isSquareImage,
           isTriangleImage: isTriangleImage,
@@ -1615,6 +1666,11 @@ define([
           isTextImage: isTextImage,
           isFileImage: isFileImage,
           isFileVideo: isFileVideo,
+
+          makePosn: makePosn,
+          isPosn: isPosn,
+          posnX: posnX,
+          posnY: posnY,
 
           makeColor: makeColor,
           isColor: isColor,
