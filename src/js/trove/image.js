@@ -29,6 +29,10 @@ define([
         "is-side-count": numpred,
         "is-step-count": numpred,
         "is-image": Fun([t.any], t.boolean),
+        "is-posn": Fun([t.any], t.boolean),
+        "make-posn": Fun([Num, Num], t.any),
+        "posn-x": Fun([t.any], Num),
+        "posn-y": Fun([t.any], Num),
         "is-color": Fun([t.any], t.boolean),
         "make-color": Fun([Num, Num, Num, Num], t.any),
         "color-red": Fun([t.any], Num),
@@ -68,6 +72,7 @@ define([
         "square": Fun([Num, Str, Color], TImage),
         "rectangle": Fun([Num, Num, Str, Color], TImage),
         "regular-polygon": Fun([Num, Num, Str, Color], TImage),
+        "polygon": Fun([t.any, Str, Color], TImage),
         "ellipse": Fun([Num, Num, Str, Color], TImage),
         "triangle": Fun([Num, Str, Color], TImage),
         "triangle-sas": TriangleFun,
@@ -198,6 +203,12 @@ define([
       var checkNonNegativeReal = p(function(val) {
           return runtime.isNumber(val) && jsnums.isReal(val) && jsnums.greaterThanOrEqual(val, 0);
         }, "Non-negative Real Number");
+
+        var checkPosn = p(image.isPosn, "Position");
+
+        var checkListofPosn = p(function(val) {
+          return ffi.makeList(ffi.toArray(val).map(checkPosn));
+        }, "List<Posn>");
 
         var _checkColor = p(image.isColorOrColorString, "Color");
 
@@ -360,6 +371,27 @@ define([
               return (runtime.isOpaque(maybeImage) &&
                       runtime.wrap(image.isImage(maybeImage.val)));
             }),
+            "is-posn": f(function(maybePosn) {
+              checkArity(1, arguments, "is-posn");
+              return runtime.wrap(image.isPosn(maybePosn));
+            }),
+            "make-posn": f(function(maybeX, maybeY) {
+              checkArity(2, arguments, "make-posn");
+              var x = checkReal(maybeX);
+              var y = checkReal(maybeY);
+              return runtime.wrap(image.makePosn(
+                jsnums.toFixnum(x), jsnums.toFixnum(y)));
+            }),
+            "posn-x": f(function(maybePosn) {
+              checkArity(1, arguments, "posn-x");
+              var p = checkPosn(maybePosn);
+              return runtime.wrap(image.posnX(p));
+            }),
+            "posn-y": f(function(maybePosn) {
+              checkArity(1, arguments, "posn-y");
+              var p = checkPosn(maybePosn);
+              return runtime.wrap(image.posnY(p));
+            }),
             "is-color": f(function(maybeColor) {
               checkArity(1, arguments, "is-color");
               return runtime.wrap(image.isColor(maybeColor));
@@ -376,23 +408,23 @@ define([
             }),
             "color-red": f(function(maybeColor) {
               checkArity(1, arguments, "color-red");
-              runtime.confirm(maybeColor, runtime.isOpaque);
-              return runtime.wrap(image.colorRed(maybeColor.val));
+              var c = checkColor(maybeColor);
+              return runtime.wrap(image.colorRed(c));
             }),
             "color-green": f(function(maybeColor) {
               checkArity(1, arguments, "color-green");
-              runtime.confirm(maybeColor, runtime.isOpaque);
-              return runtime.wrap(image.colorGreen(maybeColor.val));
+              var c = checkColor(maybeColor);
+              return runtime.wrap(image.colorGreen(c));
             }),
             "color-blue": f(function(maybeColor) {
               checkArity(1, arguments, "color-blue");
-              runtime.confirm(maybeColor, runtime.isOpaque);
-              return runtime.wrap(image.colorBlue(maybeColor.val));
+              var c = checkColor(maybeColor);
+              return runtime.wrap(image.colorBlue(c));
             }),
             "color-alpha": f(function(maybeColor) {
               checkArity(1, arguments, "color-alpha");
-              runtime.confirm(maybeColor, runtime.isOpaque);
-              return runtime.wrap(image.colorAlpha(maybeColor.val));
+              var c = checkColor(maybeColor);
+              return runtime.wrap(image.colorAlpha(c));
             }),
             "bitmap-url": bitmapURL,
             "open-image-url": bitmapURL,
@@ -701,6 +733,15 @@ define([
               var color = checkColor(maybeColor);
               return makeImage(
                 image.makePolygonImage(jsnums.toFixnum(length), jsnums.toFixnum(count), jsnums.toFixnum(1), String(mode), color));
+            }),
+
+            "polygon": f(function(maybeList, maybeMode, maybeColor) {
+              checkArity(3, arguments, "polygon");
+              var lop = checkListofPosn(maybeList);
+              var mode = checkMode(maybeMode);
+              var color = checkColor(maybeColor);
+              return makeImage(
+                image.makePosnImage(lop, String(mode), color));
             }),
 
             "ellipse": f(function(maybeWidth, maybeHeight, maybeMode, maybeColor) {
