@@ -46,15 +46,23 @@ define([
         "text": Fun([Str, Num, Color], TImage),
         "text-font": Fun([Str, Num, Color, Str, Str, Str, Str, t.boolean], TImage),
         "overlay": Fun([TImage, TImage], TImage),
+        "_spyret_overlay": t.any,
         "overlay-xy": Fun([TImage, Num, Num, TImage], TImage),
         "overlay-align": Fun([Str, Str, TImage, TImage], TImage),
+        "_spyret_overlay-align": t.any,
         "underlay": Fun([TImage, TImage], TImage),
+        "_spyret_underlay": t.any,
         "underlay-xy": Fun([TImage, Num, Num, TImage], TImage),
         "underlay-align": Fun([Str, Str, TImage, TImage], TImage),
+        "_spyret_underlay-align": t.any,
         "beside": Fun([TImage, TImage], TImage),
+        "_spyret_beside": t.any,
         "beside-align": Fun([Str, TImage, TImage], TImage),
+        "_spyret_beside-align": t.any,
         "above": Fun([TImage, TImage], TImage),
+        "_spyret_above": t.any,
         "above-align": Fun([Str, TImage, TImage], TImage),
+        "_spyret_above-align": t.any,
         "empty-scene": Fun([Num, Num], tscene),
         "put-image": Fun([TImage, Num, Num, TImage], TImage),
         "place-image": Fun([TImage, Num, Num, TImage], TImage),
@@ -470,6 +478,17 @@ define([
               return makeImage(image.makeOverlayImage(img1, img2, "middle", "middle"));
             }),
 
+            "_spyret_overlay": f(function(maybeImg1) {
+              if (arguments.length < 2) {
+                throw runtime.ffi.throwArityErrorC(["overlay"], 2, [maybeImg1]);
+              }
+              var cumulImage = checkImage(maybeImg1);
+              for (var i = 1; i < arguments.length; i++) {
+                cumulImage = image.makeOverlayImage(cumulImage, checkImage(arguments[i]), "middle", "middle");
+              }
+              return makeImage(cumulImage);
+            }),
+
             "overlay-xy": f(function(maybeImg1, maybeDx, maybeDy, maybeImg2) {
               checkArity(4, arguments, "overlay-xy");
               var img1 = checkImage(maybeImg1);
@@ -489,11 +508,35 @@ define([
               return makeImage(image.makeOverlayImage(img1, img2, String(placeX), String(placeY)));
             }),
 
+            "_spyret_overlay-align": f(function(maybePlaceX, maybePlaceY, maybeImg1) {
+              if (arguments.length < 4) {
+                throw runtime.ffi.throwArityErrorC(["overlay-align"], 4, [maybePlaceX, maybePlaceY, maybeImg1]);
+              }
+              var placeX = String(checkPlaceX(maybePlaceX));
+              var placeY = String(checkPlaceY(maybePlaceY));
+              var cumulImage = checkImage(maybeImg1);
+              for (var i = 3; i < arguments.length; i++) {
+                cumulImage = image.makeOverlayImage(cumulImage, checkImage(arguments[i]), placeX, placeY);
+              }
+              return makeImage(cumulImage);
+            }),
+
             "underlay": f(function(maybeImg1, maybeImg2) {
               checkArity(2, arguments, "underlay");
               var img1 = checkImage(maybeImg1);
               var img2 = checkImage(maybeImg2);
               return makeImage(image.makeOverlayImage(img2, img1, "middle", "middle"));
+            }),
+
+            "_spyret_underlay": f(function(maybeImg1) {
+              if (arguments.length < 2) {
+                throw runtime.ffi.throwArityErrorC(["underlay"], 2, [maybeImg1]);
+              }
+              var cumulImage = checkImage(maybeImg1);
+              for (var i = 1; i < arguments.length; i++) {
+                cumulImage = image.makeOverlayImage(checkImage(arguments[i]), cumulImage, "middle", "middle");
+              }
+              return makeImage(cumulImage);
             }),
 
             "underlay-xy": f(function(maybeImg1, maybeDx, maybeDy, maybeImg2) {
@@ -515,11 +558,35 @@ define([
               return makeImage(image.makeOverlayImage(img2, img1, String(placeX), String(placeY)));
             }),
 
+            "_spyret_underlay-align": f(function(maybePlaceX, maybePlaceY, maybeImg1) {
+              if (arguments.length < 4) {
+                throw runtime.ffi.throwArityErrorC(["underlay-align"], 4, [maybePlaceX, maybePlaceY, maybeImg1]);
+              }
+              var placeX = String(checkPlaceX(maybePlaceX));
+              var placeY = String(checkPlaceY(maybePlaceY));
+              var cumulImage = checkImage(maybeImg1);
+              for (var i = 3; i < arguments.length; i++) {
+                cumulImage = image.makeOverlayImage(checkImage(arguments[i]), cumulImage, placeX, placeY);
+              }
+              return makeImage(cumulImage);
+            }),
+
             "beside": f(function(maybeImg1, maybeImg2) {
               checkArity(2, arguments, "beside");
               var img1 = checkImage(maybeImg1);
               var img2 = checkImage(maybeImg2);
               return makeImage(image.makeOverlayImage(img1, img2, "beside", "middle"));
+            }),
+
+            "_spyret_beside": f(function(maybeImg1) {
+              if (arguments.length < 2) {
+                throw runtime.ffi.throwArityErrorC(["overlay"], 2, [maybeImg1]);
+              }
+              var cumulImage = checkImage(maybeImg1);
+              for (var i = 1; i < arguments.length; i++) {
+                cumulImage = image.makeOverlayImage(cumulImage, checkImage(arguments[i]), "beside", "middle");
+              }
+              return makeImage(cumulImage);
             }),
 
             "beside-align": f(function(maybePlaceY, maybeImg1, maybeImg2) {
@@ -530,11 +597,34 @@ define([
               return makeImage(image.makeOverlayImage(img1, img2, "beside", String(placeY)));
             }),
 
+            "_spyret_beside-align": f(function(maybePlaceY, maybeImg1) {
+              if (arguments.length < 3) {
+                throw runtime.ffi.throwArityErrorC(["beside-align"], 3, [maybePlaceY, maybeImg1]);
+              }
+              var placeY = String(checkPlaceY(maybePlaceY));
+              var cumulImage = checkImage(maybeImg1);
+              for (var i = 2; i < arguments.length; i++) {
+                cumulImage = image.makeOverlayImage(cumulImage, checkImage(arguments[i]),  "beside", placeY);
+              }
+              return makeImage(cumulImage);
+            }),
+
             "above": f(function(maybeImg1, maybeImg2) {
               checkArity(2, arguments, "above");
               var img1 = checkImage(maybeImg1);
               var img2 = checkImage(maybeImg2);
               return makeImage(image.makeOverlayImage(img1, img2, "middle", "above"));
+            }),
+
+            "_spyret_above": f(function(maybeImg1) {
+              if (arguments.length < 2) {
+                throw runtime.ffi.throwArityErrorC(["above"], 2, [maybeImg1]);
+              }
+              var cumulImage = checkImage(maybeImg1);
+              for (var i = 1; i < arguments.length; i++) {
+                cumulImage = image.makeOverlayImage(cumulImage, checkImage(arguments[i]), "middle", "above");
+              }
+              return makeImage(cumulImage);
             }),
 
             "above-align": f(function(maybePlaceX, maybeImg1, maybeImg2) {
@@ -543,6 +633,18 @@ define([
               var img1 = checkImage(maybeImg1);
               var img2 = checkImage(maybeImg2);
               return makeImage(image.makeOverlayImage(img1, img2, String(placeX), "above"));
+            }),
+
+            "_spyret_above-align": f(function(maybePlaceX, maybeImg1) {
+              if (arguments.length < 3) {
+                throw runtime.ffi.throwArityErrorC(["above-align"], 3, [maybePlaceX, maybeImg1]);
+              }
+              var placeX = String(checkPlaceX(maybePlaceX));
+              var cumulImage = checkImage(maybeImg1);
+              for (var i = 2; i < arguments.length; i++) {
+                cumulImage = image.makeOverlayImage(cumulImage, checkImage(arguments[i]), placeX, "above");
+              }
+              return makeImage(cumulImage);
             }),
 
             "empty-scene": f(function(maybeWidth, maybeHeight) {
