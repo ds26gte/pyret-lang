@@ -13,6 +13,7 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
               t.tyapp(t.libName("lists", "List"), [wcOfA])
             ],
             t.tyvar("a"))),
+        "_spyret_big-bang": t.any,
         "on-tick":
           t.forall(["a"],
             t.arrow([
@@ -54,7 +55,7 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
         "is-key-equal": t.arrow([t.string, t.string], t.boolean)
       },
       aliases: {
-        "WorldConfig": t.localType("WorldConfig") 
+        "WorldConfig": t.localType("WorldConfig")
       },
       datatypes: {
         "WorldConfig": t.dataType(
@@ -101,12 +102,11 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                 }
                 if (isOpaqueOutputConfig(handlers[i])) { isOutputConfigSeen = true; }
             }
-            
+
             // If we haven't seen an onDraw function, use the default one.
-            if (! isOutputConfigSeen) { 
+            if (! isOutputConfigSeen) {
                 configs.push(new DefaultDrawingOutput().toRawHandler(toplevelNode));
             }
-
 
             runtime.pauseStack(function(restarter) {
               rawJsworld.bigBang(
@@ -123,24 +123,19 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
             });
         };
 
-
-
-
-
         //////////////////////////////////////////////////////////////////////
 
         // Every world configuration function (on-tick, stop-when, ...)
         // produces a WorldConfigOption instance.
         var WorldConfigOption = function(name) {
-            this.name = name;	    
+            this.name = name;
         };
 
         WorldConfigOption.prototype.configure = function(config) {
             throw new Error('unimplemented WorldConfigOption');
         };
 
-
-        WorldConfigOption.prototype.toDomNode = function(params) {  
+        WorldConfigOption.prototype.toDomNode = function(params) {
             var span = document.createElement('span');
             span.appendChild(document.createTextNode("(" + this.name + " ...)"));
             return span;
@@ -157,9 +152,6 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
         var isWorldConfigOption = function(v) { return v instanceof WorldConfigOption; };
 
         //////////////////////////////////////////////////////////////////////
-
-
-
 
         // adaptWorldFunction: Racket-function -> World-CPS
         // Takes a racket function and converts it to the CPS-style function
@@ -199,13 +191,12 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
         };
 
         OnTick.prototype = Object.create(WorldConfigOption.prototype);
-         
+
         OnTick.prototype.toRawHandler = function(toplevelNode) {
             var that = this;
             var worldFunction = adaptWorldFunction(that.handler);
             return rawJsworld.on_tick(this.delay, worldFunction);
         };
-
 
         //////////////////////////////////////////////////////////////////////
         var OnKey = function(handler) {
@@ -214,7 +205,7 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
         }
 
         OnKey.prototype = Object.create(WorldConfigOption.prototype);
-         
+
         OnKey.prototype.toRawHandler = function(toplevelNode) {
             var that = this;
             var worldFunction = adaptWorldFunction(that.handler);
@@ -223,7 +214,6 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                     worldFunction(w, getKeyCodeName(e), success);
                 });
         };
-
 
         var getKeyCodeName = function(e) {
             var code = e.charCode || e.keyCode;
@@ -262,7 +252,7 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
             case 220: keyname = "\\"; break;
             case 221: keyname = "]"; break;
             case 222: keyname = "'"; break;
-            default: 
+            default:
                 if (code >= 96 && code <= 105) {
               keyname = (code - 96).toString();
                 } else if (code >= 112 && code <= 123) {
@@ -276,17 +266,13 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
         }
         //////////////////////////////////////////////////////////////////////
 
-
-
-
-
         var OnMouse = function(handler) {
             WorldConfigOption.call(this, 'on-mouse');
             this.handler = handler;
         }
 
         OnMouse.prototype = Object.create(WorldConfigOption.prototype);
-         
+
         OnMouse.prototype.toRawHandler = function(toplevelNode) {
             var that = this;
             var worldFunction = adaptWorldFunction(that.handler);
@@ -296,23 +282,12 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                 });
         };
 
-
-
-
-
-
-
-
         var OutputConfig = function() {}
         OutputConfig.prototype = Object.create(WorldConfigOption.prototype);
         var isOutputConfig = function(v) { return v instanceof OutputConfig; };
         var isOpaqueOutputConfig = function(v) {
           return runtime.isOpaque(v) && isOutputConfig(v.val);
         }
-
-
-
-
 
         // // ToDraw
 
@@ -322,7 +297,7 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
         };
 
         ToDraw.prototype = Object.create(OutputConfig.prototype);
-         
+
         ToDraw.prototype.toRawHandler = function(toplevelNode) {
             var that = this;
             var reusableCanvas;
@@ -338,7 +313,6 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                         // to check the status of the scene object and make sure it's an
                         // image.
 
-                        
                         if (runtime.isOpaque(v) && isImage(v.val) ) {
                 var theImage = v.val;
                 var width = theImage.getWidth();
@@ -352,10 +326,10 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
               reusableCanvas.jsworldOpaque = true;
               reusableCanvasNode = rawJsworld.node_to_tree(reusableCanvas);
                 }
-                if (reusableCanvas.width !== width) { 
-                                reusableCanvas.width = width; 
+                if (reusableCanvas.width !== width) {
+                                reusableCanvas.width = width;
                             }
-                if (reusableCanvas.height !== height) { 
+                if (reusableCanvas.height !== height) {
                                 reusableCanvas.height = height;
                             }
                 var ctx = reusableCanvas.getContext("2d");
@@ -372,32 +346,26 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                     });
             };
 
-            var cssFunction = function(w, k) { 
+            var cssFunction = function(w, k) {
                 if (reusableCanvas) {
-              k([[reusableCanvas, 
+              k([[reusableCanvas,
                         ["padding", "0px"],
             ["width", reusableCanvas.width + "px"],
             ["height", reusableCanvas.height + "px"]]]);
                 } else {
-                    k([]); 
+                    k([]);
                 }
             }
 
             return rawJsworld.on_draw(worldFunction, cssFunction);
         };
 
-
-
-
-
-
-
         var DefaultDrawingOutput = function() {
             WorldConfigOption.call(this, 'to-draw');
         };
 
         DefaultDrawingOutput.prototype = Object.create(WorldConfigOption.prototype);
-         
+
         DefaultDrawingOutput.prototype.toRawHandler = function(toplevelNode) {
             var that = this;
             var worldFunction = function(world, success) {
@@ -414,12 +382,7 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
             return rawJsworld.on_draw(worldFunction, cssFunction);
         };
 
-
-
-
         //////////////////////////////////////////////////////////////////////
-
-
 
         var StopWhen = function(handler) {
             WorldConfigOption.call(this, 'stop-when');
@@ -437,7 +400,6 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
         var checkHandler = runtime.makeCheckType(isOpaqueWorldConfigOption, "WorldConfigOption");
         //////////////////////////////////////////////////////////////////////
 
-
         // The default tick delay is 28 times a second.
         var DEFAULT_TICK_DELAY = 1/28;
 
@@ -454,6 +416,19 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                 var initialWorldValue = init;
                 arr.map(function(h) { checkHandler(h); });
                 bigBang(initialWorldValue, arr);
+                runtime.ffi.throwMessageException("Internal error in bigBang: stack not properly paused and stored.");
+              }),
+              "_spyret_big-bang": makeFunction(function(init) {
+                if (arguments.length < 2) {
+                  throw runtime.ffi.throwArityErrorC(["big-bang"], 2, [init]);
+                }
+                var arr = [], h;
+                for (var i = 1; i < arguments.length; i++) {
+                  h = arguments[i];
+                  checkHandler(h);
+                  arr.push(h);
+                }
+                bigBang(init, arr);
                 runtime.ffi.throwMessageException("Internal error in bigBang: stack not properly paused and stored.");
               }),
               "on-tick": makeFunction(function(handler) {
