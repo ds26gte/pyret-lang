@@ -5051,6 +5051,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
           'gensym': gensym,
           'random': makeFunction(random),
 
+          "_spyret_false": false,
+          "_spyret_true": true,
+          "_spyret_pi": jsnums.toRoughnum(Math.PI),
+          "_spyret_e": jsnums.toRoughnum(Math.E),
+
           "_spyret_check_expect": makeFunction(_spyret_check_expect),
           "_spyret_check_within": makeFunction(_spyret_check_within),
           "_spyret_identity": makeFunction(_spyret_identity),
