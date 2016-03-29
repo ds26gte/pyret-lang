@@ -64,6 +64,7 @@ define([
         "above-align": Fun([Str, TImage, TImage], TImage),
         "_spyret_above-align": t.any,
         "empty-scene": Fun([Num, Num], tscene),
+        "empty-image": TImage,
         "put-image": Fun([TImage, Num, Num, TImage], TImage),
         "place-image": Fun([TImage, Num, Num, TImage], TImage),
         "place-image-align": Fun([TImage, Num, Num, Str, Str, TImage], TImage),
@@ -654,6 +655,7 @@ define([
               return makeImage(
                 image.makeSceneImage(jsnums.toFixnum(width), jsnums.toFixnum(height), [], true));
             }),
+            "empty-image": makeImage(image.makeSceneImage(0, 0, [], true)),
             "put-image": f(function(maybePicture, maybeX, maybeY, maybeBackground) {
               checkArity(4, arguments, "put-image");
               var picture = checkImage(maybePicture);
