@@ -745,6 +745,9 @@ runtime-builtins = [string-dict:
   "_spyret_cdddr", t-arrow([list: t-top], t-top),
   "_spyret_cddr", t-arrow([list: t-top], t-top),
   "_spyret_cdr", t-arrow([list: t-top], t-top),
+  "_spyret_first", t-arrow([list: t-top], t-top),
+  "_spyret_second", t-arrow([list: t-top], t-top),
+  "_spyret_third", t-arrow([list: t-top], t-top),
   "_spyret_fourth", t-arrow([list: t-top], t-top),
   "_spyret_fifth", t-arrow([list: t-top], t-top),
   "_spyret_sixth", t-arrow([list: t-top], t-top),
@@ -933,7 +936,9 @@ standard-imports = extra-imports(
           "list-length",
           "list-member",
           "list-assoc",
-          "build-list"
+          "build-list",
+          "_spyret_null",
+          "_spyret_empty"
         ],
         [list: "List"]),
       extra-import(builtin("option"), "option", [list:

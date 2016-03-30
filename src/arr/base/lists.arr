@@ -814,6 +814,10 @@ fun build-list(n :: Number, f :: (Number -> Any)) -> List:
   build-list-helper(0)
 end
 
+#for spyret
+_spyret_null = empty
+_spyret_empty = empty
+
 index = nothing
 get-help = get #delete?
 set-help = set #delete?

@@ -5135,6 +5135,9 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_cddr": _spyret_make_cxr("dd"),
           "_spyret_cdr": _spyret_make_cxr("d"),
 
+          "_spyret_first":   _spyret_make_cxr("a"),
+          "_spyret_second":  _spyret_make_cxr("ad"),
+          "_spyret_third":   _spyret_make_cxr("add"),
           "_spyret_fourth":  _spyret_make_cxr("addd"),
           "_spyret_fifth":   _spyret_make_cxr("adddd"),
           "_spyret_sixth":   _spyret_make_cxr("addddd"),

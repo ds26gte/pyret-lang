@@ -199,6 +199,9 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_cdddr").key(), t-arrow([list: t-top], t-top))
   default-typs.set-now(A.s-global("_spyret_cddr").key(), t-arrow([list: t-top], t-top))
   default-typs.set-now(A.s-global("_spyret_cdr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_first").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_second").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_third").key(), t-arrow([list: t-top], t-top))
   default-typs.set-now(A.s-global("_spyret_fourth").key(), t-arrow([list: t-top], t-top))
   default-typs.set-now(A.s-global("_spyret_fifth").key(), t-arrow([list: t-top], t-top))
   default-typs.set-now(A.s-global("_spyret_sixth").key(), t-arrow([list: t-top], t-top))
@@ -556,6 +559,8 @@ module-const-lists = t-module("pyret-builtin://lists",
     t-member("list-member", t-top),
     t-member("list-assoc", t-top),
     t-member("build-list", t-top),
+    t-member("_spyret_null", t-top),
+    t-member("_spyret_empty", t-top),
     t-member("list", let tva = s-atom("A", 160), tv = t-var(tva):
         t-record([list:
               t-member("make", t-forall([list: tv], t-arrow([list: t-array(tv)], mk-list(tv)))),
