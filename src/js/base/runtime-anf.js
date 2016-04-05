@@ -1631,7 +1631,6 @@ function isMethod(obj) { return obj instanceof PMethod; }
     }
 
     function makePyretFailException(exn) {
-      console.log('Doing makePyretFailException')
       return new PyretFailException(exn);
     }
 
