@@ -27,6 +27,7 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                 t.number
               ],
               wcOfA)),
+        "_spyret_on-tick": t.any,
         "to-draw":
           t.forall(["a"],
             t.arrow([
@@ -440,7 +441,18 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                 runtime.ffi.checkArity(2, arguments, "on-tick-n");
                 runtime.checkFunction(handler);
                 runtime.checkNumber(n);
-                var fixN = typeof n === "number" ? fixN : n.toFixnum();
+                var fixN = typeof n === "number" ? fixN : n.toFixnum(); //bug?
+                return runtime.makeOpaque(new OnTick(handler, fixN * 1000));
+              }),
+              "_spyret_on-tick": makeFunction(function(handler, n) {
+                runtime.ffi.checkArity(arguments.length <= 1? 1: 2, arguments, "on-tick");
+                runtime.checkFunction(handler);
+                var fixN;
+                if (arguments.length >= 2) {
+                  fixN = typeof n === "number"? n: n.toFixnum();
+                } else {
+                  fixN = DEFAULT_TICK_DELAY;
+                }
                 return runtime.makeOpaque(new OnTick(handler, fixN * 1000));
               }),
               "to-draw": makeFunction(function(drawer) {
