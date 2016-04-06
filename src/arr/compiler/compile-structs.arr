@@ -928,6 +928,7 @@ standard-imports = extra-imports(
           "each3_n",
           "each4_n",
           "fold",
+          "foldr",
           "fold2",
           "fold3",
           "fold4",
