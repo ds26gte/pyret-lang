@@ -34,6 +34,7 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                 t.arrow([t.tyvar("a")], t.libName("image", "Image")),
               ],
               wcOfA)),
+        "on-redraw": t.any,
         "stop-when":
           t.forall(["a"],
             t.arrow([
@@ -457,6 +458,12 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
               }),
               "to-draw": makeFunction(function(drawer) {
                 runtime.ffi.checkArity(1, arguments, "to-draw");
+                runtime.checkFunction(drawer);
+                return runtime.makeOpaque(new ToDraw(drawer));
+              }),
+              "on-redraw": makeFunction(function(drawer) {
+                //spyret alias for to-draw
+                runtime.ffi.checkArity(1, arguments, "on-redraw");
                 runtime.checkFunction(drawer);
                 return runtime.makeOpaque(new ToDraw(drawer));
               }),
