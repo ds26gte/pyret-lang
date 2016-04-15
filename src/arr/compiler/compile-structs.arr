@@ -908,6 +908,7 @@ standard-imports = extra-imports(
           "repeat",
           "filter",
           "partition",
+          "_spyret_remove",
           "split-at",
           "any",
           "find",

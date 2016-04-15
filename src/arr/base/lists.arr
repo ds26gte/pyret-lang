@@ -416,6 +416,19 @@ fun remove<a>(lst :: List<a>, elt :: a) -> List<a>:
   end
 end
 
+fun _spyret_remove<a>(elt :: a, lst :: List<a>) -> List<a>:
+  doc: ```Returns the list without the element if found, or the whole list if it is not```
+  if is-empty(lst):
+    empty
+  else:
+    if elt == lst.first:
+      lst.rest
+    else:
+      link(lst.first, _spyret_remove(elt, lst.rest))
+    end
+  end
+end
+
 fun find<a>(f :: (a -> Boolean), lst :: List<a>) -> O.Option<a>:
   doc: ```Returns some(elem) where elem is the first elem in lst for which
         f(elem) returns true, or none otherwise```
