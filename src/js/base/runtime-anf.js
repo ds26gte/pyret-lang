@@ -4638,11 +4638,12 @@ function isMethod(obj) { return obj instanceof PMethod; }
     };
 
     var _spyret_make_cxr = function(s_rev) {
-      var s = s_rev.split("").reverse().join("");
+      var s0 = s_rev.split("").reverse().join("");
       return makeFunction(function(l) {
         if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["cxr"], 1, $a); }
         thisRuntime.checkList(l);
         var x, ign;
+        var s = s0;
         while (s !== "") {
           x = s[0];
           s = s.substring(1);
