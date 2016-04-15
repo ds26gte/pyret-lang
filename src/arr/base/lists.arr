@@ -685,6 +685,26 @@ fun foldr<a, b>(f :: (a, b -> a), base :: a, lst :: List<b>) -> a:
   end
 end
 
+fun _spyret_foldl<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
+  doc: ```Takes a function, an initial value and a list, and folds the function over the list from the left,
+        starting with the initial value```
+  if is-empty(lst):
+    base
+  else:
+    _spyret_foldl(f, f(lst.first, base), lst.rest)
+  end
+end
+
+fun _spyret_foldr<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
+  doc: ```Takes a function, an initial value and a list, and folds the function over the list from the right,
+        starting with the initial value```
+  if is-empty(lst):
+    base
+  else:
+    f(lst.first, _spyret_foldr(f, base, lst.rest))
+  end
+end
+
 fun fold2<a, b, c>(f :: (a, b, c -> a), base :: a, l1 :: List<b>, l2 :: List<c>) -> a:
   doc: ```Takes a function, an initial value and two lists, and folds the function over the lists in parallel
         from the left, starting with the initial value and ending when either list is empty```

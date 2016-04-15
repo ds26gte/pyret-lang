@@ -929,6 +929,8 @@ standard-imports = extra-imports(
           "each4_n",
           "fold",
           "foldr",
+          "_spyret_foldl",
+          "_spyret_foldr",
           "fold2",
           "fold3",
           "fold4",
