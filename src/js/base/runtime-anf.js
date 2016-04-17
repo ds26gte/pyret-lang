@@ -2324,8 +2324,10 @@ function isMethod(obj) { return obj instanceof PMethod; }
     }
 
     function wrap(v) {
-      if(jsnums.isPyretNumber(v)) { return makeNumberBig(v); }
-      else if(typeof v === "number") { return makeNumber(v); }
+      // check for number before isPyretNumber, because we want JS fixnums to become
+      // rationals if they're not integers
+      if(typeof v === "number") { return makeNumber(v); }
+      else if(jsnums.isPyretNumber(v)) { return makeNumberBig(v); }
       else if(typeof v === "string") { return makeString(v); }
       else if(typeof v === "boolean") { return makeBoolean(v); }
       else if(isOpaque(v)) { return v; }
