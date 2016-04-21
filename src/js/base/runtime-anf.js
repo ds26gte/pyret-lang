@@ -1069,6 +1069,14 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return arr;
     }
 
+    function P_spyret_box(v) {
+      this.val = v;
+    }
+
+    function _spyret_boxp(b) {
+      return thisRuntime.isOpaque(b) && b.val instanceof P_spyret_box;
+    }
+
     /************************
           Type Checking
     ************************/
@@ -1140,6 +1148,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
 
     //for Spyret
     var checkSpyretCharacter = makeCheckType(_spyret_single_char_string_p, "Character");
+    var checkSpyretBox = makeCheckType(_spyret_boxp, "Box");
 
     var checkWrapBoolean = function(val) {
       checkBoolean(val);
@@ -4770,6 +4779,24 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return false;
     };
 
+    function _spyret_box(v) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["box"], 1, $a); }
+      return thisRuntime.makeOpaque(new P_spyret_box(v));
+    }
+
+    function _spyret_unbox(b) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["unbox"], 1, $a); }
+      checkSpyretBox(b);
+      return b.val.val;
+    }
+
+    function _spyret_set_box(b, v) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["set-box!"], 2, $a); }
+      checkSpyretBox(b);
+      b.val.val = v;
+      return nothing;
+    }
+
     function loadBuiltinModules(modules, startName, withModules) {
       function loadWorklist(startMod) {
         function addMod(curMod, curPath, curName) {
@@ -5150,6 +5177,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_map": makeFunction(_spyret_map),
           "_spyret_andmap": makeFunction(_spyret_andmap),
           "_spyret_ormap": makeFunction(_spyret_ormap),
+
+          "_spyret_box": makeFunction(_spyret_box),
+          "_spyret_boxp": mkPred(_spyret_boxp),
+          "_spyret_unbox": makeFunction(_spyret_unbox),
+          "_spyret_set_box": makeFunction(_spyret_set_box),
 
           '_plus': makeFunction(plus),
           '_minus': makeFunction(minus),
