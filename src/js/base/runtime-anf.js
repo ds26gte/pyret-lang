@@ -4043,6 +4043,12 @@ function isMethod(obj) { return obj instanceof PMethod; }
 
     // primitives for Spyret
 
+    var _spyret_procedure_arity = function(f) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["procedure-arity"], 1, $a); }
+      checkFunction(f);
+      return makeNumber(f.arity);
+    };
+
     var _spyret_void = function() {
       if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["void"], 0, $a); }
       return nothing;
@@ -4698,6 +4704,27 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return result;
     };
 
+    var _spyret_apply = function(f, args) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["apply"], 2, $a); }
+      checkFunction(f);
+      checkList(args);
+      return _spyret_apply_variadic_fun(f, ffi.toArray(args));
+    };
+
+    var _spyret_compose = function(f, g) {
+      if (arguments.length !== 2) { var $a = new Array(arguments.length); for (var $i = 0; $i < arguments.length; $i++) { $a[$i] = arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["compose"], 2, $a); }
+      checkFunction(f);
+      checkFunction(g);
+      return makeFunction(function() {
+        var overallArgsNum = arguments.length;
+        var overallArgs = new Array(overallArgsNum);
+        for (var i = 0; i < overallArgsNum; i++) {
+          overallArgs[i] = arguments[i];
+        }
+        return f.app(_spyret_apply_variadic_fun(g, overallArgs));
+      });
+    };
+
     var _spyret_map = function(f) {
       checkFunction(f);
       var num_arg_arrays = arguments.length - 1;
@@ -5085,11 +5112,11 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_pi": jsnums.toRoughnum(Math.PI),
           "_spyret_e": jsnums.toRoughnum(Math.E),
 
-          "_spyret_check_expect": makeFunction(_spyret_check_expect),
-          "_spyret_check_within": makeFunction(_spyret_check_within),
+          "_spyret_apply": makeFunction(_spyret_apply),
+          "_spyret_compose": makeFunction(_spyret_compose),
           "_spyret_identity": makeFunction(_spyret_identity),
+          "_spyret_procedure_arity": makeFunction(_spyret_procedure_arity),
           "_spyret_void": makeFunction(_spyret_void),
-          "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde),
 
           "_spyret_cosh": makeFunction(_spyret_cosh),
           "_spyret_current_seconds": makeFunction(_spyret_current_seconds),
@@ -5182,6 +5209,10 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_boxp": mkPred(_spyret_boxp),
           "_spyret_unbox": makeFunction(_spyret_unbox),
           "_spyret_set_box": makeFunction(_spyret_set_box),
+
+          "_spyret_check_expect": makeFunction(_spyret_check_expect),
+          "_spyret_check_within": makeFunction(_spyret_check_within),
+          "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde),
 
           '_plus': makeFunction(plus),
           '_minus': makeFunction(minus),
