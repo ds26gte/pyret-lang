@@ -4688,27 +4688,14 @@ function isMethod(obj) { return obj instanceof PMethod; }
     };
 
     var _spyret_apply_variadic_fun = function(f, args) {
-      var result;
-      switch (args.length) {
-        case 0: result = f.app(); break;
-        case 1: result = f.app(args[0]); break;
-        case 2: result = f.app(args[0], args[1]); break;
-        case 3: result = f.app(args[0], args[1], args[2]); break;
-        case 4: result = f.app(args[0], args[1], args[2], args[3]); break;
-        case 5: result = f.app(args[0], args[1], args[2], args[3], args[4]); break;
-        case 6: result = f.app(args[0], args[1], args[2], args[3], args[4], args[5]); break;
-        case 7: result = f.app(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break;
-        case 8: result = f.app(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); break;
-        default: ffi.throwArityErrorC(["_spyret_apply_variadic_fun"], 8, args);
-      }
-      return result;
+      return f.app.apply(null, args);
     };
 
     var _spyret_apply = function(f, args) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["apply"], 2, $a); }
       checkFunction(f);
       checkList(args);
-      return _spyret_apply_variadic_fun(f, ffi.toArray(args));
+      return f.app.apply(null, ffi.toArray(args));
     };
 
     var _spyret_compose = function(f, g) {
@@ -4716,12 +4703,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
       checkFunction(f);
       checkFunction(g);
       return makeFunction(function() {
-        var overallArgsNum = arguments.length;
-        var overallArgs = new Array(overallArgsNum);
-        for (var i = 0; i < overallArgsNum; i++) {
-          overallArgs[i] = arguments[i];
-        }
-        return f.app(_spyret_apply_variadic_fun(g, overallArgs));
+        return f.app(g.app.apply(null, arguments));
       });
     };
 
@@ -4749,7 +4731,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
         for (var i = 0; i < num_arg_arrays; i++) {
           jth_arg_selection[i] = arg_arrays[i][j];
         }
-        result[j] = _spyret_apply_variadic_fun(f, jth_arg_selection);
+        result[j] = f.app.apply(null, jth_arg_selection);
       }
       return ffi.makeList(result);
     };
@@ -4772,7 +4754,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
         for (var i = 0; i < num_arg_arrays; i++) {
           jth_arg_selection[i] = arg_arrays[i][j];
         }
-        result = result && _spyret_apply_variadic_fun(f, jth_arg_selection);
+        result = result && f.app.apply(null, jth_arg_selection);
         if (!result) {
           return false;
         }
@@ -4798,7 +4780,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
         for (var i = 0; i < num_arg_arrays; i++) {
           jth_arg_selection[i] = arg_arrays[i][j];
         }
-        result = result || _spyret_apply_variadic_fun(f, jth_arg_selection);
+        result = result || f.app.apply(null, jth_arg_selection);
         if (result) {
           return true;
         }
