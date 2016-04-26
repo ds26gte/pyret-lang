@@ -217,6 +217,7 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_boxp").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_unbox").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_set_box").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_display").key(), t-top)
   default-typs.set-now(A.s-global("_times").key(), t-number-binop)
   default-typs.set-now(A.s-global("_minus").key(), t-number-binop)
   default-typs.set-now(A.s-global("_divide").key(), t-number-binop)

@@ -4806,6 +4806,22 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return nothing;
     }
 
+    function _spyret_display(val) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["display"], 1, $a); }
+      if (isString(val)) {
+        theOutsideWorld.stdout(val);
+        return nothing;
+      }
+      else {
+        return thisRuntime.safeCall(function() {
+          return toReprJS(val, ReprMethods._tostring);
+        }, function(repr) {
+          theOutsideWorld.stdout(repr);
+          return nothing;
+        });
+      }
+    };
+
     function loadBuiltinModules(modules, startName, withModules) {
       function loadWorklist(startMod) {
         function addMod(curMod, curPath, curName) {
@@ -5191,6 +5207,8 @@ function isMethod(obj) { return obj instanceof PMethod; }
           "_spyret_boxp": mkPred(_spyret_boxp),
           "_spyret_unbox": makeFunction(_spyret_unbox),
           "_spyret_set_box": makeFunction(_spyret_set_box),
+
+          "_spyret_display": makeFunction(_spyret_display),
 
           "_spyret_check_expect": makeFunction(_spyret_check_expect),
           "_spyret_check_within": makeFunction(_spyret_check_within),

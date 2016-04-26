@@ -764,6 +764,7 @@ runtime-builtins = [string-dict:
   "_spyret_boxp", t-top,
   "_spyret_unbox", t-top,
   "_spyret_set_box", t-top,
+  "_spyret_display", t-top,
   "_plus", t-top,
   "_minus", t-top,
   "_times", t-top,
