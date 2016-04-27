@@ -132,6 +132,7 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_equal_tilde").key(), t-arrow([list: t-top, t-top, t-number], t-boolean))
   default-typs.set-now(A.s-global("_spyret_num_equal_tilde").key(), t-arrow([list: t-number, t-number, t-number], t-boolean))
   default-typs.set-now(A.s-global("_spyret_identity").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_error").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_check_expect").key(), t-arrow([list: t-top, t-top], t-nothing))
   default-typs.set-now(A.s-global("_spyret_check_within").key(), t-arrow([list: t-top, t-top, t-number], t-nothing))
   default-typs.set-now(A.s-global("_spyret_zero_p").key(), t-arrow([list: t-number], t-boolean))

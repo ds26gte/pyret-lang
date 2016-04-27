@@ -679,6 +679,7 @@ runtime-builtins = [string-dict:
   "_spyret_equal_tilde", t-top,
   "_spyret_num_equal_tilde", t-top,
   "_spyret_identity", t-top,
+  "_spyret_error", t-top,
   "_spyret_check_expect", t-top,
   "_spyret_check_within", t-top,
   "_spyret_zero_p", t-number-pred1,

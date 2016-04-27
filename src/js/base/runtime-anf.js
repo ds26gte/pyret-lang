@@ -4054,6 +4054,24 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return nothing;
     };
 
+    var _spyret_error = function(f) {
+      var argsn = arguments.length;
+      if (argsn === 0) {
+        throw thisRuntime.ffi.throwArityErrorC(["error"], 1, []);
+      }
+      checkString(f);
+      var errstring = f;
+      if (argsn > 1) {
+        errstring += ": ";
+        var args = [];
+        for (var i = 1; i < argsn; i++) {
+          args.push(arguments[i]);
+        }
+        errstring += _spyret_format.apply(null, args);
+      }
+      ffi.throwMessageException(errstring);
+    };
+
     var _spyret_check_expect = function(actVal, expVal) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-expect"], 2, $a); }
       if (!equalAlways(actVal, expVal)) {
@@ -4632,24 +4650,27 @@ function isMethod(obj) { return obj instanceof PMethod; }
         if (c === '~') {
           i++;
           if (i === n) {
-            throwMessageException("format: format " + f + " too short");
+            ffi.throwMessageException("format: format " + f + " too short");
           }
           c = f[i];
           if (c === '~') {
             s += c;
           } else if (j >= argsn) {
-            throwMessageException("format: format " + f + " too long");
+            ffi.throwMessageException("format: format " + f + " too long");
           } else if (c === 'a') {
             s += arguments[j]; j++;
           } else if (c === 's') {
             s += "\"" + arguments[j] + "\""; j++;
           } else {
-            throwMessageException("format: unknown directive " + c);
+            ffi.throwMessageException("format: unknown directive " + c);
           }
         } else {
           s += c;
         }
         i++;
+      }
+      if (j < argsn) {
+        ffi.throwMessageException("format: format " + f + " too short");
       }
       return s;
     };
@@ -4665,7 +4686,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
           x = s[0];
           s = s.substring(1);
           if (!ffi.isList(l)) {
-            throwMessageException("cxr: " + l + " is not a list");
+            ffi.throwMessageException("cxr: " + l + " is not a list");
           } else if (x === "a") {
             l = thisRuntime.getField(l, "first");
           } else if (x === "d") {
@@ -5210,6 +5231,7 @@ function isMethod(obj) { return obj instanceof PMethod; }
 
           "_spyret_display": makeFunction(_spyret_display),
 
+          "_spyret_error": makeFunction(_spyret_error),
           "_spyret_check_expect": makeFunction(_spyret_check_expect),
           "_spyret_check_within": makeFunction(_spyret_check_within),
           "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde),
