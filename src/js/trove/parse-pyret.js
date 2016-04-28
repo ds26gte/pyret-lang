@@ -293,7 +293,7 @@ define(["js/runtime-util", "trove/ast", "trove/srcloc", "js/pyret-tokenizer", "j
           },
           'letrec-binding': function(node) {
             if (node.name === "letrec-binding") {
-              node = node.kids[0].kids[0];
+              node = node.kids[0];
             }
             // (let-expr binding EQUALS binop-expr)
             return RUNTIME.getField(ast, 's-letrec-bind')
@@ -1020,10 +1020,7 @@ define(["js/runtime-util", "trove/ast", "trove/srcloc", "js/pyret-tokenizer", "j
             var ast = grammar.constructUniqueParse(parsed);
 
             //debug
-            /*
-            var ast_j = JSON.stringify(ast);
-            console.log('Py_ast_j = ' + ast_j);
-            */
+            //console.log('Py_ast_j = ' + JSON.stringify(ast));
 
             var xlated = translate(ast, fileName);
             //var xlated_j = JSON.stringify(xlated);
