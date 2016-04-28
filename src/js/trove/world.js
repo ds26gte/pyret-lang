@@ -421,8 +421,8 @@ define(["js/runtime-util", "trove/image-lib", "trove/world-lib", "js/type-util",
                 runtime.ffi.throwMessageException("Internal error in bigBang: stack not properly paused and stored.");
               }),
               "_spyret_big-bang": makeFunction(function(init) {
-                if (arguments.length < 2) {
-                  throw runtime.ffi.throwArityErrorC(["big-bang"], 2, [init]);
+                if (arguments.length < 1) {
+                  throw runtime.ffi.throwArityErrorC(["big-bang"], 1, [init]);
                 }
                 var arr = [], h;
                 for (var i = 1; i < arguments.length; i++) {
