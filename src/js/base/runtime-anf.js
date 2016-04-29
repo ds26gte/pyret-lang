@@ -4712,7 +4712,26 @@ function isMethod(obj) { return obj instanceof PMethod; }
       return f.app.apply(null, args);
     };
 
-    var _spyret_apply = function(f, args) {
+    var _spyret_apply = function(f) {
+      if (arguments.length < 2) {
+        var $a = new Array(arguments.length);
+        for (var $i = 0; $i < arguments.length; $i++) {
+          $a[$i] = arguments[$i];
+        }
+        throw thisRuntime.ffi.throwArityErrorC(["apply"], 2, $a);
+      }
+      checkFunction(f);
+      var argsn = arguments.length - 1;
+      var args = arguments[argsn];
+      checkList(args);
+      var rargs = ffi.toArray(args);
+      for (var i = argsn - 1; i >= 1; i--) {
+        rargs.unshift(arguments[i]);
+      }
+      return f.app.apply(null, rargs);
+    };
+
+    var _spyret_apply_obsolete = function(f, args) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["apply"], 2, $a); }
       checkFunction(f);
       checkList(args);

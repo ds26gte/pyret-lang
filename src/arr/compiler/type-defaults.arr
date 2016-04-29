@@ -126,7 +126,7 @@ fun make-default-typs():
   default-typs.set-now(A.s-global("_spyret_pi").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_e").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_procedure_arity").key(), t-arrow([list: t-top], t-number))
-  default-typs.set-now(A.s-global("_spyret_apply").key(), t-arrow([list: t-top, t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_apply").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_compose").key(), t-arrow([list: t-top, t-top], t-top))
   default-typs.set-now(A.s-global("_spyret_void").key(), t-arrow([list: ], t-nothing))
   default-typs.set-now(A.s-global("_spyret_equal_tilde").key(), t-arrow([list: t-top, t-top, t-number], t-boolean))
