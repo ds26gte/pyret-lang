@@ -2940,7 +2940,7 @@ define(function() {
     function schemeRationalRegexp(digits) { return new RegExp("^([+-]?["+digits+"]+)/(["+digits+"]+)$"); }
 
     function schemeMixedFracRegexp(digits) {
-      return new RegExp("^([-+]?[" + digits + "]+)_([" + digits + "]+)/([" + digits + "]+)$");
+      return new RegExp("^([-+]?[" + digits + "]+)&([" + digits + "]+)/([" + digits + "]+)$");
     }
 
     function matchComplexRegexp(radix, x) {
