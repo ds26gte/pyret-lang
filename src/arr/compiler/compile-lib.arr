@@ -125,6 +125,10 @@ fun get-dependencies(p :: PyretCode, uri :: URI) -> List<CS.Dependency>:
   end
 end
 
+fun spyret-surface-parse(defs, name):
+  P.spyret-surface-parse(defs, name)
+end
+
 fun get-standard-dependencies(p :: PyretCode, uri :: URI) -> List<CS.Dependency>:
   mod-deps = get-dependencies(p, uri)
   mod-deps + CS.standard-imports.imports.map(_.dependency)
