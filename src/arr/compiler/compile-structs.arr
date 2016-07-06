@@ -32,8 +32,6 @@ t-singleton-variant = T.t-variant(_, _)
 t-app = T.t-app(_, _, A.dummy-loc)
 t-name = T.t-name(_, _, A.dummy-loc)
 
-
-
 type URI = String
 type StringDict = SD.StringDict
 string-dict = SD.string-dict
@@ -61,7 +59,6 @@ data NameResolution:
       type-bindings :: SD.MutableStringDict,
       datatypes :: SD.MutableStringDict)
 end
-
 
 # Used to describe when additional module imports should be added to a
 # program.  See wrap-extra-imports
@@ -189,8 +186,6 @@ fun datatype-from-raw(uri, datatyp):
   end
 end
 
-
-
 fun provides-from-raw-provides(uri, raw):
   values = raw.values
   vdict = for fold(vdict from SD.make-string-dict(), v from raw.values):
@@ -215,9 +210,6 @@ fun provides-from-raw-provides(uri, raw):
   provides(uri, vdict, adict, ddict)
 end
 
-
-
-
 fun provides-to-raw-provides-ast(provs, env):
   cases(Provides) provs:
     | provides(uri, values, aliases, data-defs) =>
@@ -239,7 +231,6 @@ fun provides-to-raw-provides-ast(provs, env):
       ])
   end
 end
-
 
 data CompileResult<C>:
   | ok(code :: C)
@@ -1253,7 +1244,7 @@ data CompileError:
           ED.text(" to evaluate to a function that accepts exactly the same number of arguments as are given to it.")],
         [ED.para:
           ED.highlight(ED.ed-args(self.app-expr.args.length()), self.app-expr.args.map(_.l), 1),
-          ED.text(" " + if self.app-expr.args.length() == 1: "is" else: "are" end 
+          ED.text(" " + if self.app-expr.args.length() == 1: "is" else: "are" end
                 + "given, but the type signature of the "),
           ed-applicant],
         [ED.para:
@@ -1813,6 +1804,117 @@ runtime-provides = provides("builtin://global",
     "gensym", t-top,
     "random", t-top,
     "run-task", t-top,
+
+    "_spyret_false", t-top,
+    "_spyret_true", t-top,
+    "_spyret_pi", t-top,
+    "_spyret_e", t-top,
+
+    "_spyret_apply", t-top,
+    "_spyret_compose", t-top,
+    "_spyret_identity", t-top,
+    "_spyret_procedure_arity", t-top,
+    "_spyret_void", t-top,
+
+    "_spyret_cosh", t-top,
+    "_spyret_current_seconds", t-arrow([list: ], t-number),
+    "_spyret_denominator", t-arrow([list: t-number], t-number),
+    "_spyret_divide", t-top,
+    "_spyret_eq", t-top,
+    "_spyret_even_p", t-arrow([list: t-number], t-boolean),
+    "_spyret_gcd", t-top,
+    "_spyret_ge", t-top,
+    "_spyret_gt", t-top,
+    "_spyret_integer_p", t-arrow([list: t-top], t-boolean),
+    "_spyret_lcm", t-top,
+    "_spyret_le", t-top,
+    "_spyret_lt", t-top,
+    "_spyret_minus", t-top,
+    "_spyret_num_equal_tilde", t-top,
+    "_spyret_numerator", t-arrow([list: t-number], t-number),
+    "_spyret_odd_p", t-arrow([list: t-number], t-boolean),
+    "_spyret_plus", t-top,
+    "_spyret_quotient", t-arrow([list: t-number, t-number], t-number),
+    "_spyret_random", t-top,
+    "_spyret_rational_p", t-arrow([list: t-top], t-boolean),
+    "_spyret_real_p", t-arrow([list: t-top], t-boolean),
+    "_spyret_remainder", t-arrow([list: t-number, t-number], t-number),
+    "_spyret_sgn", t-top,
+    "_spyret_sinh", t-top,
+    "_spyret_times", t-top,
+    "_spyret_zero_p", t-number-pred1,
+
+    "_spyret_false_p", t-top,
+    "_spyret_boolean_p", t-arrow([list: t-top], t-boolean),
+    "_spyret_boolean_eq", t-arrow([list: t-boolean, t-boolean], t-boolean),
+
+    "_spyret_list_to_string", t-top,
+    "_spyret_string", t-top,
+    "_spyret_string_append", t-top,
+    "_spyret_string_ci_eq", t-top,
+    "_spyret_string_ci_ge", t-top,
+    "_spyret_string_ci_gt", t-top,
+    "_spyret_string_ci_le", t-top,
+    "_spyret_string_ci_lt", t-top,
+    "_spyret_string_eq", t-top,
+    "_spyret_string_ge", t-top,
+    "_spyret_string_gt", t-top,
+    "_spyret_string_le", t-top,
+    "_spyret_string_lt", t-top,
+    "_spyret_string_to_number", t-top,
+    "_spyret_substring", t-top,
+
+    "_spyret_char_alphabetic_p", t-top,
+    "_spyret_char_lower_case_p", t-top,
+    "_spyret_char_numeric_p", t-top,
+    "_spyret_char_p", t-top,
+    "_spyret_char_to_integer", t-top,
+    "_spyret_char_upper_case_p", t-top,
+    "_spyret_char_whitespace_p", t-top,
+    "_spyret_integer_to_char", t-top,
+    "_spyret_format", t-top,
+
+    "_spyret_caaar", t-arrow([list: t-top], t-top),
+    "_spyret_caadr", t-arrow([list: t-top], t-top),
+    "_spyret_caar", t-arrow([list: t-top], t-top),
+    "_spyret_cadar", t-arrow([list: t-top], t-top),
+    "_spyret_caddr", t-arrow([list: t-top], t-top),
+    "_spyret_cadr", t-arrow([list: t-top], t-top),
+    "_spyret_car", t-arrow([list: t-top], t-top),
+    "_spyret_cdaar", t-arrow([list: t-top], t-top),
+    "_spyret_cdadr", t-arrow([list: t-top], t-top),
+    "_spyret_cdar", t-arrow([list: t-top], t-top),
+    "_spyret_cddar", t-arrow([list: t-top], t-top),
+    "_spyret_cdddr", t-arrow([list: t-top], t-top),
+    "_spyret_cddr", t-arrow([list: t-top], t-top),
+    "_spyret_cdr", t-arrow([list: t-top], t-top),
+
+    "_spyret_first", t-arrow([list: t-top], t-top),
+    "_spyret_second", t-arrow([list: t-top], t-top),
+    "_spyret_third", t-arrow([list: t-top], t-top),
+    "_spyret_fourth", t-arrow([list: t-top], t-top),
+    "_spyret_fifth", t-arrow([list: t-top], t-top),
+    "_spyret_sixth", t-arrow([list: t-top], t-top),
+    "_spyret_seventh", t-arrow([list: t-top], t-top),
+    "_spyret_eighth", t-arrow([list: t-top], t-top),
+
+    "_spyret_append", t-top,
+    "_spyret_map", t-top,
+    "_spyret_andmap", t-top,
+    "_spyret_ormap", t-top,
+
+    "_spyret_box", t-top,
+    "_spyret_boxp", t-top,
+    "_spyret_unbox", t-top,
+    "_spyret_set_box", t-top,
+
+    "_spyret_display", t-top,
+
+    "_spyret_error", t-top,
+    "_spyret_check_expect", t-top,
+    "_spyret_check_within", t-top,
+    "_spyret_equal_tilde", t-top,
+
     "_plus", t-top,
     "_minus", t-top,
     "_times", t-top,
@@ -1983,6 +2085,7 @@ standard-imports = extra-imports(
           "repeat",
           "filter",
           "partition",
+          "_spyret_remove",
           "split-at",
           "any",
           "find",
@@ -2003,9 +2106,19 @@ standard-imports = extra-imports(
           "each3_n",
           "each4_n",
           "fold",
+          "foldr",
+          "_spyret_foldl",
+          "_spyret_foldr",
           "fold2",
           "fold3",
-          "fold4"
+          "fold4",
+          "list-ref",
+          "list-length",
+          "list-member",
+          "list-assoc",
+          "build-list",
+          "_spyret_null",
+          "_spyret_empty"
         ],
         [list: "List"]),
       extra-import(builtin("option"), "option", [list:
