@@ -158,7 +158,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       delete parameters[param];
     }
 
-
     /**
        Get the brands on an object
 
@@ -257,7 +256,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         }
         s += " }";
         return s;
-        
+
       },
       "object": function(val, pushTodo) {
         var keys = [];
@@ -387,7 +386,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         if (val.$constrFor !== undefined) {
           thisRuntime.ffi.throwLookupConstructorNotObject(makeSrcloc(loc), val.$constrFor, field);
         }
-        thisRuntime.ffi.throwLookupNonObject(makeSrcloc(loc), val, field); 
+        thisRuntime.ffi.throwLookupNonObject(makeSrcloc(loc), val, field);
       }
       var fieldVal = val.dict[field];
       if(fieldVal === undefined) {
@@ -561,6 +560,11 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     */
     function isString(obj) {
       return typeof obj === 'string';
+    }
+
+    //for Spyret
+    function _spyret_single_char_string_p(obj) {
+      return isString(obj) && obj.length === 1;
     }
 
     /**Makes a PString using the given s
@@ -1011,7 +1015,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return true;
     }
 
-
     /*********************
             Object
     **********************/
@@ -1135,6 +1138,14 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return arr;
     }
 
+    function P_spyret_box(v) {
+      this.val = v;
+    }
+
+    function _spyret_boxp(b) {
+      return thisRuntime.isOpaque(b) && b.val instanceof P_spyret_box;
+    }
+
     /************************
           Type Checking
     ************************/
@@ -1210,6 +1221,10 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     var checkMethod = makeCheckType(isMethod, "Method");
     var checkOpaque = makeCheckType(isOpaque, "Opaque");
     var checkPyretVal = makeCheckType(isPyretVal, "Pyret Value");
+
+    //for Spyret
+    var checkSpyretCharacter = makeCheckType(_spyret_single_char_string_p, "Character");
+    var checkSpyretBox = makeCheckType(_spyret_boxp, "Box");
 
     var checkWrapBoolean = function(val) {
       checkBoolean(val);
@@ -2420,7 +2435,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       });
     }
 
-
     function _checkAnn(compilerLoc, ann, val) {
       if (isCheapAnnotation(ann)) {
         var result = ann.check(compilerLoc, val);
@@ -2673,8 +2687,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       });
     }
 
-
-
     function PTupleAnn(locs, anns) {
       this.locs = locs;
       this.anns = anns;
@@ -2684,7 +2696,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
       this.refinement = hasRefinement;
     }
-    
+
     function makeTupleAnn(locs, anns) {
       return new PTupleAnn(locs, anns);
     }
@@ -2746,9 +2758,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     /* PTupleAnn.prototype.createTupleLengthMismatch = function(loc, val, annLength, tupLength) {
        ffi.contractFail(loc, ffi.makeTupleLengthMismatch(loc, val, annLength, tupleLength);
        }; */
-
-
-
 
     function PRecordAnn(fields, locs, anns) {
       this.fields = fields;
@@ -2995,7 +3004,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
           if (++currentRunCount >= 1000) {
             thisRuntime.EXN_STACKHEIGHT = 0;
             throw thisRuntime.makeCont();
-          }  
+          }
           else { i = i + 1; }
         }
       }
@@ -3464,7 +3473,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       throwInternalError: function(msg) { thisRuntime.ffi.throwInternalError(msg); },
     };
 
-
     var plus = function(l, r) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_plus"], 2, $a); }
       if (thisRuntime.isNumber(l) && thisRuntime.isNumber(r)) {
@@ -3629,7 +3637,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
           thisRuntime.EXN_STACKHEIGHT = 0;
           throw thisRuntime.makeCont();
         }
-        
+
         while (curIdx < len) {
           if (++currentRunCount >= 1000) {
             thisRuntime.EXN_STACKHEIGHT = 0;
@@ -3680,7 +3688,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
           thisRuntime.EXN_STACKHEIGHT = 0;
           throw thisRuntime.makeCont();
         }
-        
+
         while (curIdx < len) {
           if (++currentRunCount >= 1000) {
             thisRuntime.EXN_STACKHEIGHT = 0;
@@ -3872,7 +3880,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return foldFun();
     };
 
-
     var raw_list_fold = function(f, init, lst) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["raw-list-fold"], 3, $a); }
       thisRuntime.checkFunction(f);
@@ -3911,7 +3918,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return foldFun();
     };
 
-
     var string_substring = function(s, min, max) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-substring"], 3, $a); }
       thisRuntime.checkString(s);
@@ -3933,7 +3939,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if(jsnums.greaterThan(max, string_length(s), NumberErrbacks)) {
         thisRuntime.ffi.throwMessageException("substring: max index " + String(max) + " is larger than the string length " + String(string_length(s)));
       }
-      return thisRuntime.makeString(s.substring(jsnums.toFixnum(min, NumberErrbacks), 
+      return thisRuntime.makeString(s.substring(jsnums.toFixnum(min, NumberErrbacks),
                                                 jsnums.toFixnum(max, NumberErrbacks)));
     }
     var string_replace = function(s, find, replace) {
@@ -4378,6 +4384,827 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return new Date().getTime();
     }
 
+    // primitives for Spyret
+
+    var _spyret_procedure_arity = function(f) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["procedure-arity"], 1, $a); }
+      checkFunction(f);
+      return makeNumber(f.arity);
+    };
+
+    var _spyret_void = function() {
+      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["void"], 0, $a); }
+      return nothing;
+    };
+
+    var _spyret_error = function(f) {
+      var argsn = arguments.length;
+      if (argsn === 0) {
+        throw thisRuntime.ffi.throwArityErrorC(["error"], 1, []);
+      }
+      checkString(f);
+      var errstring = f;
+      if (argsn > 1) {
+        errstring += ": ";
+        var args = [];
+        for (var i = 1; i < argsn; i++) {
+          args.push(arguments[i]);
+        }
+        errstring += _spyret_format.apply(null, args);
+      }
+      ffi.throwMessageException(errstring);
+    };
+
+    var _spyret_check_expect = function(actVal, expVal) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-expect"], 2, $a); }
+      if (!equalAlways(actVal, expVal)) {
+        displayFunc("check-expect: actual value " + actVal +
+        " differs from " + expVal + ", the expected value.");
+      }
+      return nothing;
+    };
+
+    var _spyret_identity = function(x) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["identity"], 1, $a); }
+      return x;
+    };
+
+    var _spyret_check_within = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-within"], 3, $a); }
+      checkNumNonNegative(absTol);
+      if (!(equalWithin(absTol).app(actVal, expVal))) {
+        displayFunc("check-within: actual value " + actVal +
+        " is not within " + absTol + " of expected value " + expVal);
+      }
+      return nothing;
+    };
+
+    var _spyret_equal_tilde = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal~?"], 3, $a); }
+      checkNumNonNegative(absTol);
+      return equalWithin(absTol).app(actVal, expVal);
+    };
+
+    var _spyret_false_p = function(x) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["false?"], 1, $a); }
+      return !x;
+    };
+
+    var _spyret_boolean_p = function(x) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["boolean?"], 1, $a); }
+      return isBoolean(x);
+    };
+
+    var _spyret_boolean_eq = function(x, y) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["boolean=?"], 2, $a); }
+      checkBoolean(x); checkBoolean(y);
+      return (x === y);
+    };
+
+    var _spyret_integer_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["integer?"], 1, $a); }
+      return isNumber(n) && jsnums.isInteger(n);
+    };
+
+    var _spyret_rational_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["rational?"], 1, $a); }
+      return isNumber(n) && jsnums.isRational(n);
+    };
+
+    var _spyret_real_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["real?"], 1, $a); }
+      return isNumber(n) && jsnums.isReal(n);
+    };
+
+    var _spyret_num_equal_tilde = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["=~"], 3, $a); }
+      thisRuntime.checkNumber(actVal);
+      thisRuntime.checkNumber(expVal);
+      checkNumNonNegative(absTol);
+      return jsnums.roughlyEquals(actVal, expVal, absTol);
+    };
+
+    var _spyret_zero_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["zero?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
+    };
+
+    var _spyret_even_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["even?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      if (!jsnums.isInteger(n)) {
+        ffi.throwMessageException("even?: " + n + " is not an integer");
+      }
+      return jsnums.equalsAnyZero(jsnums.modulo(n, 2));
+    };
+
+    var _spyret_odd_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["odd?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      if (!jsnums.isInteger(n)) {
+        ffi.throwMessageException("odd?: " + n + " is not an integer");
+      }
+      return !jsnums.equalsAnyZero(jsnums.modulo(n, 2));
+    };
+
+    var _spyret_plus = function() {
+      var result = 0;
+      var i, j;
+      for (i = 0; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.add(result, j);
+      }
+      return result;
+    };
+
+    var _spyret_minus = function(n) {
+      if (arguments.length < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["-"], 1, []);
+      }
+      if (arguments.length === 1) {
+        thisRuntime.checkNumber(n);
+        return jsnums.subtract(0, n);
+      }
+      thisRuntime.checkNumber(n);
+      var result = n;
+      var i, j;
+      for (i = 1; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.subtract(result, j);
+      }
+      return result;
+    };
+
+    var _spyret_times = function() {
+      var result = 1;
+      var i, j;
+      for (i = 0; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.multiply(result, j);
+      }
+      return result;
+    };
+
+    var _spyret_divide = function(n) {
+      if (arguments.length < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["/"], 1, []);
+      }
+      if (arguments.length === 1) {
+        thisRuntime.checkNumber(n);
+        return jsnums.divide(1, n);
+      }
+      thisRuntime.checkNumber(n);
+      var result = n;
+      var i, j;
+      for (i = 1; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.divide(result, j);
+      }
+      return result;
+    };
+
+    var _spyret_quotient = function(x, y) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["quotient"], 2, $a); }
+      checkNumber(x); checkNumber(y);
+      return thisRuntime.makeNumber(jsnums.quotient(x, y));
+    };
+
+    var _spyret_remainder = function(x, y) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["remainder"], 2, $a); }
+      checkNumber(x); checkNumber(y);
+      return thisRuntime.makeNumber(jsnums.remainder(x, y));
+    };
+
+    var _spyret_eq = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["="], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.equals(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_lt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["<"], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.lessThan(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_gt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC([">"], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.greaterThan(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_le = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["<="], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.lessThanOrEqual(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_ge = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC([">="], 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i]);
+        if (!jsnums.greaterThanOrEqual(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_sgn = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["sgn"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      if (jsnums.equalsAnyZero(n)) {
+        return 0;
+      } else if (jsnums.isPositive(n)) {
+        return 1;
+      } else {
+        return -1;
+      }
+    };
+
+    var _spyret_gcd = function() {
+      var $a = new Array(arguments.length);
+      var j;
+      for (var $i = 0; $i < arguments.length; $i++) {
+        j = arguments[$i];
+        thisRuntime.checkNumber(j);
+        $a[$i] = j;
+      }
+      return jsnums.gcd(0, $a);
+    };
+
+    var _spyret_lcm = function() {
+      var $a = new Array(arguments.length);
+      var j;
+      for (var $i = 0; $i < arguments.length; $i++) {
+        j = arguments[$i];
+        thisRuntime.checkNumber(j);
+        $a[$i] = j;
+      }
+      return jsnums.lcm(1, $a);
+    };
+
+    var _spyret_numerator = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["numerator"], 1, $a); }
+      checkNumber(n);
+      return jsnums.numerator(n);
+    };
+
+    var _spyret_denominator = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["denominator"], 1, $a); }
+      checkNumber(n);
+      return jsnums.denominator(n);
+    };
+
+    var _spyret_current_seconds = function() {
+      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["current-seconds"], 0, $a); }
+      return makeNumber(Math.floor(Date.now()/1000));
+    };
+
+    var _spyret_random = function(n) {
+      if (arguments.length > 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["random"], 0, $a); }
+      if (n) {
+        checkNumber(n);
+        if (!(jsnums.isInteger(n) && jsnums.isPositive(n))) {
+          ffi.throwMessageException("random: " + n + " is not a positive integer")
+        }
+        return makeNumber(Math.floor(jsnums.toFixnum(n) * rng()));
+      } else {
+        return makeNumber(rng());
+      }
+    };
+
+    var _spyret_sinh = function(x) {
+      thisRuntime.checkNumber(x);
+      return jsnums.halve(jsnums.subtract(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
+    };
+
+    var _spyret_cosh = function(x) {
+      thisRuntime.checkNumber(x);
+      return jsnums.halve(jsnums.add(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
+    };
+
+    var _spyret_string_eq = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (arguments[i] !== arguments[i+1]) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_string_lt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string<?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] < arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_string_gt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string>?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] > arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_string_le = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string<=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] <= arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_string_ge = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string>=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] >= arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_string_ci_eq = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (arguments[i].toLowerCase() !== arguments[i+1].toLowerCase()) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_string_ci_lt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci<?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() < arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_string_ci_gt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci>?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() > arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_string_ci_le = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci<=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() <= arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_string_ci_ge = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci>=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() >= arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _spyret_substring = function(s, min, max) {
+      if (max === undefined) {
+        max = string_length(s);
+      }
+      return string_substring(s, min, max)
+    };
+
+    var _spyret_string_to_number = function(s, b) {
+      if (arguments.length > 2) {
+        var $a = new Array(arguments.length);
+        for (var $i = 0; $i < arguments.length; $i++) {
+          $a[$i] = arguments[$i];
+        }
+        throw thisRuntime.ffi.throwArityErrorC(["string->number"], 2, $a);
+      }
+      checkString(s);
+      if (!b) {
+        b = 10;
+      }
+      checkNumber(b);
+      if (jsnums.equals(b, 2)) {
+        s = "#b" + s;
+      } else if (jsnums.equals(b, 8)) {
+        s = "#o" + s;
+      } else if (jsnums.equals(b, 16)) {
+        s = "#x" + s;
+      } else if (!jsnums.equals(b, 10)) {
+        ffi.throwMessageException("string->number: base " + b + " is not 2, 8, 10, or 16");
+      }
+      return jsnums.fromSchemeString(s);
+
+    };
+
+    var _spyret_string = function() {
+      var result = "";
+      var c;
+      for (var i = 0; i < arguments.length; i++) {
+        c = arguments[i];
+        checkSpyretCharacter(c);
+        result = result.concat(c);
+      }
+      return thisRuntime.makeString(result);
+    };
+
+    var _spyret_string_append = function() {
+      var result = "";
+      var s;
+      for (var i = 0; i < arguments.length; i++) {
+        s = arguments[i];
+        thisRuntime.checkString(s);
+        result = result.concat(s);
+      }
+      return thisRuntime.makeString(result);
+    };
+
+    var _spyret_list_to_string = function(L) {
+      thisRuntime.checkList(L);
+      var ra = ffi.toArray(L);
+      if (!ra.every(function(elt) { return _spyret_single_char_string_p(elt); })) {
+        ffi.throwMessageException("list->string: " + L + " is not a list of characters");
+      } else {
+        return thisRuntime.makeString(ra.join(""));
+      }
+    };
+
+    var _spyret_char_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char?"], 1, $a); }
+      return _spyret_single_char_string_p(c);
+    };
+
+    var _spyret_char_alphabetic_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-alphabetic?"], 1, $a); }
+      checkSpyretCharacter(c);
+      return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
+    };
+
+    var _spyret_char_lower_case_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-lower-case?"], 1, $a); }
+      checkSpyretCharacter(c);
+      return (c >= 'a' && c <= 'z');
+    };
+
+    var _spyret_char_upper_case_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-upper-case?"], 1, $a); }
+      checkSpyretCharacter(c);
+      return (c >= 'A' && c <= 'Z');
+    };
+
+    var _spyret_char_numeric_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-numeric?"], 1, $a); }
+      checkSpyretCharacter(c);
+      return (c >= '0' && c <= '9');
+    };
+
+    var _spyret_char_whitespace_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-whitespace?"], 1, $a); }
+      checkSpyretCharacter(c);
+      var n = c.charCodeAt(0);
+      return (n===9 || n===10 || n===12 || n===13 || n===32);
+    };
+
+    var _spyret_char_to_integer = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char->integer"], 1, $a); }
+      checkSpyretCharacter(c);
+      return thisRuntime.makeNumber(c.charCodeAt(0));
+    };
+
+    var _spyret_integer_to_char = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["integer->char"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeString(String.fromCharCode(n));
+    };
+
+    var _spyret_format = function(f) {
+      var argsn = arguments.length;
+      if (argsn === 0) {
+        throw thisRuntime.ffi.throwArityErrorC(["format"], 1, []);
+      }
+      checkString(f);
+      var n = f.length;
+      var j = 1;
+      var s = "";
+      var i = 0;
+      var c;
+      while (i < n) {
+        c = f[i];
+        if (c === '~') {
+          i++;
+          if (i === n) {
+            ffi.throwMessageException("format: format " + f + " too short");
+          }
+          c = f[i];
+          if (c === '~') {
+            s += c;
+          } else if (j >= argsn) {
+            ffi.throwMessageException("format: format " + f + " too long");
+          } else if (c === 'a') {
+            s += arguments[j]; j++;
+          } else if (c === 's') {
+            s += "\"" + arguments[j] + "\""; j++;
+          } else {
+            ffi.throwMessageException("format: unknown directive " + c);
+          }
+        } else {
+          s += c;
+        }
+        i++;
+      }
+      if (j < argsn) {
+        ffi.throwMessageException("format: format " + f + " too short");
+      }
+      return s;
+    };
+
+    var _spyret_make_cxr = function(s_rev) {
+      var s0 = s_rev.split("").reverse().join("");
+      return makeFunction(function(l) {
+        if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["cxr"], 1, $a); }
+        thisRuntime.checkList(l);
+        var x, ign;
+        var s = s0;
+        while (s !== "") {
+          x = s[0];
+          s = s.substring(1);
+          if (!ffi.isList(l)) {
+            ffi.throwMessageException("cxr: " + l + " is not a list");
+          } else if (x === "a") {
+            l = thisRuntime.getField(l, "first");
+          } else if (x === "d") {
+            l = thisRuntime.getField(l, "rest");
+          }
+        }
+        return l;
+      }, "_spyret_c" + s_rev + "r");
+    };
+
+    var _spyret_append = function() {
+      var result = [];
+      var L;
+      for (var i = 0; i < arguments.length; i++) {
+        L = arguments[i];
+        thisRuntime.checkList(L);
+        result = result.concat(ffi.toArray(L));
+      }
+      return ffi.makeList(result);
+    };
+
+    var _spyret_apply_variadic_fun = function(f, args) {
+      return f.app.apply(null, args);
+    };
+
+    var _spyret_apply = function(f) {
+      if (arguments.length < 2) {
+        var $a = new Array(arguments.length);
+        for (var $i = 0; $i < arguments.length; $i++) {
+          $a[$i] = arguments[$i];
+        }
+        throw thisRuntime.ffi.throwArityErrorC(["apply"], 2, $a);
+      }
+      checkFunction(f);
+      var argsn = arguments.length - 1;
+      var args = arguments[argsn];
+      checkList(args);
+      var rargs = ffi.toArray(args);
+      for (var i = argsn - 1; i >= 1; i--) {
+        rargs.unshift(arguments[i]);
+      }
+      return f.app.apply(null, rargs);
+    };
+
+    var _spyret_apply_obsolete = function(f, args) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["apply"], 2, $a); }
+      checkFunction(f);
+      checkList(args);
+      return f.app.apply(null, ffi.toArray(args));
+    };
+
+    var _spyret_compose = function(f, g) {
+      if (arguments.length !== 2) { var $a = new Array(arguments.length); for (var $i = 0; $i < arguments.length; $i++) { $a[$i] = arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["compose"], 2, $a); }
+      checkFunction(f);
+      checkFunction(g);
+      return makeFunction(function() {
+        return f.app(g.app.apply(null, arguments));
+      });
+    };
+
+    var _spyret_map = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["map"], 1, [f]);
+      }
+      /* can't do this!!
+      if (f.arity !== num_arg_arrays) {
+        throw makeMessageException("map: function arity " + f.arity + " does not match number of arguments " +
+        num_arg_arrays);
+      }
+      */
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length; // check each arg array same length?
+      var result = new Array(arg_array_length);
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        result[j] = f.app.apply(null, jth_arg_selection);
+      }
+      return ffi.makeList(result);
+    };
+
+    var _spyret_andmap = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["andmap"], 1, [f]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var result = true;
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        result = result && f.app.apply(null, jth_arg_selection);
+        if (!result) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    var _spyret_ormap = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["ormap"], 1, [f]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var result = false;
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        result = result || f.app.apply(null, jth_arg_selection);
+        if (result) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    function _spyret_box(v) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["box"], 1, $a); }
+      return thisRuntime.makeOpaque(new P_spyret_box(v));
+    }
+
+    function _spyret_unbox(b) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["unbox"], 1, $a); }
+      checkSpyretBox(b);
+      return b.val.val;
+    }
+
+    function _spyret_set_box(b, v) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["set-box!"], 2, $a); }
+      checkSpyretBox(b);
+      b.val.val = v;
+      return nothing;
+    }
+
+    function _spyret_display(val) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["display"], 1, $a); }
+      if (isString(val)) {
+        theOutsideWorld.stdout(val);
+        return nothing;
+      }
+      else {
+        return thisRuntime.safeCall(function() {
+          return toReprJS(val, ReprMethods._tostring);
+        }, function(repr) {
+          theOutsideWorld.stdout(repr);
+          return nothing;
+        });
+      }
+    };
+
     function loadBuiltinModules(modules, startName, withModules) {
       function loadWorklist(startMod) {
         function addMod(curMod, curPath, curName) {
@@ -4813,7 +5640,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       'trace-value': makeFunction(traceValue, "trace-value")
     });
 
-
     function traceValue(loc, val) {
       if(!thisRuntime.hasParam("onTrace")) { return val; }
       var callback = thisRuntime.getParam("onTrace");
@@ -4855,6 +5681,116 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
       'gensym': gensym,
       'random': makeFunction(random, "random"),
+
+      "_spyret_false": false,
+      "_spyret_true": true,
+      "_spyret_pi": jsnums.toRoughnum(Math.PI),
+      "_spyret_e": jsnums.toRoughnum(Math.E),
+
+      "_spyret_apply": makeFunction(_spyret_apply, "_spyret_apply"),
+      "_spyret_compose": makeFunction(_spyret_compose, "_spyret_compose"),
+      "_spyret_identity": makeFunction(_spyret_identity, "_spyret_identity"),
+      "_spyret_procedure_arity": makeFunction(_spyret_procedure_arity, "_spyret_procedure_arity"),
+      "_spyret_void": makeFunction(_spyret_void, "_spyret_void"),
+
+      "_spyret_cosh": makeFunction(_spyret_cosh, "_spyret_cosh"),
+      "_spyret_current_seconds": makeFunction(_spyret_current_seconds, "_spyret_current_seconds"),
+      "_spyret_denominator": makeFunction(_spyret_denominator, "_spyret_denominator"),
+      "_spyret_divide": makeFunction(_spyret_divide, "_spyret_divide"),
+      "_spyret_eq": makeFunction(_spyret_eq, "_spyret_eq"),
+      "_spyret_even_p": makeFunction(_spyret_even_p, "_spyret_even_p"),
+      "_spyret_gcd": makeFunction(_spyret_gcd, "_spyret_gcd"),
+      "_spyret_ge": makeFunction(_spyret_ge, "_spyret_ge"),
+      "_spyret_gt": makeFunction(_spyret_gt, "_spyret_gt"),
+      "_spyret_integer_p": makeFunction(_spyret_integer_p, "_spyret_integer_p"),
+      "_spyret_lcm": makeFunction(_spyret_lcm, "_spyret_lcm"),
+      "_spyret_le": makeFunction(_spyret_le, "_spyret_le"),
+      "_spyret_lt": makeFunction(_spyret_lt, "_spyret_lt"),
+      "_spyret_minus": makeFunction(_spyret_minus, "_spyret_minus"),
+      "_spyret_num_equal_tilde": makeFunction(_spyret_num_equal_tilde, "_spyret_num_equal_tilde"),
+      "_spyret_numerator": makeFunction(_spyret_numerator, "_spyret_numerator"),
+      "_spyret_odd_p": makeFunction(_spyret_odd_p, "_spyret_odd_p"),
+      "_spyret_plus": makeFunction(_spyret_plus, "_spyret_plus"),
+      "_spyret_quotient": makeFunction(_spyret_quotient, "_spyret_quotient"),
+      "_spyret_random": makeFunction(_spyret_random, "_spyret_random"),
+      "_spyret_rational_p": makeFunction(_spyret_rational_p, "_spyret_rational_p"),
+      "_spyret_real_p": makeFunction(_spyret_real_p, "_spyret_real_p"),
+      "_spyret_remainder": makeFunction(_spyret_remainder, "_spyret_remainder"),
+      "_spyret_sgn": makeFunction(_spyret_sgn, "_spyret_sgn"),
+      "_spyret_sinh": makeFunction(_spyret_sinh, "_spyret_sinh"),
+      "_spyret_times": makeFunction(_spyret_times, "_spyret_times"),
+      "_spyret_zero_p": makeFunction(_spyret_zero_p, "_spyret_zero_p"),
+
+      "_spyret_false_p": makeFunction(_spyret_false_p, "_spyret_false_p"),
+      "_spyret_boolean_p": makeFunction(_spyret_boolean_p, "_spyret_boolean_p"),
+      "_spyret_boolean_eq": makeFunction(_spyret_boolean_eq, "_spyret_boolean_eq"),
+
+      "_spyret_list_to_string": makeFunction(_spyret_list_to_string, "_spyret_list_to_string"),
+      "_spyret_string": makeFunction(_spyret_string, "_spyret_string"),
+      "_spyret_string_append": makeFunction(_spyret_string_append, "_spyret_string_append"),
+      "_spyret_string_ci_eq": makeFunction(_spyret_string_ci_eq, "_spyret_string_ci_eq"),
+      "_spyret_string_ci_ge": makeFunction(_spyret_string_ci_ge, "_spyret_string_ci_ge"),
+      "_spyret_string_ci_gt": makeFunction(_spyret_string_ci_gt, "_spyret_string_ci_gt"),
+      "_spyret_string_ci_le": makeFunction(_spyret_string_ci_le, "_spyret_string_ci_le"),
+      "_spyret_string_ci_lt": makeFunction(_spyret_string_ci_lt, "_spyret_string_ci_lt"),
+      "_spyret_string_eq": makeFunction(_spyret_string_eq, "_spyret_string_eq"),
+      "_spyret_string_ge": makeFunction(_spyret_string_ge, "_spyret_string_ge"),
+      "_spyret_string_gt": makeFunction(_spyret_string_gt, "_spyret_string_gt"),
+      "_spyret_string_le": makeFunction(_spyret_string_le, "_spyret_string_le"),
+      "_spyret_string_lt": makeFunction(_spyret_string_lt, "_spyret_string_lt"),
+      "_spyret_string_to_number": makeFunction(_spyret_string_to_number, "_spyret_string_to_number"),
+      "_spyret_substring": makeFunction(_spyret_substring, "_spyret_substring"),
+
+      "_spyret_char_alphabetic_p": makeFunction(_spyret_char_alphabetic_p, "_spyret_char_alphabetic_p"),
+      "_spyret_char_lower_case_p": makeFunction(_spyret_char_lower_case_p, "_spyret_char_lower_case_p"),
+      "_spyret_char_numeric_p": makeFunction(_spyret_char_numeric_p, "_spyret_char_numeric_p"),
+      "_spyret_char_p": makeFunction(_spyret_char_p, "_spyret_char_p"),
+      "_spyret_char_to_integer": makeFunction(_spyret_char_to_integer, "_spyret_char_to_integer"),
+      "_spyret_char_upper_case_p": makeFunction(_spyret_char_upper_case_p, "_spyret_char_upper_case_p"),
+      "_spyret_char_whitespace_p": makeFunction(_spyret_char_whitespace_p, "_spyret_char_whitespace_p"),
+      "_spyret_integer_to_char": makeFunction(_spyret_integer_to_char, "_spyret_integer_to_char"),
+      "_spyret_format": makeFunction(_spyret_format, "_spyret_format"),
+
+      "_spyret_caaar": _spyret_make_cxr("aaa"),
+      "_spyret_caadr": _spyret_make_cxr("aad"),
+      "_spyret_caar": _spyret_make_cxr("aa"),
+      "_spyret_cadar": _spyret_make_cxr("ada"),
+      "_spyret_caddr": _spyret_make_cxr("add"),
+      "_spyret_cadr": _spyret_make_cxr("ad"),
+      "_spyret_car": _spyret_make_cxr("a"),
+      "_spyret_cdaar": _spyret_make_cxr("daa"),
+      "_spyret_cdadr": _spyret_make_cxr("dad"),
+      "_spyret_cdar": _spyret_make_cxr("da"),
+      "_spyret_cddar": _spyret_make_cxr("dda"),
+      "_spyret_cdddr": _spyret_make_cxr("ddd"),
+      "_spyret_cddr": _spyret_make_cxr("dd"),
+      "_spyret_cdr": _spyret_make_cxr("d"),
+
+      "_spyret_first":   _spyret_make_cxr("a"),
+      "_spyret_second":  _spyret_make_cxr("ad"),
+      "_spyret_third":   _spyret_make_cxr("add"),
+      "_spyret_fourth":  _spyret_make_cxr("addd"),
+      "_spyret_fifth":   _spyret_make_cxr("adddd"),
+      "_spyret_sixth":   _spyret_make_cxr("addddd"),
+      "_spyret_seventh": _spyret_make_cxr("adddddd"),
+      "_spyret_eighth":  _spyret_make_cxr("addddddd"),
+
+      "_spyret_append": makeFunction(_spyret_append, "_spyret_append"),
+      "_spyret_map": makeFunction(_spyret_map, "_spyret_map"),
+      "_spyret_andmap": makeFunction(_spyret_andmap, "_spyret_andmap"),
+      "_spyret_ormap": makeFunction(_spyret_ormap, "_spyret_ormap"),
+
+      "_spyret_box": makeFunction(_spyret_box, "_spyret_box"),
+      "_spyret_boxp": mkPred(_spyret_boxp),
+      "_spyret_unbox": makeFunction(_spyret_unbox, "_spyret_unbox"),
+      "_spyret_set_box": makeFunction(_spyret_set_box, "_spyret_set_box"),
+
+      "_spyret_display": makeFunction(_spyret_display, "_spyret_display"),
+
+      "_spyret_error": makeFunction(_spyret_error, "_spyret_error"),
+      "_spyret_check_expect": makeFunction(_spyret_check_expect, "_spyret_check_expect"),
+      "_spyret_check_within": makeFunction(_spyret_check_within, "_spyret_check_within"),
+      "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde, "_spyret_equal_tilde"),
 
       '_plus': makeFunction(plus, "_plus"),
       '_minus': makeFunction(minus, "_minus"),
@@ -4986,7 +5922,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       'printPyretStack': printPyretStack,
 
       'traceValue': traceValue,
-
 
       'traceEnter': traceEnter,
       'traceExit': traceExit,
@@ -5303,6 +6238,5 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
   }
 
   return  {'makeRuntime' : makeRuntime};
-
 
 });
