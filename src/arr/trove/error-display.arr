@@ -24,7 +24,6 @@ data ErrorDisplay:
   | highlight(contents :: ErrorDisplay, locs #|:: List<S.Srcloc>|#, color :: Number)
 end
 
-
 locs = {
   make:  lam(arr):           raw-array-to-list(arr) end,
   make0: lam():              raw-array-to-list([raw-array: ]) end,
@@ -133,4 +132,12 @@ fun ed-nth(n):
         | otherwise:            "ᵗʰ"
       end
     end)
+end
+
+fun map3(f, la, lb, lc):
+  if la.length() == 0:
+    la
+  else:
+    map3(f, la.rest, lb.rest, lc.rest).push(f(la.first, lb.first, lc.first))
+  end
 end
