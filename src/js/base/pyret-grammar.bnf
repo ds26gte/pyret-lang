@@ -35,7 +35,7 @@ tuple-bind-list: bind-tuple* single-tuple-name [SEMI]
 bind-tuple: NAME SEMI
 single-tuple-name: NAME
 
-toplevel-binding: binding 
+toplevel-binding: binding
 # toplevel-binding: [SHADOW] NAME COLONCOLON noparen-arrow-ann
 multi-let-expr: LET let-binding (COMMA let-binding)* (BLOCK|COLON) block END
 let-binding: let-expr | var-expr
@@ -62,7 +62,6 @@ check-expr: (CHECKCOLON|EXAMPLESCOLON) block END
 check-test: binop-expr check-op [PERCENT (PARENSPACE|PARENNOSPACE) binop-expr RPAREN] binop-expr
           | binop-expr check-op-postfix
           | binop-expr
-
 
 data-expr: DATA NAME ty-params COLON [first-data-variant] data-variant* data-sharing where-clause END
 variant-constructor: NAME variant-members
@@ -117,10 +116,11 @@ paren-expr: PARENSPACE binop-expr RPAREN
 
 id-expr: NAME
 
-prim-expr: num-expr | frac-expr | bool-expr | string-expr
+#prim-expr: num-expr | frac-expr | bool-expr | string-expr
+prim-expr: num-expr | bool-expr | string-expr
 
 num-expr: NUMBER
-frac-expr: RATIONAL
+#frac-expr: RATIONAL
 bool-expr: TRUE | FALSE
 string-expr: STRING
 

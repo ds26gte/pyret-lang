@@ -112,13 +112,86 @@ define(["jglr/jglr"], function(E) {
   function anyOf(strs) { return "(?:" + strs.join("|") + ")(?![-_a-zA-Z0-9])"; }
   function op(str) { return "^\\s+" + str + ws_after; }
 
-  const name = new RegExp("^[_a-zA-Z][_a-zA-Z0-9]*(?:-+[_a-zA-Z0-9]+)*", STICKY_REGEXP);
-  const number = new RegExp("^[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
+  //const name = new RegExp("^[_a-zA-Z][_a-zA-Z0-9]*(?:-+[_a-zA-Z0-9]+)*", STICKY_REGEXP);
+  const extended_letter = // letters only from
+    "_a-zA-Z" +        // ascii
+    "\u00C0-\u00D6" + // latin1 supplement
+    "\u00D8-\u00F6" +
+    "\u00F8-\u00FF" +
+    "\u0100-\u0148" + // latin extended A
+    "\u014A-\u017F" +
+    "\u0180-\u01BF" + // latin extended B
+    "\u01CD-\u024F" +
+    "\u0393-\u0394" + // greek (used in math and don't look latin)
+    "\u0398\u039b\u039e\u03a0\u03a3\u03a6" +
+    "\u03a8-\u03a9" +
+    "\u03b1-\u03b8" +
+    "\u03ba-\u03be" +
+    "\u03c0-\u03c4" +
+    "\u03c6-\u03c9" +
+    "\u03d1-\u03d2";
 
-  const badNumber = new RegExp("^~?[+-]?\\.[0-9]+(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
+  const name = new RegExp("^[" + extended_letter + "]" +
+                          "[" + extended_letter + "0-9]*" +
+                          "(?:-+[" + extended_letter + "0-9]+)*", STICKY_REGEXP);
 
-  const roughnum = new RegExp("^~[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
-  const rational = new RegExp("^[-+]?[0-9]+/[0-9]+", STICKY_REGEXP);
+  //const number = new RegExp("^[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
+
+  //const badNumber = new RegExp("^~?[+-]?\\.[0-9]+(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
+  const badNumber = new RegExp("^[+-]?\\.[0-9]+(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
+
+  //const roughnum = new RegExp("^~[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
+  //const rational = new RegExp("^[-+]?[0-9]+/[0-9]+", STICKY_REGEXP);
+
+  // number
+
+  const unsigned_decimal_part = "[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?"
+
+  const unsigned_rational_part = "[0-9]+/[0-9]+"
+
+  const unsigned_mixedfrac_part = "[0-9]+[&]" + unsigned_rational_part;
+
+  const unsigned_rational_or_decimal_part = "(?:" + unsigned_rational_part + "|" +
+    unsigned_decimal_part + ")"
+
+  const unsigned_mixedfrac_rational_or_decimal_part = "(?:" +
+    unsigned_mixedfrac_part + "|" +
+    unsigned_rational_part + "|" +
+    unsigned_decimal_part + ")";
+
+  //const rational_or_decimal_string = "^[-+]?" + unsigned_rational_or_decimal_part
+
+  const rational_or_decimal_string = "^[-+]?" + unsigned_mixedfrac_rational_or_decimal_part;
+
+  const roughnum_string = "^~[-+]?" + unsigned_decimal_part
+
+  const real_unsigned_rect_complexrational_part = unsigned_rational_or_decimal_part +
+    "[-+]" + unsigned_rational_or_decimal_part + "[iIjJ]"
+
+  const mod_unsigned_polar_complexrational_part = unsigned_rational_or_decimal_part +
+    "@[-+]?" + unsigned_rational_or_decimal_part
+
+  const complexrational_string = "^[-+]?(?:" +
+    real_unsigned_rect_complexrational_part + "|" +
+    mod_unsigned_polar_complexrational_part + ")"
+
+  const real_unsigned_rect_complexroughnum_part = unsigned_decimal_part +
+    "[-+]" + unsigned_decimal_part + "[iIjJ]"
+
+  const mod_unsigned_polar_complexroughnum_part = unsigned_decimal_part +
+    "@[-+]?" + unsigned_decimal_part
+
+  const complexroughnum_string = "^~[-+]?(?:" +
+    real_unsigned_rect_complexroughnum_part + "|" +
+    mod_unsigned_polar_complexroughnum_part + ")"
+
+  const number = new RegExp(complexrational_string + "|" +
+                            rational_or_decimal_string + "|" +
+                            complexroughnum_string + "|" +
+                            roughnum_string, STICKY_REGEXP)
+
+  // end number
+
   const parenparen = new RegExp("^\\((?=\\()", STICKY_REGEXP); // NOTE: Don't include the following paren
   const spaceparen = new RegExp("^\\s+\\(", STICKY_REGEXP);
   const ws = new RegExp("^\\s+", STICKY_REGEXP);
@@ -170,6 +243,7 @@ define(["jglr/jglr"], function(E) {
   const opiseqnow = new RegExp(kw("is=~"), STICKY_REGEXP);
   const opisidentical = new RegExp(kw("is<=>"), STICKY_REGEXP);
   const opis = new RegExp(kw("is"), STICKY_REGEXP);
+  const opisroughly = new RegExp(kw("is-roughly"), STICKY_REGEXP);
   const opisnoteq = new RegExp(kw("is-not=="), STICKY_REGEXP);
   const opisnoteqnow = new RegExp(kw("is-not=~"), STICKY_REGEXP);
   const opisnotidentical = new RegExp(kw("is-not<=>"), STICKY_REGEXP);
@@ -268,9 +342,9 @@ define(["jglr/jglr"], function(E) {
     {name: "COLON", val: colon, parenIsForExp: true},
     {name: "BAR", val: bar, parenIsForExp: true},
 
-    {name: "RATIONAL", val: rational},
+    //{name: "RATIONAL", val: rational},
     {name: "NUMBER", val: number},
-    {name: "NUMBER", val: roughnum},
+    //{name: "NUMBER", val: roughnum},
     {name: "LONG_STRING", val: tquot_str},
     {name: "STRING", val: dquot_str},
     {name: "STRING", val: squot_str},
@@ -297,6 +371,7 @@ define(["jglr/jglr"], function(E) {
     {name: "ISEQUALEQUAL", val: opiseq, parenIsForExp: true},
     {name: "ISEQUALTILDE", val: opiseqnow, parenIsForExp: true},
     {name: "ISSPACESHIP", val: opisidentical, parenIsForExp: true},
+    {name: "ISROUGHLY", val: opisroughly, parenIsForExp: true},
     {name: "IS", val: opis, parenIsForExp: true},
     {name: "SATISFIESNOT", val: opsatisfiesnot, parenIsForExp: true},
     {name: "SATISFIES", val: opsatisfies, parenIsForExp: true},
