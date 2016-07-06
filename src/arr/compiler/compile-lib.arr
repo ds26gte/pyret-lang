@@ -83,7 +83,6 @@ j-break = J.j-break
 j-while = J.j-while
 j-for = J.j-for
 
-
 left = E.left
 right = E.right
 type Either = E.Either
@@ -149,8 +148,6 @@ type Locator = {
   _equals :: Method
 }
 
-
-
 fun string-locator(uri :: URI, s :: String):
   {
     method needs-compile(self, _): true end,
@@ -195,6 +192,10 @@ fun get-dependencies(p :: PyretCode, uri :: URI) -> List<CS.Dependency>:
   for map(s from parsed.imports.map(get-import-type)):
     AU.import-to-dep(s)
   end
+end
+
+fun spyret-surface-parse(defs, name):
+  P.spyret-surface-parse(defs, name)
 end
 
 fun get-standard-dependencies(p :: PyretCode, uri :: URI) -> List<CS.Dependency>:
@@ -489,7 +490,7 @@ fun make-standalone(wl, compiled, options) block:
   natives = for fold(natives from empty, w from wl):
     w.locator.get-native-modules().map(_.path) + natives
   end
-  
+
   var failure = false
   static-modules = j-obj(for C.map_list(w from wl):
       loadable = compiled.modules.get-value-now(w.locator.uri())
