@@ -257,7 +257,7 @@ data List<a>:
 
 sharing:
   method _output(self :: List<a>) -> VS.ValueSkeleton: VS.vs-collection("list", self.map(VS.vs-value)) end,
-  
+
   method _plus(self :: List<a>, other :: List<a>) -> List<a>:
     self.append(other)
   end,
@@ -402,6 +402,19 @@ fun remove<a>(lst :: List<a>, elt :: a) -> List<a>:
       remove(lst.rest, elt)
     else:
       link(lst.first, remove(lst.rest, elt))
+    end
+  end
+end
+
+fun _spyret_remove<a>(elt :: a, lst :: List<a>) -> List<a>:
+  doc: ```Returns the list without the element if found, or the whole list if it is not```
+  if is-empty(lst):
+    empty
+  else:
+    if elt == lst.first:
+      lst.rest
+    else:
+      link(lst.first, _spyret_remove(elt, lst.rest))
     end
   end
 end
@@ -660,6 +673,26 @@ fun foldr<a, b>(f :: (a, b -> a), base :: a, lst :: List<b>) -> a:
   end
 end
 
+fun _spyret_foldl<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
+  doc: ```Takes a function, an initial value and a list, and folds the function over the list from the left,
+        starting with the initial value```
+  if is-empty(lst):
+    base
+  else:
+    _spyret_foldl(f, f(lst.first, base), lst.rest)
+  end
+end
+
+fun _spyret_foldr<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
+  doc: ```Takes a function, an initial value and a list, and folds the function over the list from the right,
+        starting with the initial value```
+  if is-empty(lst):
+    base
+  else:
+    f(lst.first, _spyret_foldr(f, base, lst.rest))
+  end
+end
+
 fun fold2<a, b, c>(f :: (a, b, c -> a), base :: a, l1 :: List<b>, l2 :: List<c>) -> a:
   doc: ```Takes a function, an initial value and two lists, and folds the function over the lists in parallel
         from the left, starting with the initial value and ending when either list is empty```
@@ -757,6 +790,42 @@ fun shuffle<a>(lst :: List<a>) -> List<a>:
   end
 end
 
+#for spyret
+fun list-ref<a>(lst :: List<a>, ix :: Number) -> a:
+  lst.get(ix)
+end
+
+#for spyret
+fun list-length<a>(lst :: List<a>) -> Number:
+  lst.length()
+end
+
+#for spyret
+fun list-member<a>(e :: a, lst :: List<a>) -> Boolean:
+  member-now(lst, e)
+end
+
+#for spyret
+fun list-assoc(k, lst):
+  lst.find(lam(c): c.first == k end).or-else(false)
+end
+
+#for spyret
+fun build-list(n :: Number, f :: (Number -> Any)) -> List:
+  fun build-list-helper(m :: Number):
+    if m == n:
+      empty
+    else:
+      build-list-helper(m + 1).push(f(m))
+    end
+  end
+  build-list-helper(0)
+end
+
+#for spyret
+_spyret_null = empty
+_spyret_empty = empty
+
 fun filter-map<a, b>(f :: (a -> Option<b>), lst :: List<a>) -> List<b>:
   cases(List<a>) lst:
     | empty => empty
@@ -777,7 +846,7 @@ fun filter-values<a>(lst :: List<Option<a>>) -> List<a>:
         | some(v) => link(v, filter-values(rest))
       end
   end
-end  
+end
 
 list = {
   make: raw-array-to-list,
