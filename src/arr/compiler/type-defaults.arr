@@ -120,6 +120,117 @@ fun make-default-types() block:
   default-typs.set-now("not", t-arrow([list: t-boolean], t-boolean))
   default-typs.set-now(A.s-global("raise").key(), t-arrow([list: t-top], t-bot))
   default-typs.set-now("hasField", t-arrow([list: t-record(empty), t-string], t-boolean))
+
+  default-typs.set-now(A.s-global("_spyret_false").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_true").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_pi").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_e").key(), t-top)
+
+  default-typs.set-now(A.s-global("_spyret_apply").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_compose").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_identity").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_procedure_arity").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_void").key(), t-top)
+
+  default-typs.set-now(A.s-global("_spyret_cosh").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_current_seconds").key(), t-arrow([list: ], t-number))
+  default-typs.set-now(A.s-global("_spyret_denominator").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_spyret_divide").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_eq").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_even_p").key(), t-arrow([list: t-number], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_gcd").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_ge").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_gt").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_integer_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_lcm").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_le").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_lt").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_minus").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_num_equal_tilde").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_numerator").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_spyret_odd_p").key(), t-arrow([list: t-number], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_plus").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_quotient").key(), t-arrow([list: t-number, t-number], t-number))
+  default-typs.set-now(A.s-global("_spyret_random").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_rational_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_real_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_remainder").key(), t-arrow([list: t-number, t-number], t-number))
+  default-typs.set-now(A.s-global("_spyret_sgn").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_sinh").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_times").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_zero_p").key(), t-arrow([list: t-number], t-boolean))
+
+  default-typs.set-now(A.s-global("_spyret_false_p").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_boolean_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_boolean_eq").key(), t-arrow([list: t-boolean, t-boolean], t-boolean))
+
+  default-typs.set-now(A.s-global("_spyret_list_to_string").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_append").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_ci_eq").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_ci_ge").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_ci_gt").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_ci_le").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_ci_lt").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_eq").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_ge").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_gt").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_le").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_lt").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_string_to_number").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_substring").key(), t-top)
+
+  default-typs.set-now(A.s-global("_spyret_char_alphabetic_p").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_char_lower_case_p").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_char_numeric_p").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_char_p").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_char_to_integer").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_char_upper_case_p").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_char_whitespace_p").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_integer_to_char").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_format").key(), t-top)
+
+  default-typs.set-now(A.s-global("_spyret_caaar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_caadr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_caar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_cadar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_caddr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_cadr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_car").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_cdaar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_cdadr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_cdar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_cddar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_cdddr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_cddr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_cdr").key(), t-arrow([list: t-top], t-top))
+
+  default-typs.set-now(A.s-global("_spyret_first").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_second").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_third").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_fourth").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_fifth").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_sixth").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_seventh").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_spyret_eighth").key(), t-arrow([list: t-top], t-top))
+
+  default-typs.set-now(A.s-global("_spyret_append").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_map").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_andmap").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_ormap").key(), t-top)
+
+  default-typs.set-now(A.s-global("_spyret_box").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_boxp").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_unbox").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_set_box").key(), t-top)
+
+  default-typs.set-now(A.s-global("_spyret_display").key(), t-top)
+
+  default-typs.set-now(A.s-global("_spyret_error").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_check_expect").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_check_within").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_equal_tilde").key(), t-top)
+
   default-typs.set-now(A.s-global("_times").key(), t-number-binop)
   default-typs.set-now(A.s-global("_minus").key(), t-number-binop)
   default-typs.set-now(A.s-global("_divide").key(), t-number-binop)
@@ -314,6 +425,17 @@ module-const-lists = t-module("builtin://lists",
     t-member("fold3", t-forall([list: tva, tvb, tvc, tvd], t-arrow([list: t-arrow([list: tva, tvb, tvc, tvd], tva), tva, mk-list(tvb), mk-list(tvc), mk-list(tvd)], tva))),
     t-member("fold4", t-forall([list: tva, tvb, tvc, tvd, tve], t-arrow([list: t-arrow([list: tva, tvb, tvc, tvd, tve], tva), tva, mk-list(tvb), mk-list(tvc), mk-list(tvd), mk-list(tve)], tva))),
     t-member("fold_n", t-forall([list: tva, tvb], t-arrow([list: t-arrow([list: t-number, tva, tvb], tva), t-number, tva, mk-list(tvb)], tva))),
+    t-member("foldr", t-top),
+    t-member("_spyret_remove", t-top),
+    t-member("_spyret_foldl", t-top),
+    t-member("_spyret_foldr", t-top),
+    t-member("list-ref", t-top),
+    t-member("list-length", t-top),
+    t-member("list-member", t-top),
+    t-member("list-assoc", t-top),
+    t-member("build-list", t-top),
+    t-member("_spyret_null", t-top),
+    t-member("_spyret_empty", t-top),
     t-member("list",
         t-record([list:
               t-member("make", t-forall([list: tva], t-arrow([list: t-array(tva)], mk-list(tva)))),
