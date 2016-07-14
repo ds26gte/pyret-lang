@@ -42,9 +42,9 @@ data FieldFailure:
   | ann-failure(loc, ann, reason) with:
     method render-reason(self, loc, from-fail-arg):
       [ED.error:
-        [ED.para-nospace: ED.text("The annotation at "), draw-and-highlight(self.loc),
+        [ED.para-nospace: ED.text("The annotation at "), draw-and-highlight(loc),
          ED.text(" failed because")],
-        self.reason.render-reason(loc, from-fail-arg)]
+        self.reason.render-reason(self.loc, from-fail-arg)]
     end
   | missing-field(loc, field) with:
     method render-reason(self, loc, from-fail-arg):
@@ -180,14 +180,14 @@ data FailureReason:
     end,
     method render-reason(self, loc, from-fail-arg):
       message = [ED.para:
-        ED.text("Expected to get"), ED.code(ED.text(self.name)),
-        ED.text("because of the annotation at"), draw-and-highlight(loc),
-        ED.text("but got:")]
+        ED.text("Expected to get "), ED.code(ED.text(self.name)),
+        ED.text(" because of the annotation at "), draw-and-highlight(loc),
+        ED.text(" but got:")]
       if from-fail-arg:
         ED.maybe-stack-loc(0, true, 
           lam(l):
             [ED.error: message, ED.embed(self.val),
-              [ED.para: ED.text("called from around"), draw-and-highlight(l)]]
+              [ED.para: ED.text("called from around "), draw-and-highlight(l)]]
           end,
           [ED.error: message, ED.embed(self.val)])
       else:
@@ -259,24 +259,18 @@ data FailureReason:
       [ED.error:
         if loc.is-builtin():
           [ED.para:
-            ED.text("A record annotation, "),
-            ED.code(ED.text(self.name)),
-            ED.text(", in "),
+            ED.text("A record annotation in "),
             ED.loc(loc)]
         else if src-available(loc):
           [ED.sequence:
             [ED.para:
-              ED.text("The record annotation "),
-              ED.code(ED.text(self.name)),
-              ED.text(" in the "),
-              ED.highlight(ED.text("annotation"), [ED.locs: loc], 0)],
+              ED.text("The "),
+              ED.highlight(ED.text("record annotation"), [ED.locs: loc], -1)],
             ED.cmcode(loc)]
         else:
           [ED.para:
-              ED.text("The record annotation, "),
-              ED.code(ED.text(self.name)),
-              ED.text(", at "),
-              ED.loc(loc)]
+            ED.text("The record annotation at "),
+            ED.loc(loc)]
         end,
         [ED.para:
           ED.text("was not satisfied by the value")],
@@ -300,7 +294,7 @@ data FailureReason:
         else: [ED.sequence:] end,
         [ED.para:
           ED.text("because, "),
-          L.fold_n(lam(n, failure):
+          L.map_n(lam(n, failure):
             cases(FieldFailure) failure block:
               | missing-field(fl, ff) =>
                 if src-available(fl):
@@ -337,21 +331,21 @@ data FailureReason:
         if loc.is-builtin():
           [ED.para:
             ED.text("A tuple annotation, "),
-            ED.code(ED.text(self.name)),
+            #ED.code(ED.text(self.name)),
             ED.text(", in "),
             ED.loc(loc)]
         else if src-available(loc):
           [ED.sequence:
             [ED.para:
               ED.text("The tuple annotation "),
-              ED.code(ED.text(self.name)),
+              #ED.code(ED.text(self.name)),
               ED.text(" in the "),
               ED.highlight(ED.text("annotation"), [ED.locs: loc], 0)],
             ED.cmcode(loc)]
         else:
           [ED.para:
               ED.text("The tuple annotation, "),
-              ED.code(ED.text(self.name)),
+              #ED.code(ED.text(self.name)),
               ED.text(", at "),
               ED.loc(loc)]
         end,
@@ -377,7 +371,7 @@ data FailureReason:
         else: [ED.sequence:] end,
         [ED.para:
           ED.text("because, "),
-          L.fold_n(lam(n, failure):
+          L.map_n(lam(n, failure):
             cases(FieldFailure) failure block:
               | missing-field(fl, ff) =>
                 if src-available(fl):
@@ -394,8 +388,9 @@ data FailureReason:
                     ED.loc(fl)]
                 end
               | field-failure(_, _, _) => failure.render-reason(loc, from-fail-arg)
+              | ann-failure(_, _, _) => failure.render-reason(loc, from-fail-arg)
             end
-          end, 0, self.anns-failures)]]
+          end, 0, self.anns-failures) ^ ED.bulleted-sequence]]
     end,
     method render-reason(self, loc, from-fail-arg):
       [ED.error:
