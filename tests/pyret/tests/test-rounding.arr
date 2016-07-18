@@ -1,4 +1,4 @@
-fun round-half-to-even(n):
+fun round-half-to-even(n) block:
   n-neg = (n < 0)
   n-abs = num-exact(num-abs(n))
   var n-round = num-round(n-abs)
