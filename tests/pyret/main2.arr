@@ -32,3 +32,8 @@ import file("./tests/test-include.arr") as _
 import file("./tests/test-examples.arr") as _
 import file("./tests/test-string-dict.arr") as _
 import file("./tests/test-dup-names.arr") as _
+import file("./tests/test-phys-math.arr") as _
+import file("./tests/test-roughnum.arr") as _
+import file("./tests/test-adaptive-simpson.arr") as _
+import file("./tests/test-rounding.arr") as _
+import file("./tests/test-within.arr") as _
