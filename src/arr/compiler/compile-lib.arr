@@ -108,6 +108,7 @@ type ModuleResult = Any
 type Provides = CS.Provides
 
 type Locator = {
+  dialect :: (-> String),
 
   # In milliseconds-since-epoch format
   get-modified-time :: (-> Number),
@@ -150,6 +151,7 @@ type Locator = {
 
 fun string-locator(uri :: URI, s :: String):
   {
+    method dialect(self): "pyret" end,
     method needs-compile(self, _): true end,
     method get-modified-time(self): 0 end,
     method get-options(self, options): options end,
@@ -348,7 +350,7 @@ fun compile-module(locator :: Locator, provide-map :: SD.StringDict<CS.Provides>
       end
       ast := nothing
       ast-ended := AU.wrap-toplevels(ast-ended)
-      var wf = W.check-well-formed(ast-ended)
+      var wf = W.check-well-formed(ast-ended, locator.dialect())
       ast-ended := nothing
       when options.collect-all: ret := phase("Checked well-formedness", wf, ret) end
       checker = if options.check-mode and not(is-builtin-module(locator.uri())):
