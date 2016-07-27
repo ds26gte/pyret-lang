@@ -1597,6 +1597,22 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         }, "print");
       }, "print");
 
+    var displayFunc = function(val) {
+        if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["display"], 1, $a); }
+        if (isString(val)) {
+          theOutsideWorld.stdout(val);
+          return val;
+        }
+        else {
+          return thisRuntime.safeCall(function() {
+            return toReprJS(val, ReprMethods._tostring);
+          }, function(repr) {
+            theOutsideWorld.stdout(repr);
+            return val;
+          });
+        }
+    };
+
     var display = makeFunction(
       /**
          Prints the value to the world by passing the repr to stdout
@@ -1885,7 +1901,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
                 }
               } else if(isTuple(curLeft) && isTuple(curRight)) {
                 if (curLeft.vals.length !== curRight.vals.length) {
-                  toCompare.curAns = ffi.notEqual.app(current.path, curLeft, curRight);
+                  toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight);
                 } else {
                   for (var i = 0; i < curLeft.vals.length; i++) {
                     toCompare.stack.push({
@@ -4412,7 +4428,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         }
         errstring += _spyret_format.apply(null, args);
       }
-      ffi.throwMessageException(errstring);
+      thisRuntime.ffi.throwMessageException(errstring);
     };
 
     var _spyret_check_expect = function(actVal, expVal) {
@@ -4494,7 +4510,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["even?"], 1, $a); }
       thisRuntime.checkNumber(n);
       if (!jsnums.isInteger(n)) {
-        ffi.throwMessageException("even?: " + n + " is not an integer");
+        thisRuntime.ffi.throwMessageException("even?: " + n + " is not an integer");
       }
       return jsnums.equalsAnyZero(jsnums.modulo(n, 2));
     };
@@ -4503,7 +4519,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["odd?"], 1, $a); }
       thisRuntime.checkNumber(n);
       if (!jsnums.isInteger(n)) {
-        ffi.throwMessageException("odd?: " + n + " is not an integer");
+        thisRuntime.ffi.throwMessageException("odd?: " + n + " is not an integer");
       }
       return !jsnums.equalsAnyZero(jsnums.modulo(n, 2));
     };
@@ -4706,7 +4722,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (n) {
         checkNumber(n);
         if (!(jsnums.isInteger(n) && jsnums.isPositive(n))) {
-          ffi.throwMessageException("random: " + n + " is not a positive integer")
+          thisRuntime.ffi.throwMessageException("random: " + n + " is not a positive integer")
         }
         return makeNumber(Math.floor(jsnums.toFixnum(n) * rng()));
       } else {
@@ -4891,7 +4907,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       } else if (jsnums.equals(b, 16)) {
         s = "#x" + s;
       } else if (!jsnums.equals(b, 10)) {
-        ffi.throwMessageException("string->number: base " + b + " is not 2, 8, 10, or 16");
+        thisRuntime.ffi.throwMessageException("string->number: base " + b + " is not 2, 8, 10, or 16");
       }
       return jsnums.fromSchemeString(s);
 
@@ -4921,9 +4937,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
     var _spyret_list_to_string = function(L) {
       thisRuntime.checkList(L);
-      var ra = ffi.toArray(L);
+      var ra = thisRuntime.ffi.toArray(L);
       if (!ra.every(function(elt) { return _spyret_single_char_string_p(elt); })) {
-        ffi.throwMessageException("list->string: " + L + " is not a list of characters");
+        thisRuntime.ffi.throwMessageException("list->string: " + L + " is not a list of characters");
       } else {
         return thisRuntime.makeString(ra.join(""));
       }
@@ -4993,19 +5009,19 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         if (c === '~') {
           i++;
           if (i === n) {
-            ffi.throwMessageException("format: format " + f + " too short");
+            thisRuntime.ffi.throwMessageException("format: format " + f + " too short");
           }
           c = f[i];
           if (c === '~') {
             s += c;
           } else if (j >= argsn) {
-            ffi.throwMessageException("format: format " + f + " too long");
+            thisRuntime.ffi.throwMessageException("format: format " + f + " too long");
           } else if (c === 'a') {
             s += arguments[j]; j++;
           } else if (c === 's') {
             s += "\"" + arguments[j] + "\""; j++;
           } else {
-            ffi.throwMessageException("format: unknown directive " + c);
+            thisRuntime.ffi.throwMessageException("format: unknown directive " + c);
           }
         } else {
           s += c;
@@ -5013,7 +5029,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         i++;
       }
       if (j < argsn) {
-        ffi.throwMessageException("format: format " + f + " too short");
+        thisRuntime.ffi.throwMessageException("format: format " + f + " too short");
       }
       return s;
     };
@@ -5028,8 +5044,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         while (s !== "") {
           x = s[0];
           s = s.substring(1);
-          if (!ffi.isList(l)) {
-            ffi.throwMessageException("cxr: " + l + " is not a list");
+          if (!thisRuntime.ffi.isList(l)) {
+            thisRuntime.ffi.throwMessageException("cxr: " + l + " is not a list");
           } else if (x === "a") {
             l = thisRuntime.getField(l, "first");
           } else if (x === "d") {
@@ -5046,9 +5062,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       for (var i = 0; i < arguments.length; i++) {
         L = arguments[i];
         thisRuntime.checkList(L);
-        result = result.concat(ffi.toArray(L));
+        result = result.concat(thisRuntime.ffi.toArray(L));
       }
-      return ffi.makeList(result);
+      return thisRuntime.ffi.makeList(result);
     };
 
     var _spyret_apply_variadic_fun = function(f, args) {
@@ -5066,8 +5082,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       checkFunction(f);
       var argsn = arguments.length - 1;
       var args = arguments[argsn];
-      checkList(args);
-      var rargs = ffi.toArray(args);
+      thisRuntime.checkList(args);
+      var rargs = thisRuntime.ffi.toArray(args);
       for (var i = argsn - 1; i >= 1; i--) {
         rargs.unshift(arguments[i]);
       }
@@ -5078,7 +5094,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["apply"], 2, $a); }
       checkFunction(f);
       checkList(args);
-      return f.app.apply(null, ffi.toArray(args));
+      return f.app.apply(null, thisRuntime.ffi.toArray(args));
     };
 
     var _spyret_compose = function(f, g) {
@@ -5104,7 +5120,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       */
       var arg_arrays = new Array(num_arg_arrays);
       for (var i = 0; i < num_arg_arrays; i++) {
-        arg_arrays[i] = ffi.toArray(arguments[i+1]);
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+1]);
       }
       var arg_array_length = arg_arrays[0].length; // check each arg array same length?
       var result = new Array(arg_array_length);
@@ -5116,7 +5132,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         }
         result[j] = f.app.apply(null, jth_arg_selection);
       }
-      return ffi.makeList(result);
+      return thisRuntime.ffi.makeList(result);
     };
 
     var _spyret_andmap = function(f) {
@@ -5127,7 +5143,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
       var arg_arrays = new Array(num_arg_arrays);
       for (var i = 0; i < num_arg_arrays; i++) {
-        arg_arrays[i] = ffi.toArray(arguments[i+1]);
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+1]);
       }
       var arg_array_length = arg_arrays[0].length;
       var result = true;
@@ -5153,7 +5169,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
       var arg_arrays = new Array(num_arg_arrays);
       for (var i = 0; i < num_arg_arrays; i++) {
-        arg_arrays[i] = ffi.toArray(arguments[i+1]);
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+1]);
       }
       var arg_array_length = arg_arrays[0].length;
       var result = false;
