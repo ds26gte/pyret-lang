@@ -4315,6 +4315,16 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       thisRuntime.checkNumber(n);
       return thisRuntime.makeNumberBig(jsnums.toRoughnum(n, NumberErrbacks));
     }
+    var num_to_complexrational = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-to-complexrational"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeNumberBig(jsnums.toComplexRational(n));
+    }
+    var num_to_complexroughnum = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-to-complexroughnum"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeNumberBig(jsnums.toComplexRoughnum(n));
+    }
     var num_to_fixnum = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-to-fixnum"], 1, $a); }
       thisRuntime.checkNumber(n);
@@ -5844,6 +5854,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       'num-exact': makeFunction(num_exact, "num-exact"),
       'num-to-rational': makeFunction(num_to_rational, "num-to-rational"),
       'num-to-roughnum': makeFunction(num_to_roughnum, "num-to-roughnum"),
+      'num-to-complexrational': makeFunction(num_to_complexrational, "num-to-complexrational"),
+      'num-to-complexroughnum': makeFunction(num_to_complexroughnum, "num-to-complexroughnum"),
       'num-to-fixnum': makeFunction(num_to_fixnum, "num-to-fixnum"),
       'num-is-integer': makeFunction(num_is_integer, "num-is-integer"),
       'num-is-rational': makeFunction(num_is_rational, "num-is-rational"),

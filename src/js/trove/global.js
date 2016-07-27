@@ -107,6 +107,8 @@
       "num-exact": "NumUnop",
       "num-to-rational": "NumUnop",
       "num-to-roughnum": "NumUnop",
+      "num-to-complexrational": "NumUnop",
+      "num-to-complexroughnum": "NumUnop",
       "num-to-fixnum": "NumUnop",
 
       "num-expt": "NumBinop",
