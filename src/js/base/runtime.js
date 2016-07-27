@@ -2720,9 +2720,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       var that = this;
       if(!isTuple(val)) {
         return thisRuntime.ffi.contractFail(
-          makeSrcloc(compilerLoc),
-          thisRuntime.ffi.makeTypeMismatch(val, "Tuple")
-        );
+            makeSrcloc(compilerLoc),
+            thisRuntime.ffi.makeTypeMismatch(val, "Tuple")
+          );
       }
       if(that.anns.length != val.vals.length) {
         //return ffi.throwMessageException("lengths not equal");
@@ -2762,12 +2762,12 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.ffi.contractFail(
         makeSrcloc(compilerLoc),
         thisRuntime.ffi.makeTupleAnnsFail(val, thisRuntime.ffi.makeList([
-          thisRuntime.ffi.makeAnnFailure(
-            makeSrcloc(loc),
-            ann,
-            getField(result, "reason")
-          )
-        ]))
+            thisRuntime.ffi.makeAnnFailure(
+              makeSrcloc(loc),
+              ann,
+              getField(result, "reason")
+            )
+          ]))
       );
     };
 

@@ -1,11 +1,5 @@
 import parse-pyret as P
 import pprint as PP
-import error as E
-
-check "parse and print":
-  x = P.surface-parse("{1; 2}", "test")
-  x.tosource().pretty(80) is [list: "{ 1; 2 }"]
-end
 
 
 check "basic tuple access":
@@ -14,9 +8,6 @@ check "basic tuple access":
   x.{0} is 1
   x.{1} is 3
   x.{2} is 10
-  #|   x.{10000} raises "Index too large"
-   x.{3} raises "lookup-too-large"
-   y.{0} raises "lookup-non-tuple" |#
 end 
 
 
@@ -38,7 +29,11 @@ end
 
 check "nested tuple equals":
   x = {124;152;12}
+  
+  w :: {Number;Number;Number} = x
+  x is {124;152;12}
   y = {151; x; 523}
+  
   z = {412; 262; 652; y; 251; x}
   z.{5} is x
   z.{5} is {124;152;12}
@@ -49,34 +44,7 @@ check "nested tuple equals":
   z is c
 end
 
-check "cyclic tuple equals":
-  a1 = [array: 125, 513, 51]
-  a2 = [array: a1, 51]
-  a1.set-now(0, a2)
-  x = {124; a1; 125}
-  a3 = a1
-  y = {124; a3; 125}
-  x is y
-  x is=~ y
-  x is-not<=> y
-  b1 = [array: 125, 513, 51]
-  b2 = [array: b1, 51]
-  b1.set-now(0, b2)
-  w = {124; b1; 125}
-  x is-not w
-  x is=~ w
-  x is-not<=> w
-end
 
-check "parse and print tuple-get":
-  x = P.surface-parse("tup.{2}", "test")
-  x.tosource().pretty(80) is [list: "tup.{2}"]
-end
-
-check "pase and print tuple-let":
-  x = P.surface-parse("{x;y} = {1;2}", "test")
-  x.tosource().pretty(80) is [list: "{ x; y } = { 1; 2 }"]
-end
 
 check "tuple binding":
   {a;b;c;d;e} = {10; 214; 124; 62; 12}
@@ -92,19 +60,8 @@ check "tuple binding":
   x is 124
   y is 624
   z is 15
-
-  fun bad-bind():
-    {shadow a; shadow b} = {1;2;3;4;5}
-    nothing
-  end
-
-  bad-bind() raises "tup-length-mismatch"
 end
 
-check "parse and print type checker":
-  x = P.surface-parse("fun f(tup:: {Number; String; Number}): tup.{0} end", "test")
-  x.tosource().pretty(80) is [list: "fun f(tup :: { Number; String; Number }): tup.{0} end"]
-end
 
 
 check "annotations for tuple":
@@ -112,18 +69,14 @@ check "annotations for tuple":
   f({4; "hi"; 235}) is "hi"
 end 
 
-check "parse and print tuple-binding":
-  x = P.surface-parse("for each({k;v;} from elts): k end", "test")
-  x.tosource().pretty(80) is [list: "for each({ k; v } from elts) -> Any: k end"]
-end
 
-data tuples:
-  | tuple1(w, one)
-  | tuple2(two)
+data tuples<A,B,C>:
+  | tuple1(w :: A, one :: B)
+  | tuple2(two :: C)
 end
 
 
-check "tuple deconstruction":
+check "tuple decunstruction":
   fun f(elts) block:
     var sum = 0
     for each({k;v;} from elts):
@@ -161,16 +114,16 @@ check "tuple deconstruction":
 
   cases-test(tuple1("hi", {"hello"; "there"})) is "hellothere"
 
-  point-methods = {
-    method dist(self, {x;y;}):
-      ysquared = num-expt(y - self.pt.{1}, 2)
-      xsquared = num-expt(x - self.pt.{0}, 2)
-      num-sqrt(ysquared + xsquared)
-    end
-  }
 
   fun make-point(x, y):
-    point-methods.{ pt: {x;y} }
+    {
+      method dist(self, {shadow x; shadow y;}):
+        ysquared = num-expt(y - self.pt.{1}, 2)
+        xsquared = num-expt(x - self.pt.{0}, 2)
+        num-sqrt(ysquared + xsquared)
+      end,
+      pt: {x;y}
+    }
   end
 
   check:

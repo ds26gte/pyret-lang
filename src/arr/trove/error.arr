@@ -693,9 +693,7 @@ data RuntimeError:
           [ED.para:
             ED.text("The tuple binding statement in "),
             ED.loc(self.loc),
-            ED.text(" failed because the right hand side did not evaluate to a tuple with a value at position "),
-            ED.embed(self.index),
-            ED.text(":")],
+            ED.text(" failed because the binding was given a non-tuple value: ")],
           ED.embed(self.non-tup),
           please-report-bug()]
       else if src-available(self.loc):
@@ -704,17 +702,14 @@ data RuntimeError:
             [ED.error:
               ed-intro("tuple binding statement", self.loc, -1),
               ED.cmcode(self.loc),
-              [ED.para:
-                ED.text("failed because the "),
-                ED.highlight(ED.text("right hand side"), [ED.locs: ast.tup.l], 0),
-                ED.text(" did not evaluate to a tuple:")],
+              [ED.para: ED.text("failed because the binding was given a non-tuple value:")],
               ED.embed(self.non-tup)]
           | none      =>
             [ED.error:
               [ED.para:
                 ED.text("The tuple binding statement in "),
                 ED.loc(self.loc),
-                ED.text(" failed because the right hand side did not evaluate to a tuple:")],
+                ED.text(" failed because the binding was given a non-tuple value:")],
               ED.embed(self.non-tup)]
         end
       else:
@@ -722,7 +717,7 @@ data RuntimeError:
           [ED.para:
             ED.text("The tuple binding statement in "),
             ED.loc(self.loc),
-            ED.text(" failed because the right hand side did not evaluate to a tuple:")],
+            ED.text(" failed because the binding was given a non-tuple value:")],
           ED.embed(self.non-tup)]
       end
     end,
@@ -753,7 +748,7 @@ data RuntimeError:
             ED.loc(self.loc),
             ED.text("  failed because "),
             ED.ed-components(self.desiredLength),
-            ED.text(" are expected to be bound to values, but the right hand side evaluated to a tuple containing "),
+            ED.text(" are expected to be bound to values, but the binding was given a tuple containing "),
             ED.ed-components(self.els),
             ED.text(":")],
           ED.embed(self.tup),
@@ -766,10 +761,9 @@ data RuntimeError:
               ED.cmcode(self.loc),
               [ED.para:
                 ED.text("failed because "),
-                ED.highlight(ED.ed-names(self.desiredLength), ast.names.map(_.l), 0),
-                ED.text(" are expected to be bound to values, but the "),
-                ED.highlight(ED.text("right hand side"), [ED.locs: ast.tup.l], 1),
-                ED.text(" evaluated to a tuple containing "),
+                ED.highlight(ED.ed-names(self.desiredLength), ast.fields.map(_.l), 0),
+                ED.text(" are expected to be bound to values, but the binding was given "),
+                ED.text(" a tuple containing "),
                 ED.ed-components(self.length),
                 ED.text(":")],
               ED.embed(self.tup)]
@@ -780,7 +774,7 @@ data RuntimeError:
               [ED.para:
                 ED.text("failed because "),
                 ED.embed(self.desiredLength),
-                ED.ed-components(" are expected to be bound to values, but the right hand side evaluated to a tuple containing "),
+                ED.ed-components(" are expected to be bound to values, but the binding was given a tuple containing "),
                 ED.ed-components(self.length),
                 ED.text(":")],
               ED.embed(self.tup)]
@@ -792,7 +786,7 @@ data RuntimeError:
             ED.loc(self.loc),
             ED.text("  failed because "),
             ED.ed-components(self.desiredLength),
-            ED.text(" are expected to be bound to values, but the right hand side evaluated to a tuple containing "),
+            ED.text(" are expected to be bound to values, but the binding was given a tuple containing "),
             ED.ed-components(self.length),
             ED.text(":")],
           ED.embed(self.tup)]
@@ -806,7 +800,7 @@ data RuntimeError:
             ED.loc(self.loc),
             ED.text("  failed because "),
             ED.ed-components(self.desiredLength),
-            ED.text(" are expected to be bound to values, but the right hand side evaluated to a tuple containing "),
+            ED.text(" are expected to be bound to values, but the binding was given a tuple containing "),
             ED.ed-components(self.length),
             ED.text(":")],
           ED.embed(self.tup),
@@ -822,7 +816,7 @@ data RuntimeError:
             ED.ed-components(self.length),
             ED.text(":")],
           ED.embed(self.tup)]
-      end
+      end 
     end
   | lookup-non-object(loc, non-obj, field :: String) with:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
