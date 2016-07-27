@@ -48,6 +48,7 @@ end
 fun make-builtin-js-locator(basedir, builtin-name):
   raw = B.builtin-raw-locator(P.join(basedir, builtin-name))
   {
+    method dialect(_): "pyret" end,
     method needs-compile(_, _): false end,
     method get-modified-time(self):
       F.file-times(P.join(basedir, builtin-name + ".js")).mtime
@@ -98,6 +99,7 @@ fun make-builtin-arr-locator(basedir, builtin-name):
   path = P.join(basedir, builtin-name + ".arr")
   var ast = nothing
   {
+    method dialect(self): "pyret" end,
     method get-modified-time(self):
       F.file-times(path).mtime
     end,

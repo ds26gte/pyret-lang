@@ -268,6 +268,7 @@ fun make-repl<a>(
     extras-now = extra-imports
     globals-now = globals
     {
+      method dialect(self): "pyret" end,
       method needs-compile(self, provs): true end,
       method get-modified-time(self): 0 end,
       method get-options(self, options): options end,
@@ -304,6 +305,7 @@ fun make-repl<a>(
     extras-now = extra-imports
     globals-now = globals
     {
+      method dialect(self): "spyret" end,
       method needs-compile(self, provs): true end,
       method get-modified-time(self): 0 end,
       method get-options(self, options): options end,
@@ -336,6 +338,7 @@ fun make-repl<a>(
       ast
     end
     {
+      method dialect(self): "pyret" end,
       method needs-compile(self, provs): true end,
       method get-modified-time(self): 0 end,
       method get-options(self, options): options end,
@@ -368,6 +371,7 @@ fun make-repl<a>(
       ast
     end
     {
+      method dialect(self): "spyret" end,
       method needs-compile(self, provs): true end,
       method get-modified-time(self): 0 end,
       method get-options(self, options): options end,

@@ -91,6 +91,7 @@ fun get-cached-if-available(basedir, loc) block:
     static-path = saved-path + "-static"
     raw = B.builtin-raw-locator(static-path)
     {
+      method dialect(_): "pyret" end,
       method needs-compile(_, _): false end,
       method get-modified-time(self):
         F.file-times(static-path + ".js").mtime

@@ -12,6 +12,7 @@ fun string-to-locator(program :: String) block:
   name = "compile-helper-program-" + tostring(i)
   i := i + 1
   {
+    method dialect(self): "pyret" end,
     method needs-compile(self, provs): true end,
     method get-modified-time(self): 0 end,
     method get-options(self, options): options end,
