@@ -421,7 +421,18 @@ data CompileError:
     end
   | tuple-get-bad-index(l, tup, index, index-loc) with:
     method render-fancy-reason(self):
-      if self.index < 0:
+      if not(num-is-integer(self.index)):
+        [ED.error:
+          [ED.para:
+            ED.text("A "),
+            ED.highlight(ED.text("tuple indexing"), [list: self.l], -1),
+            ED.text(" expression")],
+          ED.cmcode(self.l),
+          [ED.para:
+            ED.text("cannot extract a "),
+            ED.highlight(ED.text("non-integer position"),[list: self.index-loc],0),
+            ED.text(".")]]
+      else if self.index < 0:
         [ED.error:
           [ED.para:
             ED.text("A "),
@@ -431,8 +442,6 @@ data CompileError:
           [ED.para:
             ED.text("cannot extract a "),
             ED.highlight(ED.text("negative position"),[list: self.index-loc],0),
-            ED.text(" from a "),
-            ED.highlight(ED.text("tuple"),[list: self.tup.l],1),
             ED.text(".")]]
       else:
         [ED.error:
@@ -444,13 +453,17 @@ data CompileError:
           [ED.para:
             ED.text("cannot extract an "),
             ED.highlight(ED.text("index"),[list: self.index-loc],0),
-            ED.text(" that large from a "),
-            ED.highlight(ED.text("tuple"),[list: self.tup.l],1),
-            ED.text(". There are no tuples that big.")]]
+            ED.text(" that large. There are no tuples that big.")]]
       end
     end,
     method render-reason(self):
-      if self.index < 0:
+      if not(num-is-integer(self.index)):
+        [ED.error:
+          [ED.para:
+            ED.text("The tuple indexing expression at "),
+            ED.loc(self.l),
+            ED.text(" was given an invalid, non-integer index.")]]
+      else if self.index < 0:
         [ED.error:
           [ED.para:
             ED.text("The tuple indexing expression at "),
@@ -1048,17 +1061,17 @@ data CompileError:
           [ED.error:
             [ED.para:
               ED.text("The declaration of the identifier named "),
-              ED.highlight(ED.text(self.id), [list: self.new-loc], new-loc-color),
+              ED.highlight(ED.code(ED.text(self.id)), [list: self.new-loc], new-loc-color),
               ED.text(" is preceeded in the same scope by a declaration of an identifier also named "),
-              ED.highlight(ED.text(self.id), [list: self.old-loc], old-loc-color),
+              ED.highlight(ED.code(ED.text(self.id)), [list: self.old-loc], old-loc-color),
               ED.text(".")]]
         | srcloc(_, _, _, _, _, _, _) =>
           [ED.error:
             [ED.para:
               ED.text("The declaration of the identifier named "),
-              ED.highlight(ED.text(self.id), [list: self.new-loc], new-loc-color),
+              ED.highlight(ED.code(ED.text(self.id)), [list: self.new-loc], new-loc-color),
               ED.text(" is preceeded in the same scope by a declaration of an identifier also named "),
-              ED.highlight(ED.text(self.id), [list: self.old-loc], old-loc-color),
+              ED.highlight(ED.code(ED.text(self.id)), [list: self.old-loc], old-loc-color),
               ED.text(".")]]
       end
     end,
@@ -1095,9 +1108,9 @@ data CompileError:
       [ED.error:
         [ED.para:
           ED.text("The declaration of the field named "),
-          ED.highlight(ED.text(self.id), [list: self.new-loc], new-loc-color),
+          ED.highlight(ED.code(ED.text(self.id)), [list: self.new-loc], new-loc-color),
           ED.text(" is preceeded by declaration of an field also named "),
-          ED.highlight(ED.text(self.id), [list: self.old-loc], old-loc-color),
+          ED.highlight(ED.code(ED.text(self.id)), [list: self.old-loc], old-loc-color),
           ED.text(".")],
         [ED.para: ED.text("You need to pick a different name for one of them.")]]
     end,
@@ -1372,9 +1385,9 @@ data CompileError:
       [ED.error:
         [ED.para:
           ED.text("A variant may not have the same name as any other variant in the type, but the declaration of a variant named "),
-          ED.code(ED.highlight(ED.text(self.id), [list: self.found], 0)),
+          ED.code(ED.highlight(ED.code(ED.text(self.id)), [list: self.found], 0)),
           ED.text(" is preceeded by a declaration of a variant also named "),
-          ED.code(ED.highlight(ED.text(self.id), [list: self.previous], 1)),
+          ED.code(ED.highlight(ED.code(ED.text(self.id)), [list: self.previous], 1)),
           ED.text(".")]]
     end,
     method render-reason(self):
@@ -1395,9 +1408,9 @@ data CompileError:
       [ED.error:
         [ED.para:
           ED.text("A variant may not be matched more than once in a cases expression, but the branch matching the variant "),
-          ED.code(ED.highlight(ED.text(self.id), [list: self.found], 0)),
+          ED.code(ED.highlight(ED.code(ED.text(self.id)), [list: self.found], 0)),
           ED.text(" is preceeded by a branch also matching "),
-          ED.code(ED.highlight(ED.text(self.id), [list: self.previous], 1)),
+          ED.code(ED.highlight(ED.code(ED.text(self.id)), [list: self.previous], 1)),
           ED.text(".")]]
     end,
     method render-reason(self):
@@ -1420,11 +1433,11 @@ data CompileError:
           ED.text("The type checker rejected your program because the "),
           ED.highlight(ED.text("cases expression"),[list: self.cases-loc], 0),
           ED.text(" expects that all of its branches have a variant of the same name in the data-type "),
-          ED.text(self.data-type.name),
+          ED.code(ED.text(self.data-type.name)),
           ED.text(". However, no variant named "),
           ED.code(ED.highlight(ED.text(self.branch.name), [list: self.branch.pat-loc], 1)),
           ED.text(" exists in "),
-          ED.text(self.data-type.name),
+          ED.code(ED.text(self.data-type.name)),
           ED.text("'s "),
           ED.highlight(ED.text("variants"),self.data-type.variants.map(_.l), 2),
           ED.text(":")],
@@ -1437,14 +1450,14 @@ data CompileError:
           ED.text("The type checker rejected your program because the cases expression at "),
           ED.loc(self.cases-loc),
           ED.text(" expects that all of its branches have a variant of the same name in the data-type "),
-          ED.text(self.data-type.name),
+          ED.code(ED.text(self.data-type.name)),
           ED.text(". However, no variant named "),
           ED.code(ED.text(self.branch.name)),
           ED.text(" (mentioned in the branch at "),
           ED.loc(self.branch.pat-loc),
           ED.text(")"),
           ED.text(" exists in the type "),
-          ED.text(self.data-type.name),
+          ED.code(ED.text(self.data-type.name)),
           ED.text("'s variants:")],
          ED.bulleted-sequence(self.data-type.variants.map(_.name).map(ED.text))]
     end
