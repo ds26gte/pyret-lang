@@ -163,7 +163,9 @@ define(["jglr/jglr"], function(E) {
 
   const rational_or_decimal_string = "^[-+]?" + unsigned_mixedfrac_rational_or_decimal_part;
 
-  const roughnum_string = "^~[-+]?" + unsigned_decimal_part
+  //const roughnum_string = "^~[-+]?" + unsigned_decimal_part
+
+  const roughnum_string = "^~[-+]?" + unsigned_mixedfrac_rational_or_decimal_part
 
   const real_unsigned_rect_complexrational_part = unsigned_rational_or_decimal_part +
     "[-+]" + unsigned_rational_or_decimal_part + "[iIjJ]"

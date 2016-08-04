@@ -2813,10 +2813,13 @@ define(function() {
   //
 
   var rationalRegexp = new RegExp("^([+-]?\\d+)/(\\d+)$");
-  var mixedfracRegexp = new RegExp("^([+-]?\\d+)[_](\\d+)/(\\d+)$");
+  var mixedfracRegexp = new RegExp("^([+-]?\\d+)[&](\\d+)/(\\d+)$");
   var digitRegexp = new RegExp("^[+-]?\\d+$");
   var flonumRegexp = new RegExp("^([-+]?)(\\d+\)((?:\\.\\d*)?)((?:[Ee][-+]?\\d+)?)$");
-  var roughnumRegexp = new RegExp("^~([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)$");
+
+  var roughnumMixedfracRegexp = new RegExp("^~([+-]?\\d+)[&](\\d+)/(\\d+)$");
+  var roughnumRatRegexp = new RegExp("^~([-+]?\\d+)/(\\d+)$");
+  var roughnumDecRegexp = new RegExp("^~([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)$");
 
   var complexroughnumRectRegexp = new RegExp("^~([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)([-+]\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)[iIjJ]$");
   var complexroughnumPolarRegexp = new RegExp("^~([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)@([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)$");
@@ -2903,7 +2906,17 @@ define(function() {
       return Rational.makeInstance(finalNum, finalDen);
     }
 
-    aMatch = x.match(roughnumRegexp);
+    aMatch = x.match(roughnumMixedfracRegexp);
+    if (aMatch) {
+      return Rational.makeInstance(fromString(aMatch[2]), fromString(aMatch[3]), fromString(aMatch[1])).toRoughnum();
+    }
+
+    aMatch = x.match(roughnumRatRegexp);
+    if (aMatch) {
+      return Rational.makeInstance(fromString(aMatch[1]), fromString(aMatch[2])).toRoughnum();
+    }
+
+    aMatch = x.match(roughnumDecRegexp);
     if (aMatch) {
       return Roughnum.makeInstance(Number(aMatch[1]));
     }
