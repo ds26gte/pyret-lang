@@ -8,13 +8,14 @@
     { "import-type": "builtin", name: "error" },
     { "import-type": "builtin", name: "srcloc" },
     { "import-type": "builtin", name: "contracts" },
+    { "import-type": "builtin", name: "string-dict" },
     // skipping checker
     { "import-type": "builtin", name: "error-display" },
     { "import-type": "builtin", name: "valueskeleton" }
   ],
   provides: {},
   nativeRequires: [],
-  theModule: function(runtime, namespace, uri, L, Se, O, E, EQ, ERR, S, CON, /* CH, */ ED, VS) {
+  theModule: function(runtime, namespace, uri, L, Se, O, E, EQ, ERR, S, CON, SDict, /* CH, */ ED, VS) {
     var gf = runtime.getField;
     L = gf(L, "values");
     Se = gf(Se, "values");
@@ -24,6 +25,7 @@
     ERR = gf(ERR, "values");
     S = gf(S, "values");
     CON = gf(CON, "values");
+    SDict = gf(SDict, "values");
     ED = gf(ED, "values");
     VS = gf(VS, "values");
     var link = gf(L, "link");
@@ -87,6 +89,30 @@
     var checkTestResult = runtime.makeCheckType(isTestResult, "TestResult");
 */
 
+    var sDictMakeMutableStringDict = gf(SDict, 'make-mutable-string-dict');
+    var sDictIsHash = gf(SDict, 'is-mutable-string-dict');
+
+    function _spyret_make_hash() {
+      return sDictMakeMutableStringDict.app();
+    }
+
+    function _spyret_hash_q(val) {
+      return sDictIsHash.app(val);
+    }
+
+    function _spyret_hash_ref(hashTable, key, defaultResult) {
+      if (runtime.unwrap(runtime.getField(hashTable, "has-key-now").app(key))) {
+        return runtime.unwrap(runtime.getField(hashTable, "get-value-now").app(key));
+      } else {
+        return defaultResult;
+      }
+    }
+    
+    function _spyret_hash_set(hashTable, key, value) {
+      runtime.getField(hashTable, "set-now").app(key, value);
+      return runtime.namespace.get("nothing");
+    }
+    
     function isErrorDisplay(val) { return runtime.unwrap(runtime.getField(ED, "ErrorDisplay").app(val)); }
     var checkErrorDisplay = runtime.makeCheckType(isErrorDisplay, "ErrorDisplay");
 
@@ -601,6 +627,13 @@
       isList: function(list) { return runtime.unwrap(runtime.getField(L, "is-List").app(list)); },
       isLink : isLink,
       isEmpty : isEmpty,
+
+      
+      _spyret_make_hash: _spyret_make_hash,
+      _spyret_hash_q: _spyret_hash_q,
+      _spyret_hash_ref: _spyret_hash_ref,
+      _spyret_hash_set: _spyret_hash_set,
+      
 
       isErrorDisplay: isErrorDisplay,
       checkErrorDisplay: checkErrorDisplay,
