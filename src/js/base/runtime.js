@@ -5145,6 +5145,28 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.ffi.makeList(result);
     };
 
+    var _spyret_for_each = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["for-each"], 1, [f]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length; // check each arg array same length?
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        f.app.apply(null, jth_arg_selection);
+      }
+      return nothing;
+    };
+
     var _spyret_andmap = function(f) {
       checkFunction(f);
       var num_arg_arrays = arguments.length - 1;
@@ -5229,7 +5251,32 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
           return nothing;
         });
       }
-    };
+    }
+
+    function _spyret_make_hash() { 
+      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["make-hash"], 0, $a); }
+      return thisRuntime.ffi._spyret_make_hash();
+    }
+
+    function _spyret_hash_q(val) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash?"], 1, $a); }
+      return thisRuntime.ffi._spyret_hash_q(val);
+    }
+
+    function _spyret_hash_ref(h, k, d) {
+      if (arguments.length < 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash-ref"], 2, $a); }
+      var result = thisRuntime.ffi._spyret_hash_ref(h, k, d);
+      if (arguments.length === 2 && result === undefined) {
+        thisRuntime.ffi.throwMessageException('hash-ref: no value found for key ' + k);
+      } else {
+        return result;
+      }
+    }
+
+    function _spyret_hash_set(h, k, v) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash-set!"], 3, $a); }
+      return thisRuntime.ffi._spyret_hash_set(h, k, v);
+    }
 
     function loadBuiltinModules(modules, startName, withModules) {
       function loadWorklist(startMod) {
@@ -5803,6 +5850,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
       "_spyret_append": makeFunction(_spyret_append, "_spyret_append"),
       "_spyret_map": makeFunction(_spyret_map, "_spyret_map"),
+      "_spyret_for_each": makeFunction(_spyret_for_each, "_spyret_for_each"),
       "_spyret_andmap": makeFunction(_spyret_andmap, "_spyret_andmap"),
       "_spyret_ormap": makeFunction(_spyret_ormap, "_spyret_ormap"),
 
@@ -5817,6 +5865,11 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_spyret_check_expect": makeFunction(_spyret_check_expect, "_spyret_check_expect"),
       "_spyret_check_within": makeFunction(_spyret_check_within, "_spyret_check_within"),
       "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde, "_spyret_equal_tilde"),
+
+      "_spyret_make_hash": makeFunction(_spyret_make_hash, "_spyret_make_hash"),
+      "_spyret_hash_q": makeFunction(_spyret_hash_q, "_spyret_hash_q"),
+      "_spyret_hash_ref": makeFunction(_spyret_hash_ref, "_spyret_hash_ref"),
+      "_spyret_hash_set": makeFunction(_spyret_hash_set, "_spyret_hash_set"),
 
       '_plus': makeFunction(plus, "_plus"),
       '_minus': makeFunction(minus, "_minus"),
