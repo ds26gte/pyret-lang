@@ -1936,6 +1936,7 @@ runtime-provides = provides("builtin://global",
 
     "_spyret_append", t-top,
     "_spyret_map", t-top,
+    "_spyret_for_each", t-top,
     "_spyret_andmap", t-top,
     "_spyret_ormap", t-top,
 
@@ -1950,6 +1951,11 @@ runtime-provides = provides("builtin://global",
     "_spyret_check_expect", t-top,
     "_spyret_check_within", t-top,
     "_spyret_equal_tilde", t-top,
+
+    "_spyret_make_hash", t-top,
+    "_spyret_hash_q", t-top,
+    "_spyret_hash_ref", t-top,
+    "_spyret_hash_set", t-top,
 
     "_plus", t-top,
     "_minus", t-top,
