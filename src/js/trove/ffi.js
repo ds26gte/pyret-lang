@@ -96,7 +96,7 @@
       return sDictMakeMutableStringDict.app();
     }
 
-    function _spyret_hash_q(val) {
+    function _spyret_hash_p(val) {
       return sDictIsHash.app(val);
     }
 
@@ -630,7 +630,7 @@
 
       
       _spyret_make_hash: _spyret_make_hash,
-      _spyret_hash_q: _spyret_hash_q,
+      _spyret_hash_p: _spyret_hash_p,
       _spyret_hash_ref: _spyret_hash_ref,
       _spyret_hash_set: _spyret_hash_set,
       
