@@ -234,9 +234,11 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("_spyret_equal_tilde").key(), t-top)
 
   default-typs.set-now(A.s-global("_spyret_make_hash").key(), t-top)
-  default-typs.set-now(A.s-global("_spyret_hash_q").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_hash_p").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_hash_ref").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_hash_set").key(), t-top)
+
+  default-typs.set-now(A.s-global("_spyret_struct_p").key(), t-top)
 
   default-typs.set-now(A.s-global("_times").key(), t-number-binop)
   default-typs.set-now(A.s-global("_minus").key(), t-number-binop)

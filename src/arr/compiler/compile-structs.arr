@@ -1953,9 +1953,11 @@ runtime-provides = provides("builtin://global",
     "_spyret_equal_tilde", t-top,
 
     "_spyret_make_hash", t-top,
-    "_spyret_hash_q", t-top,
+    "_spyret_hash_p", t-top,
     "_spyret_hash_ref", t-top,
     "_spyret_hash_set", t-top,
+
+    "_spyret_struct_p", t-top,
 
     "_plus", t-top,
     "_minus", t-top,

@@ -5258,9 +5258,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.ffi._spyret_make_hash();
     }
 
-    function _spyret_hash_q(val) {
+    function _spyret_hash_p(val) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash?"], 1, $a); }
-      return thisRuntime.ffi._spyret_hash_q(val);
+      return thisRuntime.ffi._spyret_hash_p(val);
     }
 
     function _spyret_hash_ref(h, k, d) {
@@ -5276,6 +5276,12 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     function _spyret_hash_set(h, k, v) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash-set!"], 3, $a); }
       return thisRuntime.ffi._spyret_hash_set(h, k, v);
+    }
+
+    function _spyret_struct_p(v) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash?"], 1, $a); }
+      return !!((v instanceof Object) && 
+        v.dict && v.brands && v.$name && v.$mut_fields_mask && v.$arity && v.$constructor);
     }
 
     function loadBuiltinModules(modules, startName, withModules) {
@@ -5867,9 +5873,11 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde, "_spyret_equal_tilde"),
 
       "_spyret_make_hash": makeFunction(_spyret_make_hash, "_spyret_make_hash"),
-      "_spyret_hash_q": makeFunction(_spyret_hash_q, "_spyret_hash_q"),
+      "_spyret_hash_p": makeFunction(_spyret_hash_p, "_spyret_hash_p"),
       "_spyret_hash_ref": makeFunction(_spyret_hash_ref, "_spyret_hash_ref"),
       "_spyret_hash_set": makeFunction(_spyret_hash_set, "_spyret_hash_set"),
+
+      "_spyret_struct_p": makeFunction(_spyret_struct_p, "_spyret_struct_p"),
 
       '_plus': makeFunction(plus, "_plus"),
       '_minus': makeFunction(minus, "_minus"),
