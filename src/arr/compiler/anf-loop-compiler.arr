@@ -1470,45 +1470,43 @@ fun import-key(i): AU.import-to-dep-anf(i).key() end
 fun compile-type-variant(variant):
   # TODO -- support with-members
   cases(T.TypeVariant) variant:
-    | t-variant(name, members, with-members) =>
+    | t-variant(name, members, with-members, l) =>
       j-list(true, [clist: j-str(name),
-          j-list(false, for CL.map_list(mem from members):
-              cases(T.TypeMember) mem:
-                | t-member(mem-name, typ) =>
-                  if T.is-t-ref(typ):
-                    j-list(true, [clist: j-str("ref"), j-str(mem-name), compile-provided-type(typ.typ)])
-                  else:
-                    j-list(true, [clist: j-str(mem-name), compile-provided-type(typ)])
-                  end
-              end
-            end)])
-    | t-singleton-variant(name, with-members) =>
+        j-list(false, CL.map_list(lam(mem-name):
+          typ = members.get-value(mem-name)
+          if T.is-t-ref(typ):
+            j-list(true, [clist: j-str("ref"), j-str(mem-name), compile-provided-type(typ.typ)])
+          else:
+            j-list(true, [clist: j-str(mem-name), compile-provided-type(typ)])
+          end
+        end, members.keys-list()))])
+    | t-singleton-variant(name, with-members, l) =>
       j-list(true, [clist: j-str(name)])
   end
 end
 
-fun compile-type-member(member):
-  cases(T.TypeMember) member:
-    | t-member(name, typ) => j-field(name, compile-provided-type(typ))
-  end
+fun compile-type-member(name, typ):
+  j-field(name, compile-provided-type(typ))
 end
 
-fun compile-provided-data(typ :: T.Type%(is-t-data), params):
-  cases(T.Type) typ:
-    | t-data(name, variants, members, l) =>
+fun compile-provided-data(typ :: T.DataType):
+  cases(T.DataType) typ:
+    | t-data(name, params, variants, members, l) =>
       j-list(false,
         [clist: j-str("data"), j-str(name),
           j-list(false, for CL.map_list(p from params):
               j-str(tostring(p))
             end),
           j-list(false, CL.map_list(compile-type-variant, variants)),
-          j-obj(CL.map_list(compile-type-member, members))])
+          j-obj(CL.map_list(lam(mem-name):
+            compile-type-member(mem-name, members.get-value(mem-name))
+          end, members.keys-list()))])
   end
 end
 
 fun compile-provided-type(typ):
   cases(T.Type) typ:
-    | t-name(mod-name, id, l) =>
+    | t-name(mod-name, id, l, _) =>
       cases(T.NameOrigin) mod-name:
         | local => j-obj([clist:
               j-field("tag", j-str("name")),
@@ -1522,35 +1520,31 @@ fun compile-provided-type(typ):
         | dependency(dep) =>
           raise("Dependency-origin names in provided-types shouldn't be possible")
       end
-    | t-var(name, l) => j-list(true, [clist: j-str("tid"), j-str(name.toname())])
-    | t-arrow(args, ret, l) =>
+    | t-var(name, l, _) => j-list(true, [clist: j-str("tid"), j-str(name.toname())])
+    | t-arrow(args, ret, l, _) =>
       j-list(true,
         [clist: j-str("arrow"),
           j-list(true, CL.map_list(compile-provided-type, args)), compile-provided-type(ret)])
-    | t-app(base, args, l) =>
+    | t-app(base, args, l, _) =>
       j-list(false,
         [clist: j-str("tyapp"), compile-provided-type(base),
           j-list(true, CL.map_list(compile-provided-type, args))])
-    | t-top(_) => j-str("tany")
+    | t-top(_, _) => j-str("tany")
       # | t-bot(_) =>
-    | t-record(fields, l) =>
+    | t-record(fields, l, _) =>
       j-list(false,
-        [clist: j-str("record"), j-obj(CL.map_list(compile-type-member, fields))])
-    | t-tuple(elts, l) =>
+        [clist: j-str("record"), j-obj(CL.map_list(lam(key): compile-type-member(key, fields.get-value(key)) end, fields.keys-list()))])
+    | t-tuple(elts, l, _) =>
       j-list(false,
         [clist: j-str("tuple"), j-list(false, CL.map_list(compile-provided-type, elts))])
-    | t-forall(params, body, l) =>
-      if T.is-t-data(body): compile-provided-data(body, params)
-      else:
-        j-list(true,
-          [clist: j-str("forall"),
-            j-list(false, for CL.map_list(p from params):
-              j-str(tostring(p))
-            end), compile-provided-type(body)])
-      end
+    | t-forall(params, body, l, _) =>
+      j-list(true,
+        [clist: j-str("forall"),
+          j-list(false, for CL.map_list(p from params):
+            j-str(tostring(p))
+          end), compile-provided-type(body)])
       # | t-ref(_, _) =>
       # | t-existential(_, _) =>
-    | t-data(_, _, _, _) => compile-provided-data(typ, empty)
       # | t-data-refinement(_, _, _) =>
     | else => j-ternary(j-false, j-str(tostring(typ)), j-str("tany"))
   end
@@ -1563,7 +1557,7 @@ fun compile-provides(provides):
         j-field(v, compile-provided-type(values.get-value(v)))
       end
       data-fields = for CL.map_list(d from data-defs.keys().to-list()):
-        j-field(d, compile-provided-type(data-defs.get-value(d)))
+        j-field(d, compile-provided-data(data-defs.get-value(d)))
       end
       alias-fields = for CL.map_list(a from aliases.keys().to-list()):
         j-field(a, compile-provided-type(aliases.get-value(a)))

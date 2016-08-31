@@ -32,7 +32,7 @@ fun display-to-string(e :: ED.ErrorDisplay, embed-display, stack):
         | left(v)  => help(v)
         | right(_) => embed-display(val)
       end
-    | loc(l) => tostring(l)
+    | loc(l) => l.format(true)
     | maybe-stack-loc(n, user-frames-only, contents-with-loc, contents-without-loc) =>
       cases(Option) nth-stack-frame(n, user-frames-only, stack):
         | none => help(contents-without-loc)
@@ -42,12 +42,11 @@ fun display-to-string(e :: ED.ErrorDisplay, embed-display, stack):
       cases(ED.ErrorDisplay) contents:
         | loc(l2) =>
           if l2 == l: help(contents)
-          else: help(contents) + " (at " + tostring(l) + ")"
+          else: help(contents) + " (at " + l.format(true) + ")"
           end
-        | else => help(contents) + " (at " + tostring(l) + ")"
+        | else => help(contents) + " (at " + l.format(true) + ")"
       end
     | code(contents) => "`" + help(contents) + "`"
-    | styled(contents, style) => help(contents)
     | h-sequence(contents, sep) =>
       contents.filter(lam(c): not(ED.is-optional(c)) end).map(help).join-str(sep)
     | v-sequence(contents) =>
@@ -55,6 +54,7 @@ fun display-to-string(e :: ED.ErrorDisplay, embed-display, stack):
     | bulleted-sequence(contents) =>
       contents.map(lam(elt): "* " + help(elt) end).join-str("\n")
     | optional(_) => ""
-    | highlight(contents, locs, _) => help(ED.loc-display(contents, "", locs.first))
+    | cmcode(loc) => tostring(loc)
+    | highlight(contents, locs, _) => help(ED.loc-display(locs.first, "", contents))
   end
 end

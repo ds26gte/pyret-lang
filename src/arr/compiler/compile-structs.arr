@@ -16,25 +16,28 @@ t-nothing = T.t-nothing(A.dummy-loc)
 t-str = T.t-string(A.dummy-loc)
 t-boolean = T.t-boolean(A.dummy-loc)
 t-number = T.t-number(A.dummy-loc)
-t-arrow = T.t-arrow(_, _, A.dummy-loc)
-t-top = T.t-top(A.dummy-loc)
-t-member = T.t-member(_, _)
-t-bot = T.t-bot(A.dummy-loc)
-t-record = T.t-record(_, A.dummy-loc)
-t-forall = T.t-forall(_, _, A.dummy-loc)
-t-var = T.t-var(_, A.dummy-loc)
+t-arrow = T.t-arrow(_, _, A.dummy-loc, false)
+t-top = T.t-top(A.dummy-loc, false)
+t-bot = T.t-bot(A.dummy-loc, false)
+t-record = T.t-record(_, A.dummy-loc, false)
+t-forall = T.t-forall(_, _, A.dummy-loc, false)
+t-var = T.t-var(_, A.dummy-loc, false)
 t-array = T.t-array(_, A.dummy-loc)
 t-string = T.t-string(A.dummy-loc)
 t-option = T.t-option(_, A.dummy-loc)
-t-data = T.t-data(_, _, _, A.dummy-loc)
-t-variant = T.t-variant(_, _, _)
-t-singleton-variant = T.t-variant(_, _)
-t-app = T.t-app(_, _, A.dummy-loc)
-t-name = T.t-name(_, _, A.dummy-loc)
+t-data = T.t-data(_, _, _, _, A.dummy-loc)
+t-variant = T.t-variant(_, _, _, A.dummy-loc)
+t-singleton-variant = T.t-singleton-variant(_, _, A.dummy-loc)
+t-app = T.t-app(_, _, A.dummy-loc, false)
+t-name = T.t-name(_, _, A.dummy-loc, false)
+
+is-t-app = T.is-t-app
 
 type URI = String
 type StringDict = SD.StringDict
 string-dict = SD.string-dict
+
+is-s-block = A.is-s-block
 
 type Loc = SL.Srcloc
 
@@ -102,30 +105,30 @@ end
 
 rag = raw-array-get
 
-fun type-from-raw(uri, typ, tyvar-env :: SD.StringDict<T.TypeVariable>):
+fun type-from-raw(uri, typ, tyvar-env :: SD.StringDict<T.Type>):
   tfr = type-from-raw(uri, _, tyvar-env)
   # TODO(joe): Make this do something intelligent when location information
   # is available
   l = SL.builtin(uri)
   t = typ.tag
   ask:
-    | t == "any" then: T.t-top(l)
+    | t == "any" then: T.t-top(l, false)
     | t == "record" then:
-      T.t-record(for map(f from typ.fields): T.t-member(f.name, tfr(f.value)) end, l)
+      T.t-record(typ.fields.foldl(lam(f, fields): fields.set(f.name, tfr(f.value)) end, [string-dict: ]), l, false)
     | t == "tuple" then:
-      T.t-tuple(for map(e from typ.elts): tfr(e) end, l)
+      T.t-tuple(for map(e from typ.elts): tfr(e) end, l, false)
     | t == "name" then:
       if typ.origin.import-type == "$ELF":
-        T.t-name(T.local, A.s-type-global(typ.name), l)
+        T.t-name(T.local, A.s-type-global(typ.name), l, false)
       else if typ.origin.import-type == "uri":
-        T.t-name(T.module-uri(typ.origin.uri), A.s-type-global(typ.name), l)
+        T.t-name(T.module-uri(typ.origin.uri), A.s-type-global(typ.name), l, false)
       else:
-        T.t-name(T.dependency(make-dep(typ.origin)), A.s-type-global(typ.name), l)
+        T.t-name(T.dependency(make-dep(typ.origin)), A.s-type-global(typ.name), l, false)
       end
     | t == "tyvar" then:
-      cases(Option<T.TypeVariable>) tyvar-env.get(typ.name):
+      cases(Option<T.Type>) tyvar-env.get(typ.name):
         | none => raise("Unbound type variable " + typ.name + " in provided type.")
-        | some(tv) => T.t-var(tv, l)
+        | some(tv) => T.t-var(tv, l, false)
       end
     | t == "forall" then:
       new-env = for fold(new-env from tyvar-env, a from typ.args):
@@ -133,13 +136,13 @@ fun type-from-raw(uri, typ, tyvar-env :: SD.StringDict<T.TypeVariable>):
         new-env.set(a, tvn)
       end
       params = for map(k from new-env.keys-list()):
-        T.t-var(new-env.get-value(k), l)
+        T.t-var(new-env.get-value(k), l, false)
       end
-      T.t-forall(params, type-from-raw(uri, typ.onto, new-env), l)
+      T.t-forall(params, type-from-raw(uri, typ.onto, new-env), l, false)
     | t == "tyapp" then:
-      T.t-app(tfr(typ.onto), map(tfr, typ.args), l)
+      T.t-app(tfr(typ.onto), map(tfr, typ.args), l, false)
     | t == "arrow" then:
-      T.t-arrow(map(tfr, typ.args), tfr(typ.ret), l)
+      T.t-arrow(map(tfr, typ.args), tfr(typ.ret), l, false)
     | otherwise: raise("Unknown raw tag for type: " + t)
   end
 end
@@ -149,13 +152,12 @@ fun tvariant-from-raw(uri, tvariant, env):
   t = tvariant.tag
   ask:
     | t == "variant" then:
-      members = for map(tm from tvariant.vmembers):
-        # TODO(joe): Exporting ref fields?
-        T.t-member(tm.name, type-from-raw(uri, tm.typ, env))
-      end
-      T.t-variant(tvariant.name, members, empty)
+      members = tvariant.vmembers.foldl(lam(tm, members):
+        members.set(tm.name, type-from-raw(uri, tm.typ, env))
+      end, [string-dict: ])
+      t-variant(tvariant.name, members, [string-dict: ])
     | t == "singleton-variant" then:
-      T.t-singleton-variant(tvariant.name, empty)
+      t-singleton-variant(tvariant.name, [string-dict: ])
     | otherwise: raise("Unkonwn raw tag for variant: " + t)
   end
 end
@@ -172,19 +174,13 @@ fun datatype-from-raw(uri, datatyp):
       pdict.set(a, tvn)
     end
     params = for map(k from pdict.keys-list()):
-      T.t-var(pdict.get-value(k), l)
+      T.t-var(pdict.get-value(k), l, false)
     end
     variants = map(tvariant-from-raw(uri, _, pdict), datatyp.variants)
-    members = for map(tm from datatyp.methods):
-      # TODO(joe): Exporting ref fields?
-      T.t-member(tm.name, type-from-raw(uri, tm.value, pdict))
-    end
-    temp-data = t-data(datatyp.name, variants, members)
-    if is-empty(params):
-      temp-data
-    else:
-      t-forall(params, temp-data)
-    end
+    members = datatyp.methods.foldl(lam(tm, members):
+      members.set(tm.name, type-from-raw(uri, tm.value, pdict))
+    end, [string-dict: ])
+    t-data(datatyp.name, params, variants, members)
   end
 end
 
@@ -261,14 +257,17 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("Pyret rejected your program because you have an "),
-          ED.highlight(ED.text("empty block"),[list: self.loc], 0),
-          ED.text(".")]]
+          ED.text("This "),
+          ED.highlight(ED.text("block"),[list: self.loc], 0),
+          ED.text(" is empty:")],
+        ED.cmcode(self.loc),
+        [ED.para:
+          ED.text("A block should end with an expression.")]]
     end,
     method render-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("Pyret rejected your program becayse you have an empty block at")],
+          ED.text("Pyret rejected your program because there is an empty block at")],
         [ED.para: draw-and-highlight(self.loc)]]
     end
   | wf-err-split(msg :: String, loc :: List<A.Loc>) with:
@@ -287,9 +286,12 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("The name "),
-          ED.code(ED.highlight(ED.text(self.id), [list: self.loc], 0)),
-          ED.text(" is reserved by Pyret, and cannot be used as an identifier.")]]
+          ED.text("Reading a "),
+          ED.highlight(ED.text("name"), [list: self.loc], 0),
+          ED.text(" errored:")],
+        ED.cmcode(self.loc),
+        [ED.para:
+          ED.text("This name is reserved is reserved by Pyret, and cannot be used as an identifier.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -304,11 +306,12 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("Pyret disallows the "),
-          ED.highlight(ED.text("fraction literal expression"), [ED.locs: self.loc], 0)],
+          ED.text("Reading a "),
+          ED.highlight(ED.text("fraction literal expression"), [ED.locs: self.loc], 0),
+          ED.text(" errored:")],
         ED.cmcode(self.loc),
         [ED.para:
-          ED.text("because its denominator is zero.")]]
+          ED.text("Its denominator is zero.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -327,53 +330,64 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("Binary operators of different kinds cannot be mixed at the same level, but you use "),
+          ED.text("Reading this "),
+          ED.highlight(ED.text("arithmetic expression"), [ED.locs: self.op-a-loc + self.op-b-loc], -1),
+          ED.text(" errored:")],
+        ED.cmcode(self.op-a-loc + self.op-b-loc),
+        [ED.para:
+          ED.text("The "),
           ED.code(ED.highlight(ED.text(self.op-a-name),[list: self.op-a-loc], 0)),
-          ED.text(" at the same level as "),
+          ED.text(" operation is at the same level as the "),
           ED.code(ED.highlight(ED.text(self.op-b-name),[list: self.op-b-loc], 1)),
-          ED.text(". Use parentheses to group the operations and to make their precedence unambiguous.")]]
+          ED.text(" operation.")],
+        [ED.para:
+          ED.text("Use parentheses to group the operations and to make the order of operations clear.")]]
     end,
     method render-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("Binary operators of different kinds cannot be mixed at the same level, but you use "),
+          ED.text("Operators of different kinds cannot be mixed at the same level, but "),
           ED.code(ED.text(self.op-a-name)),
-          ED.text(" at "),
+          ED.text(" is at "),
           ED.loc(self.op-a-loc),
           ED.text(" at the same level as "),
           ED.code(ED.text(self.op-b-name)),
           ED.text(" at "),
           ED.loc(self.op-b-loc),
-          ED.text(". Use parentheses to group the operations and to make their precedence unambiguous.")]]
+          ED.text(". Use parentheses to group the operations and to make the order of operations clear.")]]
     end
-  | block-ending(l :: Loc, kind) with:
+  | block-ending(l :: Loc, block-loc :: Loc, kind) with:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("Blocks should end with an expression, but you ended a block with a statement. You cannot end a block with a "),
+          ED.text("This "),
+          ED.highlight(ED.text("block"), [list: self.block-loc], -1),
+          ED.text(" ends with a "),
           ED.highlight(ED.text(self.kind), [list: self.l], 0),
-          ED.text(".")]]
+          ED.text(":")],
+        ED.cmcode(self.l),
+        [ED.para:
+          ED.text("Blocks should end with an expression")]]
     end,
     method render-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("Blocks should end with an expression, but you ended a block with a statement. You cannot end a block with a "),
-          ED.text(self.kind),
-          ED.text(" at "),
+          ED.text("The block at "),
+          ED.loc(self.block-loc),
+          ED.text(" ends with a " + self.kind + " at "),
           ED.loc(self.l),
-          ED.text(".")]]
+          ED.text(". Blocks should end with an expression.")]]
     end
   | single-branch-if(expr :: A.Expr) with:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("The "),
-          ED.code(ED.text("if-expression"))],
-        ED.cmcode(self.expr.l),
-        [ED.para:
-          ED.text("only has "),
-          ED.highlight(ED.text("one branch"), [list: self.expr.branches.first.l], 1),
-          ED.text(".")]]
+          ED.text("An "),
+          ED.highlight(ED.text("if-expression"), [list: self.expr.l], -1),
+          ED.text(" has only one "),
+          ED.highlight(ED.text("branch"), [list: self.expr.branches.first.l], 0),
+          ED.text(":")],
+        ED.cmcode(self.expr.l)]
     end,
     method render-reason(self):
       [ED.error:
@@ -382,13 +396,20 @@ data CompileError:
           ED.loc(self.expr.l),
           ED.text(" does not have any other branches.")]]
     end
-  | unwelcome-where(kind, loc) with:
+  | unwelcome-where(kind, loc, block-loc) with:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.code(ED.text("`where`")),
-          ED.text(" blocks are only allowed on named function and declarations; a where block may not be added to a "),
-          ED.code(ED.highlight(ED.text(self.kind), [list: self.loc], 0)),
+          ED.text("A "),
+          ED.highlight(ED.code(ED.text("where")), [list: self.block-loc], 0),
+          ED.text(" can't be added to a "),
+          ED.highlight(ED.text(self.kind), [list: self.loc], -1),
+          ED.text(":")],
+        ED.cmcode(self.block-loc),
+        [ED.para:
+          ED.text("A "),
+          ED.code(ED.text("where")),
+          ED.text(" block may only be added to named function declarations"),
           ED.text(".")]]
     end,
     method render-reason(self):
@@ -405,11 +426,12 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.code(ED.text("example")),
-          ED.text(" blocks must only contain testing statements, but ")],
+          ED.highlight(ED.text("This"),[list: self.expr.l], 0),
+          ED.text(" is not a testing statement:")],
         ED.cmcode(self.expr.l),
         [ED.para:
-          ED.text(" is not a testing statement.")]]
+          ED.code(ED.text("example")),
+          ED.text(" blocks must only contain testing statements.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -424,36 +446,30 @@ data CompileError:
       if not(num-is-integer(self.index)):
         [ED.error:
           [ED.para:
-            ED.text("A "),
+            ED.text("This "),
             ED.highlight(ED.text("tuple indexing"), [list: self.l], -1),
-            ED.text(" expression")],
-          ED.cmcode(self.l),
-          [ED.para:
-            ED.text("cannot extract a "),
+            ED.text(" expression cannot extract a "),
             ED.highlight(ED.text("non-integer position"),[list: self.index-loc],0),
-            ED.text(".")]]
+            ED.text(".")],
+          ED.cmcode(self.l)]
       else if self.index < 0:
         [ED.error:
           [ED.para:
-            ED.text("A "),
+            ED.text("This "),
             ED.highlight(ED.text("tuple indexing"), [list: self.l], -1),
-            ED.text(" expression")],
-          ED.cmcode(self.l),
-          [ED.para:
-            ED.text("cannot extract a "),
+            ED.text(" expression cannot extract a "),
             ED.highlight(ED.text("negative position"),[list: self.index-loc],0),
-            ED.text(".")]]
+            ED.text(".")],
+          ED.cmcode(self.l)]
       else:
         [ED.error:
           [ED.para:
-            ED.text("A "),
+            ED.text("This "),
             ED.highlight(ED.text("tuple indexing"), [list: self.l], -1),
-            ED.text(" expression")],
-          ED.cmcode(self.l),
-          [ED.para:
-            ED.text("cannot extract an "),
+            ED.text(" expression cannot extract an "),
             ED.highlight(ED.text("index"),[list: self.index-loc],0),
-            ED.text(" that large. There are no tuples that big.")]]
+            ED.text(" that large. There are no tuples that big.")],
+          ED.cmcode(self.l)]
       end
     end,
     method render-reason(self):
@@ -481,7 +497,7 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("The "),
+          ED.text("This "),
           ED.highlight([ED.sequence: ED.code(ED.text(self.kind)), ED.text(" import statement")],
                        [list: self.l], -1),
           ED.text(":")],
@@ -495,7 +511,7 @@ data CompileError:
     method render-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("The "),
+          ED.text("This "),
           ED.code(ED.text(self.kind)),
           ED.text(" import statement at "),
           ED.loc(self.l),
@@ -508,11 +524,12 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("The "),
-          ED.highlight(ED.text("method declaration"), [list: self.expr.l], 0)],
+          ED.text("This "),
+          ED.highlight(ED.text("method declaration"), [list: self.expr.l], 0),
+          ED.text(" does not accept at least one argument:")],
         ED.cmcode(self.expr.l),
         [ED.para:
-          ED.text(" does not accept at least one argument. When a method is applied, the first argument is a reference to the object it belongs to.")]]
+          ED.text("When a method is applied, the first argument is a reference to the object it belongs to.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -521,13 +538,19 @@ data CompileError:
           ED.loc(self.expr.l),
           ED.text(" has no arguments. When a method is applied, the first argument is a reference to the object it belongs to.")]]
     end
-  | non-toplevel(kind, l :: Loc) with:
+  | non-toplevel(kind, l :: Loc, parent-loc :: Loc) with:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("You may only define a "),
+          ED.text("This "),
           ED.code(ED.highlight(ED.text(self.kind), [ED.locs: self.l], 0)),
-          ED.text(" at the top-level.")]]
+          ED.text(" is inside "),
+          ED.highlight(ED.text("another block"), [list: self.parent-loc], -1),
+          ED.text(":")],
+        ED.cmcode(self.l),
+        [ED.para:
+          ED.text(self.kind),
+          ED.text(" may only occur at the top-level of the program.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -567,13 +590,12 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("The "),
-          ED.highlight(ED.text("testing operator"),[list: self.op.l], 0)],
-        ED.cmcode(self.op.l + self.refinement.l),
-        [ED.para:
-          ED.text("may not be used with a "),
+          ED.text("This "),
+          ED.highlight(ED.text("testing operator"),[list: self.op.l], 0),
+          ED.text(" may not be used with a "),
           ED.highlight(ED.text("refinement"),[list: self.refinement.l], 1),
-          ED.text(".")]]
+          ED.text(":")],
+        ED.cmcode(self.op.l + self.refinement.l)]
     end,
     method render-reason(self):
       [ED.error:
@@ -608,9 +630,12 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("The underscore "),
-          ED.code(ED.highlight(ED.text("_"), [ED.locs: self.l], 0)),
-          ED.text(" cannot be used as a pattern in a cases expression. If you want to match all cases not matched by the previous branches, use the pattern "),
+          ED.text("An underscore cannot be used for this "),
+          ED.highlight(ED.text("pattern"), [ED.locs: self.l], 0),
+          ED.text(" in a cases expression:")],
+        ED.cmcode(self.l),
+        [ED.para:
+          ED.text("To match all cases not matched by the other branches, use the pattern "),
           ED.code(ED.text("else")),
           ED.text(" instead.")]]
     end,
@@ -621,7 +646,7 @@ data CompileError:
           ED.code(ED.text("_")),
           ED.text(" at "),
           ED.loc(self.l),
-          ED.text(" cannot be used as a pattern in a cases expression. If you want to match all cases not matched by the previous branches, use the pattern "),
+          ED.text(" cannot be used as a pattern in a cases expression. To match all cases not matched by the previous branches, use the pattern "),
           ED.code(ED.text("else")),
           ED.text(" instead.")]]
     end
@@ -659,40 +684,40 @@ data CompileError:
           ED.loc(self.l),
           ED.text(" cannot be used where a type annotation is expected.")]]
     end
-  | block-needed(expr-loc :: Loc, block-locs :: List<Loc>) with:
+  | block-needed(expr-loc :: Loc, blocks :: List<A.Expr % (is-s-block)>) with:
     method render-fancy-reason(self):
-      if self.block-locs.length() > 1:
+      if self.blocks.length() > 1:
         [ED.error:
           [ED.para:
-            ED.text("The expression")],
+            ED.text("This expression contains one or more "),
+            ED.highlight(ED.text("blocks"), self.blocks.map(_.l), -1),
+            ED.text(" that contain "),
+           ED.highlight(ED.text("multiple expressions"), A.flatten(self.blocks.map(_.stmts)).filter({(e):not(A.is-binder(e))}).map(_.l), 0),
+            ED.text(":")],
           ED.cmcode(self.expr-loc),
-          [ED.para:
-            ED.text("contains several blocks that each contain "),
-            ED.highlight(ED.text("multiple expressions"), self.block-locs, 0),
-            ED.text(".")],
           [ED.para:
             ED.text("Either simplify each of these blocks to a single expression, or mark the outer expression with"),
             ED.code(ED.text("block:")), ED.text("to indicate this is deliberate.")]]
       else:
         [ED.error:
           [ED.para:
-            ED.text("The expression")],
-          ED.cmcode(self.expr-loc),
-          [ED.para:
-            ED.text("contains a block that contains "),
-            ED.highlight(ED.text("multiple expressions"), self.block-locs, 0),
+            ED.text("This expression contains a "),
+            ED.highlight(ED.text("block"),[list: self.blocks.first.l],-1),
+            ED.text(" that contains "),
+            ED.highlight(ED.text("multiple expressions"), A.flatten(self.blocks.map(_.stmts)).filter({(e):not(A.is-binder(e))}).map(_.l), 0),
             ED.text(".")],
+          ED.cmcode(self.expr-loc),
           [ED.para:
             ED.text("Either simplify this block to a single expression, or mark the outer expression with "),
             ED.code(ED.text("block:")), ED.text(" to indicate this is deliberate.")]]
       end
     end,
     method render-reason(self):
-      if self.block-locs.length() > 1:
+      if self.blocks.length() > 1:
         [ED.error:
           [ED.para: ED.text("The expression at "), draw-and-highlight(self.expr-loc),
             ED.text(" contains several blocks that each contain multiple expressions:")],
-          ED.v-sequence(self.block-locs.map(draw-and-highlight)),
+          ED.v-sequence(self.blocks.map(_.l).map(draw-and-highlight)),
           [ED.para:
             ED.text("Either simplify each of these blocks to a single expression, or mark the outer expression with "),
             ED.code(ED.text("block:")), ED.text(" to indicate this is deliberate.")]]
@@ -700,7 +725,7 @@ data CompileError:
         [ED.error:
           [ED.para: ED.text("The expression at "), draw-and-highlight(self.expr-loc),
             ED.text(" contains a block that contains multiple expressions:")],
-          ED.v-sequence(self.block-locs.map(draw-and-highlight)),
+          ED.v-sequence(self.blocks.map(_.l).map(draw-and-highlight)),
           [ED.para:
             ED.text("Either simplify this block to a single expression, or mark the outer expression with "),
             ED.code(ED.text("block:")), ED.text(" to indicate this is deliberate.")]]
@@ -867,9 +892,12 @@ data CompileError:
         | srcloc(_, _, _, _, _, _, _) =>
           [ED.error:
             [ED.para:
-              ED.text("Defining the anonymous variable "),
-              ED.code(ED.highlight(ED.text("var _"), [ED.locs: self.loc], 0)),
-              ED.text(" is pointless since there is no name that can be used to mutate it later on.")]]
+              ED.text("This "),
+              ED.highlight(ED.text("variable binding"), [list: self.loc], 0),
+              ED.text(" is pointless:")],
+            ED.cmcode(self.loc),
+            [ED.para:
+              ED.text("There is no name that can be used to mutate it later on.")]]
       end
     end,
     method render-reason(self):
@@ -899,9 +927,12 @@ data CompileError:
         | srcloc(_, _, _, _, _, _, _) =>
           [ED.error:
             [ED.para:
-              ED.text("Defining the anonymous recursive identifier "),
-              ED.code(ED.highlight(ED.text("rec _"), [ED.locs: self.loc], 0)),
-              ED.text(" is pointless since there is no name to call recursively.")]]
+              ED.text("This "),
+              ED.highlight(ED.text("recursive binding"), [list: self.loc], 0),
+              ED.text(" is pointless:")],
+            ED.cmcode(self.loc),
+            [ED.para:
+              ED.text("There isn't a name that can be used to make a recursive call.")]]
       end
     end,
     method render-reason(self):
@@ -931,9 +962,12 @@ data CompileError:
         | srcloc(_, _, _, _, _, _, _) =>
           [ED.error:
             [ED.para:
-              ED.text("The anonymous identifier "),
-              ED.code(ED.highlight(ED.text("shadow _"), [ED.locs: self.loc], 0)),
-              ED.text(" cannot shadow anything: there is no name to shadow.")]]
+              ED.text("This "),
+              ED.highlight(ED.text("shadowing binding"), [list: self.loc], 0),
+              ED.text(" is pointless:")],
+            ED.cmcode(self.loc),
+            [ED.para:
+              ED.text("There is no name to shadow.")]]
       end
     end,
     method render-reason(self):
@@ -1068,11 +1102,13 @@ data CompileError:
         | srcloc(_, _, _, _, _, _, _) =>
           [ED.error:
             [ED.para:
-              ED.text("The declaration of the identifier named "),
-              ED.highlight(ED.code(ED.text(self.id)), [list: self.new-loc], new-loc-color),
-              ED.text(" is preceeded in the same scope by a declaration of an identifier also named "),
-              ED.highlight(ED.code(ED.text(self.id)), [list: self.old-loc], old-loc-color),
-              ED.text(".")]]
+              ED.text("This declaration of a "),
+              ED.highlight(ED.text("name"), [list: self.new-loc], 0),
+              ED.text(" conflicts with an earlier declaration of the "),
+              ED.highlight(ED.text("same name"), [list: self.old-loc], 1),
+              ED.text(":")],
+            ED.cmcode(self.old-loc),
+            ED.cmcode(self.new-loc)]
       end
     end,
     method render-reason(self):
@@ -1111,8 +1147,9 @@ data CompileError:
           ED.highlight(ED.code(ED.text(self.id)), [list: self.new-loc], new-loc-color),
           ED.text(" is preceeded by declaration of an field also named "),
           ED.highlight(ED.code(ED.text(self.id)), [list: self.old-loc], old-loc-color),
-          ED.text(".")],
-        [ED.para: ED.text("You need to pick a different name for one of them.")]]
+          ED.text(":")],
+        ED.cmcode(self.old-loc + self.new-loc),
+        [ED.para: ED.text("Pick a different name for one of them.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -1126,17 +1163,19 @@ data CompileError:
           ED.text(" at "),
           ED.loc(self.old-loc),
           ED.text(".")],
-        [ED.para: ED.text("You need to pick a different name for one of them.")]]
+        [ED.para: ED.text("Pick a different name for one of them.")]]
     end
   | same-line(a :: Loc, b :: Loc) with:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("Pyret expects each expression within a block to have its own line, but Pyret found "),
-          ED.highlight(ED.text("an expression"), [list: self.a], 0),
+          ED.highlight(ED.text("This expression"), [list: self.a], 0),
           ED.text(" on the same line as "),
           ED.highlight(ED.text("another expression"), [list: self.b], 1),
-          ED.text(".")]]
+          ED.text(":")],
+        ED.cmcode(self.a + self.b),
+        [ED.para:
+          ED.text("Each expression within a block should be on its own line.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -1151,7 +1190,7 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("You have two "),
+          ED.text("There are two "),
           ED.highlight(ED.text("unfinished template expressions"), [list: self.a, self.b], 0),
           ED.text(" on the same line.")],
         ED.cmcode(self.a + self.b),
@@ -1161,9 +1200,34 @@ data CompileError:
     method render-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("You have two unfinished template expressions on the same line at "),
+          ED.text("There are two unfinished template expressions on the same line at "),
           ED.loc(self.a + self.b),
           ED.text(". Either remove one, or separate them.")]]
+    end
+  | type-mismatch(type-1 :: T.Type, type-2 :: T.Type) with:
+    method render-fancy-reason(self):
+      {type-1; type-2} = if self.type-1.l.before(self.type-2.l): {self.type-1; self.type-2} else: {self.type-2; self.type-1} end
+      [ED.error:
+        [ED.para:
+          ED.text("Type checking failed because of a type inconsistency.")],
+        [ED.para:
+          ED.text("The type constraint "),
+          ED.highlight(ED.text(tostring(type-1)), [list: type-1.l], 0),
+          ED.text(" was incompatible with the type constraint "),
+          ED.highlight(ED.text(tostring(type-2)), [list: type-2.l], 1)]]
+    end,
+    method render-reason(self):
+      {type-1; type-2} = if self.type-1.l.before(self.type-2.l): {self.type-1; self.type-2} else: {self.type-2; self.type-1} end
+      [ED.error:
+        [ED.para:
+          ED.text("Type checking failed because of a type inconsistency.")],
+        [ED.para:
+          ED.text("The type constraint "),
+          ED.code(ED.text(tostring(type-1))),
+          ED.text(" at "), draw-and-highlight(type-1.l),
+          ED.text(" was incompatible with the type constraint "),
+          ED.code(ED.text(tostring(type-2))),
+          ED.text(" at "), draw-and-highlight(type-2.l)]]
     end
   | incorrect-type(bad-name :: String, bad-loc :: A.Loc, expected-name :: String, expected-loc :: A.Loc) with:
     method render-fancy-reason(self):
@@ -1171,10 +1235,8 @@ data CompileError:
         [ED.para:
           ED.text("The type checker rejected your program because it found a "),
           ED.highlight(ED.text(self.bad-name), [list: self.bad-loc], 0),
-          ED.text(" but it "),
-          ED.highlight(ED.text("expected"), [list: self.expected-loc], 1),
-          ED.text(" a "),
-          ED.text(self.expected-name)]]
+          ED.text(" but it expected a "),
+          ED.highlight(ED.text(self.expected-name), [list: self.expected-loc], 1)]]
     end,
     method render-reason(self):
       [ED.error:
@@ -1192,11 +1254,10 @@ data CompileError:
         [ED.para:
           ED.cmcode(self.e.l)],
         [ED.para:
-          ED.text("becuase it found a "),
+          ED.text("because it found a "),
           ED.highlight(ED.text(self.bad-name), [list: self.bad-loc], 0),
-          ED.text(" but it "),
-          ED.highlight(ED.text("expected"), [list: self.expected-loc], 1),
-          ED.text(" a "), ED.text(self.expected-name)]]
+          ED.text(" but it expected a "),
+          ED.highlight(ED.text(self.expected-name), [list: self.expected-loc], 1)]]
     end,
     method render-reason(self):
       [ED.error:
@@ -1210,39 +1271,22 @@ data CompileError:
           ED.text(" but it was expected to be of type "), ED.code(ED.text(self.expected-name)),
           ED.text(" because of "), draw-and-highlight(self.expected-loc)]]
     end
-  | bad-type-instantiation(expected :: List<T.Type>, given :: List<T.Type>, ann :: A.Ann) with:
+  | bad-type-instantiation(app-type :: T.Type%(is-t-app), expected-length :: Any) with:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("The type checker rejected your program because the type instantiation")],
-       [ED.para:
-          ED.code([ED.sequence:
-              ED.highlight(ED.h-sequence(self.ann.ann.tosource().pretty(80).map(ED.text),""), [list: self.ann.ann.l], 0),
-              ED.text("<"),
-              ED.h-sequence(self.ann.args.map(lam(ann):
-                  ED.highlight(ED.h-sequence(ann.tosource().pretty(80).map(ED.text), ""), [list: ann.l], 1) end), ","),
-              ED.text(">")])],
-        [ED.para:
-          ED.text("should give exactly the same number of parameters as the type accepts. However, the type instantiation is given "),
-          ED.highlight(ED.ed-params(self.given.length()), self.ann.args.map(_.l), 1),
-          ED.text(", but the type accepts "),
-          ED.embed(self.expected.length()),
-          ED.text(" parameters.")]]
+          ED.text("The type checker rejected your program because the type application "),
+          ED.highlight(ED.embed(self.app-type), [list: self.app-type.l], 0),
+          ED.text(" expected " + tostring(self.expected-length) + " type arguments, "),
+          ED.text("but it received " + tostring(self.app-type.args.length()))]]
     end,
     method render-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("The type checker rejected your program because the type instantiation")],
-       [ED.para:
-          ED.code(ED.v-sequence(self.ann.tosource().pretty(80).map(ED.text)))],
-        [ED.para:
-          ED.text(" at "),
-          ED.loc(self.ann.l),
-          ED.text("should give exactly the same number of parameters as the type accepts. However, the type instantiation is given "),
-          ED.ed-params(self.given.length()),
-          ED.text(", but the type accepts "),
-          ED.embed(self.expected.length()),
-          ED.text(" parameters.")]]
+          ED.text("The type checker rejected your program because the type application "),
+          ED.highlight(ED.embed(self.app-type), [list: self.app-type.l], 0),
+          ED.text(" expected " + tostring(self.expected-length) + " type arguments, "),
+          ED.text("but it received " + tostring(self.app-type.args.length()))]]
     end
   | incorrect-number-of-args(app-expr, fun-typ) with:
     method render-fancy-reason(self):
@@ -1257,7 +1301,7 @@ data CompileError:
           ED.text(" to evaluate to a function that accepts exactly the same number of arguments as are given to it.")],
         [ED.para:
           ED.highlight(ED.ed-args(self.app-expr.args.length()), self.app-expr.args.map(_.l), 1),
-          ED.text(" " + if self.app-expr.args.length() == 1: "is" else: "are" end
+          ED.text(" " + if self.app-expr.args.length() == 1: "is " else: "are " end 
                 + "given, but the type signature of the "),
           ed-applicant],
         [ED.para:
@@ -1384,11 +1428,15 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("A variant may not have the same name as any other variant in the type, but the declaration of a variant named "),
-          ED.code(ED.highlight(ED.code(ED.text(self.id)), [list: self.found], 0)),
-          ED.text(" is preceeded by a declaration of a variant also named "),
-          ED.code(ED.highlight(ED.code(ED.text(self.id)), [list: self.previous], 1)),
-          ED.text(".")]]
+          ED.text("This "),
+          ED.highlight(ED.text("variant"), [list: self.found], 0),
+          ED.text(" is preceeded by "),
+          ED.highlight(ED.text("another variant"), [list: self.previous], 1),
+          ED.text(" of the same name:")],
+        ED.cmcode(self.previous),
+        ED.cmcode(self.found),
+        [ED.para:
+          ED.text("A data declaration may not have two variants with the same names.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -1407,11 +1455,15 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("A variant may not be matched more than once in a cases expression, but the branch matching the variant "),
-          ED.code(ED.highlight(ED.code(ED.text(self.id)), [list: self.found], 0)),
-          ED.text(" is preceeded by a branch also matching "),
-          ED.code(ED.highlight(ED.code(ED.text(self.id)), [list: self.previous], 1)),
-          ED.text(".")]]
+          ED.text("This "),
+          ED.highlight(ED.text("branch"), [list: self.found], 0),
+          ED.text(" is preceeded by "),
+          ED.highlight(ED.text("another branch"), [list: self.previous], 1),
+          ED.text(" that matches the same name: ")],
+        ED.cmcode(self.previous),
+        ED.cmcode(self.found),
+        [ED.para:
+          ED.text("A variant may not be matched more than once in a cases expression.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -1426,7 +1478,7 @@ data CompileError:
           ED.loc(self.previous),
           ED.text(".")]]
     end,
-  | unneccesary-branch(branch :: A.CasesBranch, data-type :: T.Type, cases-loc :: A.Loc) with:
+  | unneccesary-branch(branch :: A.CasesBranch, data-type :: T.DataType, cases-loc :: A.Loc) with:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
@@ -1561,7 +1613,7 @@ data CompileError:
           ED.text(". However, the branch pattern binds "),
           ED.highlight(ed-fields(self.branch.args.length()), self.branch.args.map(_.l), 1),
           ED.text(" and the variant is declared as having "),
-          ED.highlight(ed-fields(self.variant.fields.length()), [list: A.dummy-loc], 3)]]
+          ED.highlight(ed-fields(self.variant.fields.count()), [list: A.dummy-loc], 3)]]
     end,
     method render-reason(self):
       fun ed-fields(n):
@@ -1642,7 +1694,11 @@ data CompileError:
     end
   | unable-to-infer(loc :: A.Loc) with:
     method render-fancy-reason(self):
-      self.render-reason()
+      [ED.error:
+        [ED.para-nospace:
+          ED.text("Unable to infer the type of "), 
+          ED.highlight(ED.text("this"), [list: self.loc], 0),
+          ED.text(". Please add an annotation.")]]
     end,
     method render-reason(self):
       [ED.error:
@@ -1738,9 +1794,11 @@ data CompileError:
           ED.text(")")]]
     end
   | no-module(loc :: A.Loc, mod-name :: String) with:
-    #### TODO ###
     method render-fancy-reason(self):
-      self.render-reason()
+      [ED.error:
+        [ED.para-nospace:
+          ED.text("There is no module imported with the name "),
+          ED.highlight(ED.text(self.mod-name), [list: self.loc], 0)]]
     end,
     method render-reason(self):
       [ED.error:
@@ -1749,6 +1807,218 @@ data CompileError:
           ED.text(" (used at "),
           draw-and-highlight(self.loc),
           ED.text(")")]]
+    end
+  | table-empty-header(loc :: A.Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.highlight(ED.text("This table"), [list: self.loc], 0),
+          ED.text(" has no column names, but tables must have at least one column.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The table at "),
+          ED.loc(self.loc),
+          ED.text(" has no column names, but tables must have at least one column.")]]
+    end
+  | table-empty-row(loc :: A.Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.highlight(ED.text("This table row"), [list: self.loc], 0),
+          ED.text(" is empty, but table rows cannot be empty.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The table row at "),
+          ED.loc(self.loc),
+          ED.text(" is empty, but table rows cannot be empty.")]]
+    end
+  | table-row-wrong-size(header-loc :: A.Loc, header :: List<A.FieldName>, row :: A.TableRow) with:
+    method render-fancy-reason(self):
+      fun ed-cols(n, ls, c):
+        ED.highlight([ED.sequence:
+            ED.embed(n),
+            if n <> 1:
+              ED.text("columns")
+            else:
+              ED.text("column")
+            end], ls, c)
+      end
+      [ED.error:
+        [ED.para:
+          ED.text("The table row")],
+        ED.cmcode(self.row.l),
+        [ED.para:
+          ED.text("has "),
+          ed-cols(self.row.elems.length(), self.row.elems.map(_.l), 0),
+          ED.text(", but the table header")],
+        ED.cmcode(self.header-loc),
+        [ED.para:
+          ED.text(" declares "),
+          ed-cols(self.header.length(), self.header.map(_.l), 1),
+          ED.text(".")]]
+    end,
+    method render-reason(self):
+      fun ed-cols(n):
+        [ED.sequence:
+          ED.embed(n),
+          if n <> 1:
+            ED.text("columns")
+          else:
+            ED.text("column")
+          end]
+      end
+      [ED.error:
+        [ED.para:
+          ED.text("The table row at "),
+          ED.loc(self.row.l),
+          ED.text(" has "),
+          ed-cols(self.row.elems.length()),
+          ED.text(", but the table header "),
+          ED.loc(self.header-loc),
+          ED.text(" declares "),
+          ed-cols(self.header.length()),
+          ED.text(".")]]
+    end
+  | table-duplicate-column-name(column1 :: A.FieldName, column2 :: A.FieldName) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("Column "),
+          ED.highlight(ED.text(self.column1.name), [list: self.column1.l], 0),
+          ED.text(" and column "),
+          ED.highlight(ED.text(self.column2.name), [list: self.column2.l], 0),
+          ED.text(" have the same name, but table columns must have different names.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The table columns at "),
+          ED.loc(self.column1.l),
+          ED.text(" and at "),
+          ED.loc(self.column2.l),
+          ED.text(" have the same name, but columns in a table must have different names.")]]
+    end
+  | table-reducer-bad-column(extension :: A.TableExtendField, col-defs :: A.Loc) with:
+    method render-fancy-reason(self):
+      bad-column = self.extension.col
+      bad-column-name = bad-column.tosource().pretty(80).join-str("\n")
+      reducer = self.extension.reducer
+      reducer-name = reducer.tosource().pretty(80).join-str("\n")
+      [ED.error:
+        [ED.para:
+          ED.text("The column "),
+          ED.highlight(ED.text(bad-column-name), [list: bad-column.l], 0),
+          ED.text(" is used with the reducer "),
+          ED.highlight(ED.text(reducer-name), [list: reducer.l], 1),
+          ED.text(", but it is not one of the "),
+          ED.highlight(ED.text("used columns"), [list: self.col-defs], 2),
+          ED.text(".")]]
+    end,
+    method render-reason(self):
+      bad-column = self.extension.col
+      reducer = self.extension.reducer
+      [ED.error:
+        [ED.para:
+          ED.text("The column at "),
+          ED.loc(bad-column.l),
+          ED.text(" is used with the reducer at "),
+          ED.loc(reducer.l),
+          ED.text(", but it is not one of the used columns listed at "),
+          ED.loc(self.col-defs),
+          ED.text(".")]]
+    end
+  | table-sanitizer-bad-column(sanitize-expr :: A.LoadTableSpec, col-defs :: A.Loc) with:
+    method render-fancy-reason(self):
+      
+      bad-column = self.sanitize-expr.name
+      bad-column-name = bad-column.tosource().pretty(80)
+      sanitizer = self.sanitize-expr.sanitizer
+      sanitizer-name = sanitizer.tosource().pretty(80)
+      [ED.error:
+        [ED.para:
+          ED.text("The column "),
+          ED.highlight(ED.text(bad-column-name), [list: bad-column.l], 0),
+          ED.text(" is used with the sanitizer "),
+          ED.highlight(ED.text(sanitizer-name), [list: sanitizer.l], 1),
+          ED.text(", but it is not one of the "),
+          ED.highlight(ED.text("used columns"), [list: self.col-defs], 2),
+          ED.text(".")]]
+    end,
+    method render-reason(self):
+      bad-column = self.sanitize-expr.name
+      sanitizer = self.sanitize-expr.sanitizer
+      [ED.error:
+        [ED.para:
+          ED.text("The column at "),
+          ED.loc(bad-column.l),
+          ED.text(" is used with the sanitizer at "),
+          ED.loc(sanitizer.l),
+          ED.text(", but it is not one of the used columns listed at "),
+          ED.loc(self.col-defs),
+          ED.text(".")]]
+    end
+  | load-table-bad-number-srcs(lte :: A.Expr#|%(A.is-s-load-table)|#, num-found :: Number) with:
+    method render-fancy-reason(self):
+      load-table-expr = self.lte.tosource().pretty(80)
+      [ED.error:
+        [ED.para:
+          ED.text("The table loader "),
+          ED.highlight(ED.text(load-table-expr), [list: self.lte.l], 0),
+          ED.text(" specifies "
+              + num-to-string(self.num-found)
+              + " sources, but it should only specify one.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The table loader at "),
+          ED.loc(self.lte.l),
+          ED.text(" specifies "
+              + num-to-string(self.num-found)
+              + " sources, but it should only specify one.")]]
+    end
+  | load-table-duplicate-sanitizer(original :: A.LoadTableSpec, col-name :: String, duplicate-exp :: A.LoadTableSpec) with:
+    method render-fancy-reason(self):
+      orig-pretty = self.original.tosource().pretty(80)
+      dup-pretty = self.duplicate-exp.tosource().pretty(80)
+      [ED.error:
+        [ED.para:
+          ED.text("The column "),
+          ED.highlight(ED.text(self.col-name), [list: self.duplicate-exp.l], 0),
+          ED.text(" is already sanitized by the sanitizer "),
+          ED.highlight(ED.text(orig-pretty), [list: self.original.l], 1),
+          ED.text(".")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The column at "),
+          ED.loc(self.duplicate-exp.l),
+          ED.text(" is already sanitized by the sanitizer at "),
+          ED.loc(self.original.l),
+          ED.text(".")]]
+    end
+  | load-table-no-body(load-table-exp :: A.Expr#|%(A.is-s-load-table)|#) with:
+    method render-fancy-reason(self):
+      pretty = self.load-table-exp.tosource().pretty(80)
+      [ED.error:
+        [ED.para:
+          ED.text("The table loader "),
+          ED.highlight(ED.text(pretty), [list: self.load-table-exp.l], 0),
+          ED.text(" has no information about how to load the table. "
+              + "It should at least contain a source.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The table loader at "),
+          ED.loc(self.load-table-exp.l),
+          ED.text(" has no information about how to load the table. "
+              + "It should at least contain a source.")]]
     end
 end
 
@@ -1808,25 +2078,23 @@ runtime-provides = provides("builtin://global",
     "brander", t-top,
     "raise", t-arrow([list: t-top], t-bot),
     "nothing", t-nothing,
-    "builtins", t-record([list:
-        t-member("has-field", t-arrow([list: t-record(empty)], t-boolean)),
-        t-member("trace-value", t-arrow([list: t-top, t-top], t-bot)),
-        t-member("current-checker", t-arrow([list: ], t-record([list: # Cheat on these types for now.
-            t-member("run-checks", t-bot),
-            t-member("check-is", t-bot),
-            t-member("check-is-refinement", t-bot),
-            t-member("check-is-not", t-bot),
-            t-member("check-is-not-refinement", t-bot),
-            t-member("check-is-refinement", t-bot),
-            t-member("check-is-not-refinement", t-bot),
-            t-member("check-satisfies", t-bot),
-            t-member("check-satisfies-not", t-bot),
-            t-member("check-raises-str", t-bot),
-            t-member("check-raises-not", t-bot),
-            t-member("check-raises-other-str", t-bot),
-            t-member("check-raises-satisfies", t-bot),
-            t-member("check-raises-violates" , t-bot)
-        ])))
+    "builtins", t-record([string-dict:
+        "has-field", t-arrow([list: t-record([string-dict: ])], t-boolean),
+        "trace-value", t-arrow([list: t-top, t-top], t-bot),
+        "current-checker", t-arrow([list: ], t-record([string-dict: # Cheat on these types for now.
+            "run-checks", t-bot,
+            "check-is", t-bot,
+            "check-is-not", t-bot,
+            "check-is-not-refinement", t-bot,
+            "check-is-refinement", t-bot,
+            "check-satisfies", t-bot,
+            "check-satisfies-not", t-bot,
+            "check-raises-str", t-bot,
+            "check-raises-not", t-bot,
+            "check-raises-other-str", t-bot,
+            "check-raises-satisfies", t-bot,
+            "check-raises-violates" , t-bot
+        ]))
     ]),
     "not", t-arrow([list: t-boolean], t-boolean),
     "is-nothing", t-pred,
@@ -1837,6 +2105,7 @@ runtime-provides = provides("builtin://global",
     "is-function", t-pred,
     "is-raw-array", t-pred,
     "is-tuple", t-pred,
+    "is-table", t-pred,
     "gensym", t-top,
     "random", t-top,
     "run-task", t-top,
@@ -2002,6 +2271,7 @@ runtime-provides = provides("builtin://global",
     "num-asin", t-number-unop,
     "num-acos", t-number-unop,
     "num-atan", t-number-unop,
+    "num-atan2", t-number-binop,
     "num-modulo", t-number-binop,
     "num-truncate", t-number-unop,
     "num-sqrt", t-number-unop,
@@ -2044,14 +2314,14 @@ runtime-provides = provides("builtin://global",
     "raw-array-to-list", t-top,
     "raw-array-fold", t-top,
     "raw-array", t-record(
-      [list:
-        t-member("make", t-forall1(lam(a): t-arrow([list: t-array(a)], t-array(a)) end)),
-        t-member("make0", t-forall1(lam(a): t-arrow([list: ], t-array(a)) end)),
-        t-member("make1", t-forall1(lam(a): t-arrow([list: a], t-array(a)) end)),
-        t-member("make2", t-forall1(lam(a): t-arrow([list: a, a], t-array(a)) end)),
-        t-member("make3", t-forall1(lam(a): t-arrow([list: a, a, a], t-array(a)) end)),
-        t-member("make4", t-forall1(lam(a): t-arrow([list: a, a, a, a], t-array(a)) end)),
-        t-member("make5", t-forall1(lam(a): t-arrow([list: a, a, a, a, a], t-array(a)) end))
+      [string-dict:
+        "make", t-forall1(lam(a): t-arrow([list: t-array(a)], t-array(a)) end),
+        "make0", t-forall1(lam(a): t-arrow([list: ], t-array(a)) end),
+        "make1", t-forall1(lam(a): t-arrow([list: a], t-array(a)) end),
+        "make2", t-forall1(lam(a): t-arrow([list: a, a], t-array(a)) end),
+        "make3", t-forall1(lam(a): t-arrow([list: a, a, a], t-array(a)) end),
+        "make4", t-forall1(lam(a): t-arrow([list: a, a, a, a], t-array(a)) end),
+        "make5", t-forall1(lam(a): t-arrow([list: a, a, a, a, a], t-array(a)) end)
       ]),
     "ref-get", t-top,
     "ref-set", t-top,
@@ -2075,6 +2345,7 @@ runtime-provides = provides("builtin://global",
      "NumNonPositive", t-top,
      "NumNonNegative", t-top,
      "String", t-str,
+     "Table", t-top,
      "Function", t-top,
      "Boolean", t-top,
      "Object", t-top,
@@ -2189,3 +2460,6 @@ standard-imports = extra-imports(
         ],
         [list: "Set"])
     ])
+
+reactor-fields = [list: "init", "on-tick", "to-draw", "on-key", "on-mouse", "seconds-per-tick", "stop-when", "title", "close-when-stop"]
+reactor-optional-fields = reactor-fields.rest

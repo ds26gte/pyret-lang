@@ -202,71 +202,74 @@ type NameChanger = (T.Type%(is-t-name) -> T.Type)
 
 
 fun get-named-provides(resolved :: CS.NameResolution, uri :: URI, compile-env :: CS.CompileEnvironment) -> CS.Provides:
-  fun field-to-typ(f :: A.AField) -> T.TypeMember:
-    T.t-member(f.name, ann-to-typ(f.ann))
-  end
-
-  fun collect-shared-fields(vs :: List<A.Variant>) block:
-    init-members = SD.make-mutable-string-dict()
-    for each(m from vs.first.with-members):
-      init-members.set-now(m.name, member-to-t-member(m))
-    end
-
-    shared-across-variants = init-members
-
-    for each(v from vs.rest):
-      for each(m from v.with-members):
-        when shared-across-variants.has-key-now(m.name):
-          existing-mem = shared-across-variants.get-value-now(m.name)
-          this-mem = member-to-t-member(m)
-          when not(existing-mem == this-mem):
-            shared-across-variants.remove-now(m.name)
+  fun collect-shared-fields(vs :: List<A.Variant>) -> SD.StringDict<T.Type>:
+    init-members = members-to-t-members(vs.first.with-members)
+    vs.rest.foldl(lam(v, shared-members):
+      v.with-members.foldl(lam(m, shadow shared-members):
+        if shared-members.has-key(m.name):
+          existing-mem-type = shared-members.get-value(m.name)
+          this-mem-type = member-to-t-member(m)
+          if existing-mem-type == this-mem-type:
+            shared-members
+          else:
+            shared-members.remove(m.name)
           end
+        else:
+          shared-members
         end
-      end
-    end
-
-    for map(k from shared-across-variants.keys-list-now()):
-      shared-across-variants.get-value-now(k)
-    end
+      end, shared-members)
+    end, init-members)
   end
 
-  fun v-member-to-t-member(m):
-    cases(A.VariantMember) m:
-      | s-variant-member(l, kind, bind) =>
-        typ = if A.is-s-mutable(kind):
-            T.t-ref(ann-to-typ(bind.ann), l)
+  fun v-members-to-t-members(ms):
+    ms.foldl(lam(m, members):
+      cases(A.VariantMember) m:
+        | s-variant-member(l, kind, bind) =>
+          typ = if A.is-s-mutable(kind):
+            T.t-ref(ann-to-typ(bind.ann), l, false)
           else:
             ann-to-typ(bind.ann)
           end
-        T.t-member(bind.id.toname(), typ)
-    end
+          members.set(bind.id.toname(), typ)
+      end
+    end, [SD.string-dict: ])
   end
 
   fun member-to-t-member(m):
     cases(A.Member) m:
       | s-data-field(l, name, val) =>
-        T.t-member(name, T.t-top(l))
+        T.t-top(l, false)
       | s-mutable-field(l, name, ann, val) =>
-        T.t-member(name, T.t-ref(ann-to-typ(ann)))
+        T.t-ref(ann-to-typ(ann), false)
       | s-method-field(l, name, params, args, ann, _, _, _, _) =>
         arrow-part =
-          T.t-arrow(map(ann-to-typ, map(_.ann, args)), ann-to-typ(ann), l)
-        typ =
-          if is-empty(params): arrow-part
-          else:
-            tvars = for map(p from params): T.t-var(p, l) end
-            T.t-forall(tvars, arrow-part, l)
-          end
-        T.t-member(name, typ)
+          T.t-arrow(map(ann-to-typ, map(_.ann, args)), ann-to-typ(ann), l, false)
+        if is-empty(params): arrow-part
+        else:
+          tvars = for map(p from params): T.t-var(p, l, false) end
+          T.t-forall(tvars, arrow-part, l, false)
+        end
     end
+  end
+
+  fun members-to-t-members(ms):
+    ms.foldl(lam(m, members):
+      cases(A.Member) m:
+        | s-data-field(l, name, val) =>
+          members.set(name, member-to-t-member(m))
+        | s-mutable-field(l, name, ann, val) =>
+          members.set(name, member-to-t-member(m))
+        | s-method-field(l, name, params, args, ann, _, _, _, _) =>
+          members.set(name, member-to-t-member(m))
+      end
+    end, [SD.string-dict: ])
   end
 
   # TODO(MATT): a-blank should have location
   fun ann-to-typ(a :: A.Ann) -> T.Type:
     cases(A.Ann) a:
-      | a-blank => T.t-top(A.dummy-loc)
-      | a-any(l) => T.t-top(l)
+      | a-blank => T.t-top(A.dummy-loc, false)
+      | a-any(l) => T.t-top(l, false)
       | a-name(l, id) =>
         cases(A.Name) id:
           | s-type-global(name) =>
@@ -276,24 +279,26 @@ fun get-named-provides(resolved :: CS.NameResolution, uri :: URI, compile-env ::
                 cases(Option<CS.Provides>) compile-env.mods.get(key):
                   | none => raise("Module not found in compile-env.mods: " + key
                         + " (looked up for " + name + " for module " + uri + ")")
-                  | some(mod) => T.t-name(T.module-uri(mod.from-uri), id, l)
+                  | some(mod) => T.t-name(T.module-uri(mod.from-uri), id, l, false)
                 end
             end
-          | s-atom(_, _) => T.t-name(T.module-uri(uri), id, l)
+          | s-atom(_, _) => T.t-name(T.module-uri(uri), id, l, false)
           | else => raise("Bad name found in ann-to-typ: " + id.key())
         end
       | a-type-var(l, id) =>
-        T.t-var(id, l)
+        T.t-var(id, l, false)
       | a-arrow(l, args, ret, use-parens) =>
-        T.t-arrow(map(ann-to-typ, args), ann-to-typ(ret), l)
+        T.t-arrow(map(ann-to-typ, args), ann-to-typ(ret), l, false)
       | a-method(l, args, ret) =>
         raise("Cannot provide a raw method")
       | a-record(l, fields) =>
-        T.t-record(map(field-to-typ, fields), l)
+        T.t-record(fields.foldl(lam(f, members):
+          members.set(f.name, ann-to-typ(f.ann))
+        end, [SD.string-dict: ]), l, false)
       | a-tuple(l, fields) =>
-        T.t-tuple(map(ann-to-typ, fields), l)
+        T.t-tuple(map(ann-to-typ, fields), l, false)
       | a-app(l, ann, args) =>
-        T.t-app(ann-to-typ(ann), map(ann-to-typ, args), l)
+        T.t-app(ann-to-typ(ann), map(ann-to-typ, args), l, false)
       | a-pred(l, ann, exp) =>
         # TODO(joe): give more info than this to type checker?  only needed dynamically, right?
         ann-to-typ(ann)
@@ -301,25 +306,25 @@ fun get-named-provides(resolved :: CS.NameResolution, uri :: URI, compile-env ::
         maybe-b = resolved.type-bindings.get-now(obj.key())
         cases(Option) maybe-b:
           | none =>
-            T.t-top(l)
+            T.t-top(l, false)
           | some(b) =>
             exp = for some-pred(v from b.ann):
               A.is-s-import-complete(v)
             end
             dep = import-to-dep(exp.import-type)
             provided-from-other = compile-env.mods.get-value(dep.key())
-            T.t-name(module-uri(provided-from-other.from-uri), A.s-name(l, field), l)
+            T.t-name(module-uri(provided-from-other.from-uri), A.s-name(l, field), l, false)
         end
       | a-checked(checked, residual) =>
         raise("a-checked should only be generated by the type-checker")
     end
   end
-  fun data-expr-to-datatype(exp :: A.Expr % (is-s-data-expr)) -> T.Type:
+  fun data-expr-to-datatype(exp :: A.Expr % (is-s-data-expr)) -> T.DataType:
     cases(A.Expr) exp:
       | s-data-expr(l, name, _, params, _, variants, shared-members, _) =>
 
         tvars = for map(tvar from params):
-          T.t-var(tvar, l)
+          T.t-var(tvar, l, false)
         end
 
         tvariants = for map(tv from variants):
@@ -327,26 +332,32 @@ fun get-named-provides(resolved :: CS.NameResolution, uri :: URI, compile-env ::
             | s-variant(l2, constr-loc, vname, members, with-members) =>
               T.t-variant(
                 vname,
-                map(v-member-to-t-member, members),
-                map(member-to-t-member, with-members))
+                v-members-to-t-members(members),
+                members-to-t-members(with-members),
+                l2)
             | s-singleton-variant(l2, vname, with-members) =>
               T.t-singleton-variant(
                 vname,
-                map(member-to-t-member, with-members))
+                members-to-t-members(with-members),
+                l2)
           end
         end
 
         shared-across-variants = collect-shared-fields(variants)
+        shared-fields = members-to-t-members(shared-members)
+        all-shared-fields = shared-across-variants.keys-list().foldl(lam(key, all-shared-fields):
+          if shared-fields.has-key(key):
+            all-shared-fields
+          else:
+            all-shared-fields.set(key, shared-across-variants.get-value(key))
+          end
+        end, shared-fields)
 
-        all-shared-fields = map(member-to-t-member, shared-members) + shared-across-variants
-
-        T.t-forall(
+        T.t-data(
+          name,
           tvars,
-          T.t-data(
-            name,
-            tvariants,
-            all-shared-fields,
-            l),
+          tvariants,
+          all-shared-fields,
           l)
     end
   end
@@ -363,12 +374,12 @@ fun get-named-provides(resolved :: CS.NameResolution, uri :: URI, compile-env ::
             # TODO(joe): recursive lookup here until reaching a non-alias?
             target-binding = resolved.type-bindings.get-value-now(a.in-name.key())
             typ = cases(Option) target-binding.ann:
-              | none => T.t-top(l)
+              | none => T.t-top(l, false)
               | some(target-ann) =>
                 if A.is-Ann(a):
                   ann-to-typ(target-ann)
                 else:
-                  T.t-top(l)
+                  T.t-top(l, false)
                 end
             end
             alias-typs.set-now(a.out-name.toname(), typ)
@@ -388,51 +399,50 @@ fun get-named-provides(resolved :: CS.NameResolution, uri :: URI, compile-env ::
   end
 end
 
-
 fun canonicalize-members(ms :: T.TypeMembers, uri :: URI, tn :: NameChanger) -> T.TypeMembers:
-  for map(f from ms):
-    T.t-member(f.field-name, canonicalize-names(f.typ, uri, tn))
-  end
+  T.type-member-map(ms, lam(_, typ): canonicalize-names(typ, uri, tn) end)
 end
 
 fun canonicalize-variant(v :: T.TypeVariant, uri :: URI, tn :: NameChanger) -> T.TypeVariant:
   c = canonicalize-members(_, uri, tn)
   cases(T.TypeVariant) v:
-    | t-variant(name, fields, with-fields) =>
-      T.t-variant(name, c(fields), c(with-fields))
-    | t-singleton-variant(name, with-fields) =>
-      T.t-singleton-variant(name, c(with-fields))
+    | t-variant(name, fields, with-fields, l) =>
+      T.t-variant(name, c(fields), c(with-fields), l)
+    | t-singleton-variant(name, with-fields, l) =>
+      T.t-singleton-variant(name, c(with-fields), l)
   end
 end
 
-#fun canonicalize-datatype(dtyp :: T.DataType, uri :: URI) -> T.DataType:
-#  cases(T.DataType) dtyp:
-#    | t-datatype(name, params, variants, fields) =>
-#      T.t-datatype(
-#          name,
-#          params,
-#          map(canonicalize-variant(_, uri), variants),
-#          canonicalize-members(fields, uri))
-#  end
-#end
+fun canonicalize-data-type(dtyp :: T.DataType, uri :: URI, tn :: NameChanger) -> T.DataType:
+  cases(T.DataType) dtyp:
+    | t-data(name, params, variants, fields, l) =>
+      T.t-data(
+          name,
+          params,
+          map(canonicalize-variant(_, uri, tn), variants),
+          canonicalize-members(fields, uri, tn),
+          l)
+  end
+end
 
+# TODO(MATT): add all the correct cases to this
 fun canonicalize-names(typ :: T.Type, uri :: URI, transform-name :: NameChanger) -> T.Type:
   c = canonicalize-names(_, uri, transform-name)
   cases(T.Type) typ:
-    | t-name(module-name, id, l) => transform-name(typ)
-    | t-var(id, l) => typ
-    | t-arrow(args, ret, l) => T.t-arrow(map(c, args), c(ret), l)
-    | t-tuple(elts, l) => T.t-tuple(map(c, elts), l)
-    | t-app(onto, args, l) => T.t-app(c(onto), map(c, args), l)
-    | t-top(l) => T.t-top(l)
-    | t-bot(l) => T.t-bot(l)
-    | t-record(fields, l) =>
-      T.t-record(canonicalize-members(fields, uri, transform-name), l)
-    | t-forall(introduces, onto, l) => T.t-forall(map(c, introduces), c(onto), l)
-    | t-ref(t, l) => T.t-ref(c(t), l)
-    | t-existential(id, l) => typ
-    | t-data(name, variants, fields, l) =>
-      T.t-data(name, map(canonicalize-variant(_, uri, transform-name), variants), canonicalize-members(fields, uri, transform-name), l)
+    | t-name(module-name, id, l, _) => transform-name(typ)
+    | t-var(id, l, _) => typ
+    | t-arrow(args, ret, l, inferred) => T.t-arrow(map(c, args), c(ret), l, inferred)
+    | t-tuple(elts, l, inferred) => T.t-tuple(map(c, elts), l, inferred)
+    | t-app(onto, args, l, inferred) => T.t-app(c(onto), map(c, args), l, inferred)
+    | t-top(l, inferred) => T.t-top(l, inferred)
+    | t-bot(l, inferred) => T.t-bot(l, inferred)
+    | t-record(fields, l, inferred) =>
+      T.t-record(canonicalize-members(fields, uri, transform-name), l, inferred)
+    | t-forall(introduces, onto, l, inferred) => T.t-forall(map(c, introduces), c(onto), l, inferred)
+    | t-ref(t, l, inferred) => T.t-ref(c(t), l, inferred)
+    | t-data-refinement(data-type, variant-name, l, inferred) =>
+      T.t-data-refinement(c(data-type), variant-name, l, inferred)
+    | t-existential(id, l, _) => typ
   end
 end
 
@@ -443,18 +453,23 @@ fun find-mod(compile-env, uri) -> Option<String>:
   end
 end
 
-fun transform-dict(d, uri, transformer):
-  for fold(s from [SD.string-dict:], v from d.keys-list()):
-    s.set(v, canonicalize-names(d.get-value(v), uri, transformer))
+fun transform-dict-helper(canonicalizer):
+  lam(d, uri, tranformer):
+    for fold(s from [SD.string-dict: ], v from d.keys-list()):
+      s.set(v, canonicalizer(d.get-value(v), uri, tranformer))
+    end
   end
 end
+
+transform-dict = transform-dict-helper(canonicalize-names)
+transform-data-dict = transform-dict-helper(canonicalize-data-type)
 
 fun transform-provides(provides, compile-env, transformer):
   cases(CS.Provides) provides:
   | provides(from-uri, values, aliases, data-definitions) =>
     new-vals = transform-dict(values, from-uri, transformer)
     new-aliases = transform-dict(aliases, from-uri, transformer)
-    new-data-definitions = transform-dict(data-definitions, from-uri, transformer)
+    new-data-definitions = transform-data-dict(data-definitions, from-uri, transformer)
     CS.provides(from-uri, new-vals, new-aliases, new-data-definitions)
   end
 end
@@ -468,17 +483,17 @@ fun canonicalize-provides(provides :: CS.Provides, compile-env :: CS.CompileEnvi
   ```
   transformer = lam(t :: T.Type%(is-t-name)):
     cases(T.Type) t:
-    | t-name(origin, name, loc) =>
+    | t-name(origin, name, loc, inferred) =>
       cases(T.NameOrigin) origin:
-      | local => T.t-name(T.module-uri(provides.from-uri), name, loc)
+      | local => T.t-name(T.module-uri(provides.from-uri), name, loc, inferred)
       | module-uri(uri) =>
         cases(Option<String>) find-mod(compile-env, uri):
-        | some(_) => T.t-name(T.module-uri(uri), name, loc)
+        | some(_) => T.t-name(T.module-uri(uri), name, loc, inferred)
         | none =>
           if string-index-of(uri, "builtin://") == 0:
-            T.t-name(T.module-uri(uri), name, loc)
+            T.t-name(T.module-uri(uri), name, loc, inferred)
           else if uri == provides.from-uri:
-            T.t-name(T.module-uri(uri), name, loc)
+            T.t-name(T.module-uri(uri), name, loc, inferred)
           else:
           # TODO(joe): This should become an error once things are localized again
 
@@ -489,7 +504,7 @@ fun canonicalize-provides(provides :: CS.Provides, compile-env :: CS.CompileEnvi
       | dependency(d) =>
         provides-for-d = compile-env.mods.get(d)
         cases(Option<CS.Provides>) provides-for-d:
-        | some(p) => T.t-name(module-uri(p.from-uri), name, loc)
+        | some(p) => T.t-name(module-uri(p.from-uri), name, loc, inferred)
         | none => raise("Unknown module dependency for type: " + torepr(t) + " in provides for " + provides.from-uri)
         end
       end
@@ -508,18 +523,18 @@ fun localize-provides(provides :: CS.Provides, compile-env :: CS.CompileEnvironm
   ```
   transformer = lam(t :: T.Type%(is-t-name)):
     cases(T.Type) t:
-    | t-name(origin, name, loc) =>
+    | t-name(origin, name, loc, inferred) =>
       cases(T.NameOrigin) origin:
       | local => t
       | module-uri(uri) =>
         if uri == provides.from-uri:
-          T.t-name(T.local, name, loc)
+          T.t-name(T.local, name, loc, inferred)
         else:
           cases(Option<String>) find-mod(compile-env, uri):
-          | some(d) => T.t-name(T.dependency(d), name, loc)
+          | some(d) => T.t-name(T.dependency(d), name, loc, inferred)
           | none =>
             if string-index-of(uri, "builtin://") == 0:
-              T.t-name(T.module-uri(uri), name, loc)
+              T.t-name(T.module-uri(uri), name, loc, inferred)
             else:
               # TODO(joe): This should become an error once things are localized again
               #T.t-name(T.module-uri(uri), name, loc)
@@ -544,8 +559,8 @@ end
 fun get-typed-provides(typed :: TCS.Typed, uri :: URI, compile-env :: CS.CompileEnvironment):
   transformer = lam(t):
     cases(T.Type) t:
-      | t-name(origin, name, l) =>
-        T.t-name(origin, A.s-type-global(name.toname()), l)
+      | t-name(origin, name, l, inferred) =>
+        T.t-name(origin, A.s-type-global(name.toname()), l, inferred)
       | else => t
     end
   end
@@ -582,7 +597,7 @@ fun get-typed-provides(typed :: TCS.Typed, uri :: URI, compile-env :: CS.Compile
           end
           data-typs = SD.make-mutable-string-dict()
           for each(d from datas):
-            data-typs.set-now(d.d.toname(), c(typed.info.data-types.get-value(d.d.key())))
+            data-typs.set-now(d.d.toname(), canonicalize-data-type(typed.info.data-types.get-value(d.d.key()), uri, transformer))
           end
           CS.provides(
               uri,

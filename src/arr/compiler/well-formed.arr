@@ -10,6 +10,8 @@ import srcloc as SL
 import file("compile-structs.arr") as C
 import format as F
 import string-dict as SD
+import sets as S
+import lists as L
 
 type Loc = SL.Srcloc
 
@@ -22,7 +24,7 @@ var dialect = false
 
 is-s-let = A.is-s-let # ANNOYING WORKAROUND
 
-reserved-names = [SD.string-dict: 
+reserved-names = [SD.string-dict:
   "function", true,
   "break", true,
   "return", true,
@@ -61,6 +63,8 @@ reserved-names = [SD.string-dict:
   "case", true,
   "with", true,
   "__proto__", true
+  # TODO: refactor AST so this can be added
+  # "table", true
 ]
 
 
@@ -94,16 +98,14 @@ fun ensure-empty-block(loc, typ, block :: A.Expr % (is-s-block)):
   if not(PARAM-current-where-everywhere):
     if block.stmts.length() == 0: nothing
     else:
-      add-error(C.unwelcome-where(tostring(typ), loc))
+      add-error(C.unwelcome-where(tostring(typ), loc, block.l))
     end
   else:
     nothing
   end
 end
 
-fun is-binder(expr):
-  A.is-s-let(expr) or A.is-s-fun(expr) or A.is-s-var(expr) or A.is-s-rec(expr)
-end
+is-binder = A.is-binder
 
 fun explicitly-blocky-block(block :: A.Expr % (is-s-block)) -> Boolean block:
   var seen-non-let = false
@@ -124,7 +126,7 @@ end
 fun wf-blocky-blocks(l :: Loc, blocks :: List<A.Expr % (is-s-block)>):
   explicitly-blocky-blocks = blocks.filter(explicitly-blocky-block)
   when not(is-empty(explicitly-blocky-blocks)):
-    add-error(C.block-needed(l, explicitly-blocky-blocks.map(_.l)))
+    add-error(C.block-needed(l, explicitly-blocky-blocks))
   end
 end
 
@@ -261,14 +263,14 @@ fun ensure-unique-variant-ids(variants :: List<A.Variant>):
 end
 
 
-fun wf-last-stmt(stmt :: A.Expr):
+fun wf-last-stmt(block-loc, stmt :: A.Expr):
   cases(A.Expr) stmt:
-    | s-let(l, _, _, _)                => add-error(C.block-ending(l, "let-binding"))
-    | s-var(l, _, _)                   => add-error(C.block-ending(l, "var-binding"))
-    | s-rec(l, _, _)                   => add-error(C.block-ending(l, "rec-binding"))
-    | s-fun(l, _, _, _, _, _, _, _, _) => add-error(C.block-ending(l, "fun-binding"))
-    | s-data(l, _, _, _, _, _, _)      => add-error(C.block-ending(l, "data definition"))
-    | s-contract(l, _, _)              => add-error(C.block-ending(l, "contract"))
+    | s-let(l, _, _, _)                => add-error(C.block-ending(l, block-loc, "let-binding"))
+    | s-var(l, _, _)                   => add-error(C.block-ending(l, block-loc, "var-binding"))
+    | s-rec(l, _, _)                   => add-error(C.block-ending(l, block-loc, "rec-binding"))
+    | s-fun(l, _, _, _, _, _, _, _, _) => add-error(C.block-ending(l, block-loc, "fun-binding"))
+    | s-data(l, _, _, _, _, _, _)      => add-error(C.block-ending(l, block-loc, "data definition"))
+    | s-contract(l, _, _)              => add-error(C.block-ending(l, block-loc, "contract"))
     | else => nothing
   end
 end
@@ -314,6 +316,25 @@ fun wf-examples-body(visitor, body):
   end
 end
 
+fun wf-table-headers(loc, headers):
+  num-headers = headers.length()
+  if num-headers == 0 block:
+    add-error(C.table-empty-header(loc))
+    true
+  else:
+    for each(i from range(0, num-headers)):
+      hi = headers.get(i)
+      for each(j from range(i + 1, num-headers)):
+        hj = headers.get(j)
+        when hi.name == hj.name:
+          add-error(C.table-duplicate-column-name(hi, hj))
+        end
+      end
+    end
+    true
+  end
+end
+
 
 fun is-underscore(e):
   A.is-s-id(e) and A.is-s-underscore(e.id)
@@ -355,28 +376,28 @@ well-formed-visitor = A.default-iter-visitor.{
     end
   end,
   method s-data(self, l, name, params, mixins, variants, shares, _check) block:
+    add-error(C.non-toplevel("data declaration", l, last-visited-loc))
     last-visited-loc := l
-    add-error(C.non-toplevel("data declaration", l))
     true
   end,
   method s-data-expr(self, l, name, namet, params, mixins, variants, shared, _check) block:
+    add-error(C.non-toplevel("data declaration", l, last-visited-loc))
     last-visited-loc := l
-    add-error(C.non-toplevel("data declaration", l))
     true
   end,
   method s-type(self, l, name, params, ann) block:
+    add-error(C.non-toplevel("type alias", l, last-visited-loc))
     last-visited-loc := l
-    add-error(C.non-toplevel("type alias", l))
     true
   end,
   method s-newtype(self, l, name, namet) block:
+    add-error(C.non-toplevel("newtype", l, last-visited-loc))
     last-visited-loc := l
-    add-error(C.non-toplevel("newtype", l))
     true
   end,
   method s-let-expr(self, l, binds, body, blocky) block:
     last-visited-loc := l
-    when not(blocky): 
+    when not(blocky):
       wf-blocky-blocks(l, [list: body])
     end
     lists.all(_.visit(self), binds) and body.visit(self)
@@ -385,7 +406,7 @@ well-formed-visitor = A.default-iter-visitor.{
     last-visited-loc := l
     cases(A.Bind) bind block:
       | s-bind(_,_,_,_) => nothing
-      | s-tuple-bind(l2, _, _) => 
+      | s-tuple-bind(l2, _, _) =>
         last-visited-loc := l
         wf-error("Recursive bindings must be names and cannot be tuple bindings ", l2)
         nothing
@@ -394,14 +415,14 @@ well-formed-visitor = A.default-iter-visitor.{
   end,
   method s-letrec(self, l, binds, body, blocky) block:
     last-visited-loc := l
-    when not(blocky): 
+    when not(blocky):
       wf-blocky-blocks(l, [list: body])
     end
     lists.all(_.visit(self), binds) and body.visit(self)
   end,
   method s-type-let-expr(self, l, binds, body, blocky) block:
+    add-error(C.non-toplevel("type alias", l, last-visited-loc))
     last-visited-loc := l
-    add-error(C.non-toplevel("type alias", l))
     true
   end,
   method s-op(self, l, op-l, op, left, right) block:
@@ -432,7 +453,7 @@ well-formed-visitor = A.default-iter-visitor.{
           add-error(C.pointless-var(l.at-start() + bind.l))
         end
         bind.visit(self) and val.visit(self)
-      | s-tuple-bind(l2, _, _) => 
+      | s-tuple-bind(l2, _, _) =>
         last-visited-loc := l
         wf-error("Variable bindings must be names and cannot be tuple bindings ", l2)
         true
@@ -447,7 +468,7 @@ well-formed-visitor = A.default-iter-visitor.{
           add-error(C.pointless-rec(l.at-start() + bind.l))
         end
         bind.visit(self) and val.visit(self)
-      | s-tuple-bind(l2, _, _) => 
+      | s-tuple-bind(l2, _, _) =>
         last-visited-loc := l
         wf-error("Recursive bindings must be names and cannot be tuple bindings ", l2)
         true
@@ -461,7 +482,7 @@ well-formed-visitor = A.default-iter-visitor.{
           add-error(C.pointless-var(l.at-start() + bind.l))
         end
        bind.visit(self) and val.visit(self)
-    | s-tuple-bind(l2, _, _) => 
+    | s-tuple-bind(l2, _, _) =>
       last-visited-loc := l
       wf-error("Variable bindings must be names and cannot be tuple bindings ", l2)
       true
@@ -472,7 +493,7 @@ well-formed-visitor = A.default-iter-visitor.{
       add-error(C.wf-empty-block(last-visited-loc))
       true
     else:
-      wf-last-stmt(stmts.last())
+      wf-last-stmt(l, stmts.last())
       wf-block-stmts(self, l, stmts)
       true
     end
@@ -519,7 +540,7 @@ well-formed-visitor = A.default-iter-visitor.{
       | none => nothing
       | some(chk) => ensure-empty-block(l, "methods", chk)
     end
-    when not(blocky): 
+    when not(blocky):
       wf-blocky-blocks(l, [list: body])
     end
     lists.all(_.visit(self), args) and ann.visit(self) and body.visit(self) and wrap-visit-check(self, _check)
@@ -548,7 +569,7 @@ well-formed-visitor = A.default-iter-visitor.{
       | none => nothing
       | some(chk) => ensure-empty-block(l, "methods", chk)
     end
-    when not(blocky): 
+    when not(blocky):
       wf-blocky-blocks(l, [list: body])
     end
     lists.all(_.visit(self), args) and ann.visit(self) and body.visit(self) and wrap-visit-check(self, _check)
@@ -560,7 +581,7 @@ well-formed-visitor = A.default-iter-visitor.{
       | none => nothing
       | some(chk) => ensure-empty-block(l, "anonymous functions", chk)
     end
-    when not(blocky): 
+    when not(blocky):
       wf-blocky-blocks(l, [list: body])
     end
     lists.all(_.visit(self), params)
@@ -571,7 +592,7 @@ well-formed-visitor = A.default-iter-visitor.{
     when reserved-names.has-key(name):
       reserved-name(l, name)
     end
-    when not(blocky): 
+    when not(blocky):
       wf-blocky-blocks(l, [list: body])
     end
     ensure-unique-ids(args)
@@ -585,7 +606,7 @@ well-formed-visitor = A.default-iter-visitor.{
     lists.all(_.visit(self), fields)
   end,
   method s-tuple-get(self, l, tup, index, index-loc):
-    if not(num-is-integer(index)) or (index < 0) or (index > 1000) block: 
+    if not(num-is-integer(index)) or (index < 0) or (index > 1000) block:
       add-error(C.tuple-get-bad-index(l, tup, index, index-loc))
       true
     else:
@@ -678,6 +699,82 @@ well-formed-visitor = A.default-iter-visitor.{
   method s-provide(self, l, expr):
     true
   end,
+  method s-reactor(self, l, fields):
+    method-fields = for filter(f from fields): A.is-s-method-field(f) end
+    if not(is-empty(method-fields)) block:
+      wf-error("A reactor cannot contain method fields ", method-fields.first.l)
+      true
+    else:
+      has-init = is-some(for find(f from fields): f.name == "init" end)
+      when not(has-init):
+        wf-error("A reactor must have a field named init for the initial value ", l)
+      end
+      fields-dict = SD.make-mutable-string-dict()
+      ok-fields = C.reactor-fields
+      for each(f from fields) block:
+        when not(ok-fields.member(f.name)):
+          wf-error("Valid options for reactors are " + ok-fields.join-str(", ") + ", but found one named " + f.name + " ", f.l)
+        end
+        cases(Option<A.Loc>) fields-dict.get-now(f.name):
+          | none => fields-dict.set-now(f.name, f.l)
+          | some(l2) => wf-error2("Duplicate option in reactor: " + f.name, f.l, l2)
+        end
+      end
+      true
+    end
+  end,
+  method s-table-extend(self, l, column-binds, extensions) block:
+    bound-names = S.list-to-tree-set(map(lam(b :: A.Bind): b.id.toname() end, column-binds.binds))
+    for L.all(extension from extensions):
+      cases(A.TableExtendField) extension block:
+        | s-table-extend-field(_, _, val, ann) => val.visit(self) and ann.visit(self)
+        | s-table-extend-reducer(_, _, reducer, col, ann) =>
+          when (not(bound-names.member(col.toname()))):
+            add-error(C.table-reducer-bad-column(extension, column-binds.l))
+          end
+          reducer.visit(self) and ann.visit(self)
+      end
+    end
+  end,
+  method s-load-table(self, l, headers, spec) block:
+    this-expr = A.s-load-table(l, headers, spec)
+    wf-table-headers(l, headers)
+    if is-empty(spec) block:
+      add-error(C.load-table-no-body(this-expr))
+      false
+    else:
+      bound-names = S.list-to-tree-set(map(lam(b :: A.FieldName): b.name end, headers))
+      var dup-found = false
+      header-loc =
+        if is-empty(headers):
+          l.upto(spec.first.l)
+        else:
+          headers.first.l + headers.last().l
+        end
+      {num-srcs; _} = for fold(acc from {0; [SD.string-dict:]}, s from spec):
+        cases(A.LoadTableSpec) s block:
+          | s-sanitize(_,name,_) =>
+            namestr = name.toname()
+            when (not(bound-names.member(namestr))):
+              add-error(C.table-sanitizer-bad-column(s, header-loc))
+            end
+            cases(Option) acc.{1}.get(namestr) block:
+              | some(expr) =>
+                add-error(C.load-table-duplicate-sanitizer(
+                    acc.{1}.get-value(namestr), namestr, s))
+                dup-found := true
+                acc
+              | none => {acc.{0}; acc.{1}.set(namestr, s)}
+            end
+          | s-table-src(_,_) => {acc.{0} + 1; acc.{1}}
+        end
+      end
+      when num-srcs <> 1:
+        add-error(C.load-table-bad-number-srcs(this-expr, num-srcs))
+      end
+      (num-srcs == 1) and not(dup-found) and L.all(_.visit(self), spec)
+    end
+  end,
   method a-name(self, l, id) block:
     when A.is-s-underscore(id):
       add-error(C.underscore-as-ann(l))
@@ -701,7 +798,7 @@ top-level-visitor = A.default-iter-visitor.{
     true
   end,
   method s-type-let-expr(self, l, binds, body, blocky) block:
-    when not(blocky): 
+    when not(blocky):
       wf-blocky-blocks(l, [list: body])
     end
     lists.all(_.visit(self), binds) and body.visit(well-formed-visitor)
@@ -763,7 +860,28 @@ top-level-visitor = A.default-iter-visitor.{
     is-empty(underscores) and
       ret and wrap-visit-check(well-formed-visitor, _check)
   end,
-
+  method s-table(_, l :: Loc, header :: List<A.FieldName>, rows :: List<A.TableRow>) block:
+    wf-table-headers(l, header)
+    if is-empty(header):
+      true
+    else:
+      expected-len = header.length()
+      for lists.all(_row from rows) block:
+        actual-len = _row.elems.length()
+        when actual-len == 0:
+          add-error(C.table-empty-row(_row.l))
+        end
+        when (actual-len <> 0) and (actual-len <> expected-len):
+          header-loc = header    .get(0).l + header    .last().l
+          row-loc    = _row.elems.get(0).l + _row.elems.last().l
+          add-error(C.table-row-wrong-size(header-loc, header, _row))
+        end
+        for lists.all(elem from _row.elems):
+          elem.visit(well-formed-visitor)
+        end
+      end
+    end
+  end,
 
   # Everything else delegates to the non-toplevel visitor
   method s-import(_, l, import-type, name):
@@ -937,23 +1055,26 @@ top-level-visitor = A.default-iter-visitor.{
   method s-check(_, l :: Loc, name :: Option<String>, body :: A.Expr, keyword-check :: Boolean):
     well-formed-visitor.s-check(l, name, body, keyword-check)
   end,
-  method s-data-field(_, l :: Loc, name :: A.Expr, value :: A.Expr):
+  method s-data-field(_, l :: Loc, name :: String, value :: A.Expr):
     well-formed-visitor.s-data-field(l, name, value)
   end,
-  method s-mutable-field(_, l :: Loc, name :: A.Expr, ann :: A.Ann, value :: A.Expr):
+  method s-mutable-field(_, l :: Loc, name :: String, ann :: A.Ann, value :: A.Expr):
     well-formed-visitor.s-mutable-field(l, name, ann, value)
   end,
-  method s-method-field(_, l :: Loc, name :: A.Expr, params :: List<A.Name>, args :: List<A.Bind>, ann :: A.Ann, doc :: String, body :: A.Expr, _check :: Option<A.Expr>, blocky):
+  method s-method-field(_, l :: Loc, name :: String, params :: List<A.Name>, args :: List<A.Bind>, ann :: A.Ann, doc :: String, body :: A.Expr, _check :: Option<A.Expr>, blocky):
     well-formed-visitor.s-method-field(l, name, params, args, ann, doc, body, _check, blocky)
   end,
   method s-for-bind(_, l :: Loc, bind :: A.Bind, value :: A.Expr):
     well-formed-visitor.s-for-bind(l, bind, value)
   end,
   method s-variant-member(_, l :: Loc, member-type :: A.VariantMemberType, bind :: A.Bind) block:
-    cases(A.Bind) bind: 
+    cases(A.Bind) bind:
      | s-bind(_,_,_,_) => well-formed-visitor.s-variant-member(l, member-type, bind)
      | s-tuple-bind(l2, _, _) => wf-error("Tuple binding not allowed as variant member", l2)
     end
+  end,
+  method s-table-extend(_, l :: Loc, column-binds :: A.ColumnBinds, extensions :: List<A.TableExtendField>):
+    well-formed-visitor.s-table-extend(l, column-binds, extensions)
   end,
   method a-arrow(_, l, args, ret, use-parens):
     well-formed-visitor.a-arrow(l, args, ret, use-parens)

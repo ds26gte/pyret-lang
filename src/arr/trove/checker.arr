@@ -7,6 +7,7 @@ import srcloc as SL
 import error as E
 import error-display as ED
 import render-error-display as RED
+import valueskeleton as VS
 
 import ffi as _
 
@@ -99,6 +100,10 @@ data TestResult:
                ED.cmcode(self.loc),
               [ED.para:
                 cases(Any) test-ast.op:
+                  | s-op-is-roughly(_) =>
+                    [ED.sequence:
+                    ED.text("because it reports success if and only if the "),
+                   ed-lhs, ED.text(" and the "), ed-rhs, ED.text(" are equal (allowing for rough equality).")]
                   | s-op-is(_) => [ED.sequence:
                     ED.text("because it reports success if and only if the predicate "),
                     cases(Option) test-ast.refinement:
@@ -275,7 +280,14 @@ data TestResult:
         ED.embed(self.actual-exn),
         [ED.para: ED.text("when expecting ")],
         ED.embed(self.exn-expected)]
-    end
+    end,
+    method _output(self):
+      VS.vs-constr("failure-wrong-exn",
+        [list:
+          VS.vs-value(self.loc),
+          VS.vs-value(self.exn-expected),
+          VS.vs-value(exn-unwrap(self.actual-exn))])
+    end,
   | failure-right-exn(loc :: Loc, exn-not-expected, actual-exn) with:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
       self.render-reason()
@@ -286,7 +298,14 @@ data TestResult:
         ED.embed(self.actual-exn),
         [ED.para: ED.text("and expected it not to contain ")],
         ED.embed(self.exn-not-expected)]
-    end
+    end,
+    method _output(self):
+      VS.vs-constr("failure-right-exn",
+        [list:
+          VS.vs-value(self.loc),
+          VS.vs-value(self.exn-not-expected),
+          VS.vs-value(exn-unwrap(self.actual-exn))])
+    end,
   | failure-exn(loc :: Loc, actual-exn, exn-place :: CheckOperand) with:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
       if self.loc.is-builtin():
@@ -322,7 +341,14 @@ data TestResult:
       [ED.error:
         [ED.para: ED.text("Got unexpected exception ")],
         ED.embed(self.actual-exn)]
-    end
+    end,
+    method _output(self):
+      VS.vs-constr("failure-exn",
+        [list:
+          VS.vs-value(self.loc),
+          VS.vs-value(exn-unwrap(self.actual-exn)),
+          VS.vs-value(self.exn-place)])
+    end,
   | failure-no-exn(loc :: Loc, exn-expected :: Option<String>) with:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
       cases(Option) self.exn-expected:
@@ -373,6 +399,13 @@ data TestResult:
       [ED.error:
         [ED.para: ED.text("Predicate failed for exception:")],
         [ED.para: ED.embed(exn-unwrap(self.exn))]]
+    end,
+    method _output(self):
+      VS.vs-constr("failure-raise-not-satisfied",
+        [list:
+          VS.vs-value(self.loc),
+          VS.vs-value(exn-unwrap(self.exn)),
+          VS.vs-value(self.pred)])
     end
   | failure-raise-not-dissatisfied(loc :: Loc, exn, pred) with:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
@@ -411,6 +444,13 @@ data TestResult:
       [ED.error:
         [ED.para: ED.text("Predicate succeeded for exception (it should have failed):")],
         [ED.para: ED.embed(exn-unwrap(self.exn))]]
+    end,
+    method _output(self):
+      VS.vs-constr("failure-raise-not-dissatisfied",
+        [list:
+          VS.vs-value(self.loc),
+          VS.vs-value(exn-unwrap(self.exn)),
+          VS.vs-value(self.pred)])
     end
   # This is not so much a test result as an error in a test case:
   # Maybe pull it out in the future?
@@ -479,6 +519,14 @@ fun make-check-context(main-module-name :: String, check-all :: Boolean):
       for left-right-check(loc)(lv from left, rv from right):
         check-bool(loc,
           lv == rv,
+          lam(): failure-not-equal(loc, none, lv, rv) end)
+      end
+      nothing
+    end,
+    method check-is-roughly(self, left, right, loc) block:
+      for left-right-check(loc)(lv from left, rv from right):
+        check-bool(loc,
+          within(~0.0)(lv, rv),
           lam(): failure-not-equal(loc, none, lv, rv) end)
       end
       nothing

@@ -37,4 +37,6 @@ import file("./tests/test-roughnum.arr") as _
 import file("./tests/test-adaptive-simpson.arr") as _
 import file("./tests/test-rounding.arr") as _
 import file("./tests/test-within.arr") as _
+import file("./tests/test-tables.arr") as _
 import file("./tests/test-tuple.arr") as _
+import file("./tests/test-reactor.arr") as _
