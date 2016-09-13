@@ -3077,7 +3077,7 @@ define(function() {
     Exactness.prototype.floatAsInexactp = function () { return this.defaultp() || this.inexactp(); };
 
     // fromSchemeString: string boolean -> (scheme-number | false)
-    var fromSchemeString = function(x, exactness) {
+    var fromSchemeString = function(x, exactness, errbacks) {
 
 	var radix = 10
 	var exactness = typeof exactness === 'undefined' ? Exactness.def :
