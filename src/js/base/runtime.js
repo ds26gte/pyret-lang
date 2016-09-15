@@ -1211,6 +1211,11 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         throw thisRuntime.ffi.throwArityErrorC([source], expected, args);
       }
     }
+    var checkArityAtLeast = function(expected, args, source) {
+      if (args.length < expected) {
+        throw thisRuntime.ffi.throwArityErrorC([source], expected, args);
+      }
+    }
     var checkArityC = function(cloc, expected, args) {
       if (expected !== args.length) {
         throw thisRuntime.ffi.throwArityErrorC(cloc, expected, args);
@@ -6481,6 +6486,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       'checkOpaque' : checkOpaque,
       'checkPyretVal' : checkPyretVal,
       'checkArity': checkArity,
+      'checkArityAtLeast': checkArityAtLeast,
       'checkArityC': checkArityC,
       'checkConstructorArityC': checkConstructorArityC,
       'checkTuple' : checkTuple,
