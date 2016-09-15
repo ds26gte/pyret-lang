@@ -4662,6 +4662,10 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       thisRuntime.ffi.throwMessageException(errstring);
     };
 
+    var _spyret_dead_code_function = function() {
+      return nothing;
+    };
+
     var _spyret_check_expect = function(actVal, expVal) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-expect"], 2, $a); }
       if (!equalAlways(actVal, expVal)) {
@@ -6099,6 +6103,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_spyret_display": makeFunction(_spyret_display, "_spyret_display"),
 
       "_spyret_error": makeFunction(_spyret_error, "_spyret_error"),
+      "_spyret_dead_code_function": makeFunction(_spyret_dead_code_function, "_spyret_dead_code_function"),
       "_spyret_check_expect": makeFunction(_spyret_check_expect, "_spyret_check_expect"),
       "_spyret_check_within": makeFunction(_spyret_check_within, "_spyret_check_within"),
       "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde, "_spyret_equal_tilde"),

@@ -251,6 +251,7 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("_spyret_display").key(), t-top)
 
   default-typs.set-now(A.s-global("_spyret_error").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_dead_code_function").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_check_expect").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_check_within").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_equal_tilde").key(), t-top)
