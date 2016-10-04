@@ -4838,7 +4838,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
       for (var i = 0; i < lastIndex; i++) {
         thisRuntime.checkNumber(arguments[i]);
-        if (!jsnums.equals(arguments[i], arguments[i+1])) {
+        if (!jsnums.schemeEquals(arguments[i], arguments[i+1])) {
           return thisRuntime.makeBoolean(false);
         }
       }
