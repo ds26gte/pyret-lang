@@ -544,6 +544,14 @@ define(function() {
       return x.equals(y, errbacks);
     });
 
+  var schemeEquals = makeNumericBinop(
+    function(x, y, errbacks) {
+      return x === y;
+    },
+    function(x, y, errbacks) {
+      return x.schemeEquals(y, errbacks);
+    });
+
   var equalsAnyZero = function(x, errbacks) {
     if (typeof(x) === 'number') return x === 0;
     if (isRoughnum(x)) return x.n === 0;
@@ -1519,6 +1527,8 @@ define(function() {
             _integerEquals(this.d, other.d));
   };
 
+  Rational.prototype.schemeEquals = Rational.prototype.equals;
+
   Rational.prototype.isInteger = function() {
     return _integerIsOne(this.d);
   };
@@ -1906,6 +1916,11 @@ define(function() {
     errbacks.throwIncomparableValues("roughnums cannot be compared for equality");
   };
 
+  Roughnum.prototype.schemeEquals = function(other, errbacks) {
+    return (other instanceof Roughnum &&
+      this.n === other.n);
+  };
+
   Roughnum.prototype.isRational = function() {
     return false;
   };
@@ -2119,7 +2134,11 @@ define(function() {
   };
 
   Roughnum.prototype.sin = function(errbacks){
-    return Roughnum.makeInstance(Math.sin(this.n), errbacks);
+    if ((this.n % Math.PI) === 0) {
+      return 0
+    } else {
+      return Roughnum.makeInstance(Math.sin(this.n), errbacks);
+    }
   };
 
   Roughnum.prototype.expt = function(a, errbacks){
@@ -2311,6 +2330,8 @@ define(function() {
     return (equals(this.r, other.r) &&
       equals(this.i, other.i))
   }
+
+  ComplexRational.prototype.schemeEquals = ComplexRational.prototype.equals;
 
   ComplexRational.prototype.greaterThan = function(other) {
     if (!this.isReal() || !other.isReal()) {
@@ -2659,6 +2680,10 @@ define(function() {
   ComplexRoughnum.prototype.equals = function(other, aUnionFind) {
     throwRuntimeError("complex roughnums can't be compared for equality");
   }
+
+  ComplexRoughnum.prototype.schemeEquals = function(other, errbacks) {
+    return (this.r === other.r && this.i === other.i);
+  };
 
   ComplexRoughnum.prototype.greaterThan = function(other) {
     if (!this.isReal() || !other.isReal()) {
@@ -4434,6 +4459,7 @@ define(function() {
   BigInteger.prototype.signum = bnSigNum;
   BigInteger.prototype.toByteArray = bnToByteArray;
   BigInteger.prototype.equals = bnEquals;
+  BigInteger.prototype.schemeEquals = bnEquals;
   BigInteger.prototype.min = bnMin;
   BigInteger.prototype.max = bnMax;
   BigInteger.prototype.and = bnAnd;
@@ -4969,6 +4995,7 @@ define(function() {
   Numbers['negate'] = negate;
   Numbers['halve'] = halve;
   Numbers['equals'] = equals;
+  Numbers['schemeEquals'] = schemeEquals;
   Numbers['equalsAnyZero'] = equalsAnyZero;
   Numbers['eqv'] = eqv; // why is this being exported?
   Numbers['roughlyEquals'] = roughlyEquals;
