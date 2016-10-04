@@ -24,7 +24,9 @@
     values: {
       "nothing": "Nothing",
       "torepr": ["arrow", ["Any"], "String"],
+      "to-repr": ["arrow", ["Any"], "String"],
       "tostring": ["arrow", ["Any"], "String"],
+      "to-string": ["arrow", ["Any"], "String"],
       "not": ["arrow", ["Boolean"], "Boolean"],
 
       "is-nothing": "AnyPred",
@@ -49,6 +51,8 @@
                                                 ["RawArray", "tva"]]],
       "raw-array-length":    ["forall", ["a"], ["arrow", [["RawArray", "tva"]], "Number"]],
       "raw-array-to-list":   ["forall", ["a"], ["arrow", [["RawArray", "tva"]], ["List", "tva"]]],
+      "raw-array-filter":    ["forall", ["a"], ["arrow", [["arrow", ["tva"], "Boolean"], ["RawArray", "tva"]], ["RawArray", "tva"]]],
+      "raw-array-map":    ["forall", ["a", "b"], ["arrow", [["arrow", ["tva"], "tvb"], ["RawArray", "tva"]], ["RawArray", "tvb"]]],
       "raw-array-fold":      ["forall", ["a", "b"], ["arrow", [["arrow", ["tvb", "tva", "Number"], "tvb"], 
                                                                "tvb", ["RawArray", "tva"], "Number"], "tvb"]],
 
@@ -132,11 +136,14 @@
       "string-repeat": ["arrow", ["String", "Number"], "String"],
       "string-substring": ["arrow", ["String", "Number", "Number"], "String"],
       "string-toupper": "StrUnop",
+      "string-to-upper": "StrUnop",
       "string-tolower": "StrUnop",
+      "string-to-lower": "StrUnop",
       "string-append": "StrBinop",
       "string-equal": "StrPred2",
       "string-contains": "StrPred2",
       "string-isnumber": "StrPred",
+      "string-is-number": "StrPred",
       "string-to-number": ["arrow", ["String"], ["Option", "Number"]],
       "string-length": ["arrow", ["String"], "Number"],
       "string-replace": ["arrow", ["String", "String", "String"], "String"],

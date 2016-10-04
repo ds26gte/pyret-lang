@@ -4102,7 +4102,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       function filterFun($ar) {
         try {
           if (thisRuntime.isActivationRecord($ar)) {
-            newArray = $ar.ans;
+            if($ar.ans) { newArray.push(arr[currentIndex]); }
           }
           return filterHelp();
         } catch ($e) {
@@ -5967,7 +5967,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
     var runtimeNamespaceBindings = {
       'torepr': torepr,
+      'to-repr': torepr,
       'tostring': tostring,
+      'to-string': tostring,
       'test-print': print,
       'print': print,
       'display': display,
@@ -6173,6 +6175,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       'string-append': makeFunction(string_append, "string-append"),
       'string-length': makeFunction(string_length, "string-length"),
       'string-isnumber': makeFunction(string_isnumber, "string-isnumber"),
+      'string-is-number': makeFunction(string_isnumber, "string-is-number"),
       'string-tonumber': makeFunction(string_tonumber, "string-tonumber"),
       'string-to-number': makeFunction(string_to_number, "string-to-number"),
       'string-repeat': makeFunction(string_repeat, "string-repeat"),
@@ -6182,7 +6185,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       'string-split-all': makeFunction(string_split_all, "string-split-all"),
       'string-char-at': makeFunction(string_charat, "string-char-at"),
       'string-toupper': makeFunction(string_toupper, "string-toupper"),
+      'string-to-upper': makeFunction(string_toupper, "string-to-upper"),
       'string-tolower': makeFunction(string_tolower, "string-tolower"),
+      'string-to-lower': makeFunction(string_tolower, "string-to-lower"),
       'string-explode': makeFunction(string_explode, "string-explode"),
       'string-index-of': makeFunction(string_indexOf, "string-index-of"),
       'string-to-code-point': makeFunction(string_to_code_point, "string-to-code-point"),

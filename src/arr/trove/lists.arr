@@ -320,6 +320,10 @@ fun set<a>(lst :: List<a>, n :: Number, v) -> a:
   end
 end
 
+fun push<a>(l :: List<a>, elt :: a) -> List<a>:
+  link(elt, l)
+end
+
 fun reverse-help<a>(lst :: List<a>, tail :: List<a>) -> List<a>:
   doc: "Returns a new list containing the same elements as this list, in reverse order"
   builtins.raw-list-fold(lam(acc, elt): link(elt, acc) end, tail, lst)
@@ -329,6 +333,14 @@ where:
 end
 
 fun reverse<a>(lst :: List<a>) -> List<a>: reverse-help(lst, empty) end
+
+fun sort-by<a>(lst :: List<a>, cmp :: (a, a -> Boolean), eq :: (a, a -> Boolean)) -> List<a>:
+  lst.sort-by(cmp, eq)
+end
+
+fun sort<a>(lst :: List<a>) -> List<a>:
+  lst.sort()
+end
 
 fun range(start :: Number, stop :: Number) -> List<Number>:
   doc: "Creates a list of numbers, starting with start, ending with stop-1"
@@ -371,6 +383,13 @@ end
 fun filter<a>(f :: (a -> Boolean), lst :: List<a>) -> List<a>:
   doc: "Returns the subset of lst for which f(elem) is true"
   builtins.raw-list-filter(f, lst)
+end
+
+fun append<a>(front :: List<a>, back :: List<a>) -> List<a>:
+  cases(List<a>) front:
+    | empty => back
+    | link(f, r) => link(f, append(r, back))
+  end
 end
 
 fun partition<a>(f :: (a -> Boolean), lst :: List<a>) -> {is-true :: List<a>, is-false :: List<a>} block:
@@ -463,6 +482,10 @@ end
 fun drop<a>(n :: Number, lst :: List<a>) -> List<a>:
   doc: "Returns a list containing all but the first n elements of the given list"
   split-at(n, lst).suffix
+end
+
+fun last<a>(l :: List<a>) -> a:
+  l.last()
 end
 
 fun any<a>(f :: (a -> Boolean), lst :: List<a>) -> Boolean:
@@ -858,89 +881,6 @@ fun filter-values<a>(lst :: List<Option<a>>) -> List<a>:
   end
 end
 
-fun length(l :: List) -> Number:
-  l.length()
-end
-
-fun sum(l :: List<Number>) -> Number:
-  cases (List<Number>) l:
-    | empty => 0
-    | link(first, rest) => first + sum(rest)
-  end
-end
-
-fun mean(l :: List<Number>) -> Number:
-  doc: "Find the average of a list of numbers"
-  if length(l) == 0:
-    raise("You can't take the average of an empty list")
-  else:
-    sum(l) / length(l)
-  end
-end
-
-fun min(l :: List):
-  doc: "Find the minimum element of a list according to the built in ordering of elements"
-  cases (List) l:
-    |empty => raise("The list is empty")
-    |link(first, rest) => min-helper(first, rest)
-  end
-end
-
-fun min-helper(curr-min, l :: List):
-  cases (List) l:
-    |empty => curr-min
-    |link(first, rest) =>
-      if first < curr-min:
-        min-helper(first, rest)
-      else:
-        min-helper(curr-min, rest)
-      end
-  end
-end
-
-#Max
-fun max(l :: List):
-  doc: "Find the maximum element of a list according to the built in ordering of elements"
-  cases (List) l:
-    |empty => raise("The list is empty")
-    |link(first, rest) => max-helper(first, rest)
-  end
-end
-
-fun max-helper(curr-max, l :: List):
-  cases (List) l:
-    |empty => curr-max
-    |link(first, rest) =>
-      if first > curr-max:
-        max-helper(first, rest)
-      else if first <= curr-max:
-        max-helper(curr-max, rest)
-      end
-  end
-end
-
-
-#Median
-fun median(l :: List):
-  doc: "returns the median element of the list"
-  sorted = l.sort()
-  index = length(sorted)
-  cases (List) sorted:
-    |empty => raise("The list is empty")
-    |link(first, rest) => sorted.get(num-floor(index / 2))
-  end
-end
-
-# Standard Deviation
-fun stdev(l :: List) -> Number:
-  doc: "returns the standard deviation of the list of numbers"
-  reg-mean = mean(l)
-  sq-diff = l.map(lam(k): num-expt((k - reg-mean), 2) end)
-  sq-mean = mean(sq-diff)
-  num-sqrt(sq-mean)
-end
-
-#Distinct
 fun distinct(l :: List) -> List:
   doc: "returns a list with exactly the distinct elements of the original list removing the first instance"
   cases (List) l:
@@ -952,6 +892,14 @@ fun distinct(l :: List) -> List:
         | Equal => distinct(rest)
       end
   end
+end
+
+fun length(l :: List) -> Number:
+  l.length()
+end
+
+fun join-str(l :: List<String>, s :: String) -> String:
+  l.join-str(s)
 end
 
 list = {

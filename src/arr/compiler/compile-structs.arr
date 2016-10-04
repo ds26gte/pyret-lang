@@ -105,12 +105,13 @@ end
 
 rag = raw-array-get
 
-fun type-from-raw(uri, typ, tyvar-env :: SD.StringDict<T.Type>):
+fun type-from-raw(uri, typ, tyvar-env :: SD.StringDict<T.Type>) block:
   tfr = type-from-raw(uri, _, tyvar-env)
   # TODO(joe): Make this do something intelligent when location information
   # is available
   l = SL.builtin(uri)
   t = typ.tag
+  #print("\n\ntyp: " + tostring(typ))
   ask:
     | t == "any" then: T.t-top(l, false)
     | t == "record" then:
@@ -187,9 +188,10 @@ end
 fun provides-from-raw-provides(uri, raw):
   values = raw.values
   vdict = for fold(vdict from SD.make-string-dict(), v from raw.values):
-    if is-string(v):
+    if is-string(v) block:
       vdict.set(v, t-top)
     else:
+      #print("\n\nYOOOOOOOOOOOOOOOOOOOOOOO: " + tostring(v.name)) 
       vdict.set(v.name, type-from-raw(uri, v.typ, SD.make-string-dict()))
     end
   end
@@ -1706,6 +1708,21 @@ data CompileError:
           ED.text("Unable to infer the type of "), draw-and-highlight(self.loc),
           ED.text(". Please add an annotation.")]]
     end
+  | unann-failed-test-inference(function-loc :: A.Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The type checker could not infer the type of the "),
+          ED.highlight(ED.text("function"), [list: self.function-loc], 0),
+          ED.text(". Please add type annotations to the arguments.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The type checker could not infer the type of the function at"),
+          draw-and-highlight(self.function-loc),
+          ED.text(". Please add type annotations to the arguments.")]]
+    end
   | toplevel-unann(arg :: A.Bind) with:
     method render-fancy-reason(self):
       [ED.error:
@@ -1714,14 +1731,14 @@ data CompileError:
           ED.highlight(ED.text("argument"), [list: self.arg.l], 0),
           ED.text(" at "),
           ED.cmcode(self.arg.l),
-          ED.text(" needs a type annotation.")]]
+          ED.text(" needs a type annotation. Alternatively, provide a where: block with examples of the function's use.")]]
     end,
     method render-reason(self):
       [ED.error:
         [ED.para:
           ED.text("The "),
           ED.text("argument at"), draw-and-highlight(self.arg.l),
-          ED.text(" needs a type annotation.")]]
+          ED.text(" needs a type annotation. Alternatively, provide a where: block with examples of the function's use.")]]
     end
   | binop-type-error(binop :: A.Expr, tl :: T.Type, tr :: T.Type, etl :: T.Type, etr :: T.Type) with:
     method render-fancy-reason(self):
@@ -2024,6 +2041,7 @@ end
 
 type CompileOptions = {
   check-mode :: Boolean,
+  check-all :: Boolean,
   type-check :: Boolean,
   allow-shadowed :: Boolean,
   collect-all :: Boolean,
@@ -2039,6 +2057,7 @@ type CompileOptions = {
 
 default-compile-options = {
   check-mode : true,
+  check-all : true,
   type-check : false,
   allow-shadowed : false,
   collect-all: false,
@@ -2074,7 +2093,9 @@ runtime-provides = provides("builtin://global",
     "print-error", t-forall1(lam(a): t-arrow([list: a], a) end),
     "display-error", t-forall1(lam(a): t-arrow([list: a], a) end),
     "tostring", t-arrow([list: t-top], t-str),
+    "to-string", t-arrow([list: t-top], t-str),
     "torepr", t-arrow([list: t-top], t-str),
+    "to-repr", t-arrow([list: t-top], t-str),
     "brander", t-top,
     "raise", t-arrow([list: t-top], t-bot),
     "nothing", t-nothing,
@@ -2241,6 +2262,8 @@ runtime-provides = provides("builtin://global",
     "string-contains", t-top,
     "string-append", t-top,
     "string-length", t-top,
+    "string-isnumber", t-top,
+    "string-is-number", t-top,
     "string-tonumber", t-top,
     "string-to-number", t-arrow([list: t-string], t-option(t-number)),
     "string-repeat", t-top,
@@ -2250,7 +2273,9 @@ runtime-provides = provides("builtin://global",
     "string-split-all", t-top,
     "string-char-at", t-top,
     "string-toupper", t-top,
+    "string-to-upper", t-top,
     "string-tolower", t-top,
+    "string-to-lower", t-top,
     "string-explode", t-top,
     "string-index-of", t-top,
     "string-to-code-point", t-top,
@@ -2314,6 +2339,8 @@ runtime-provides = provides("builtin://global",
     "raw-array-length", t-top,
     "raw-array-to-list", t-top,
     "raw-array-fold", t-top,
+    "raw-array-filter", t-top,
+    "raw-array-map", t-top,
     "raw-array", t-record(
       [string-dict:
         "make", t-forall1(lam(a): t-arrow([list: t-array(a)], t-array(a)) end),
