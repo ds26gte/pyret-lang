@@ -56,7 +56,8 @@ check:
   
   "1/2" satisfies string-is-number
   "abc" violates string-is-number
-  "3+5i" violates string-is-number
+  #"3+5i" violates string-is-number
+  "3+5i" satisfies string-is-number
   "1a2" violates string-is-number
 
   string-repeat("a", 4) is "aaaa"
