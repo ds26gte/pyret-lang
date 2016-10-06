@@ -1849,7 +1849,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     // rel is a flag that indicates whether the tolerance should be
     // interpreted as _absolute_ (two numbers are equal +/- tol) or _relative_
     // (two numbers are equal +/- n * tol, where tol is between 0 and 1)
-    function equal3(left, right, alwaysFlag, tol, rel) {
+    function equal3(left, right, alwaysFlag, tol, rel, spyretP) {
       if(tol === undefined) { // means that we aren't doing any kind of within
         var isIdentical = identical3(left, right);
         if (!thisRuntime.ffi.isNotEqual(isIdentical)) { return isIdentical; } // if Equal or Unknown...
@@ -1887,6 +1887,12 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
                   toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight);
                 }
               } else if (jsnums.roughlyEquals(curLeft, curRight, tol, NumberErrbacks)) {
+                continue;
+              } else {
+                toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight);
+              }
+            } else if (spyretP) {
+              if (jsnums.schemeEquals(curLeft, curRight, NumberErrbacks)) {
                 continue;
               } else {
                 toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight);
@@ -2211,6 +2217,18 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         return equal3(v1, v2, true);
       }, equalityToBool, "equal-always");
     };
+
+    // JS function from Pyret values to Pyret booleans (or throws)
+    function schemeEqualAlways(v1, v2) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal-always"], 2, $a); }
+      if(typeof v1 === "number" || typeof v1 === "string" || typeof v1 === "boolean") {
+        return v1 === v2;
+      }
+      return safeCall(function() {
+        return equal3(v1, v2, true, false, false, true);
+      }, equalityToBool, "equal-always");
+    };
+
     // JS function from Pyret values to Pyret equality answers
     function equalNow3(left, right) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal-now3"], 2, $a); }
@@ -4668,7 +4686,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
     var _spyret_check_expect = function(actVal, expVal) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-expect"], 2, $a); }
-      if (!equalAlways(actVal, expVal)) {
+      if (!schemeEqualAlways(actVal, expVal)) {
         displayFunc("check-expect: actual value " + actVal +
         " differs from " + expVal + ", the expected value.");
       }
