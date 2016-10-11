@@ -6019,6 +6019,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_spyret_false": false,
       "_spyret_true": true,
       "_spyret_pi": jsnums.toRoughnum(Math.PI),
+      "_spyret_tau": jsnums.toRoughnum(2*Math.PI),
       "_spyret_e": jsnums.toRoughnum(Math.E),
 
       "_spyret_apply": makeFunction(_spyret_apply, "_spyret_apply"),

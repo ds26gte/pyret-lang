@@ -147,6 +147,7 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("_spyret_false").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_true").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_pi").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_tau").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_e").key(), t-top)
 
   default-typs.set-now(A.s-global("_spyret_apply").key(), t-top)

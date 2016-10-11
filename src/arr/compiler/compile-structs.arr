@@ -2134,6 +2134,7 @@ runtime-provides = provides("builtin://global",
     "_spyret_false", t-top,
     "_spyret_true", t-top,
     "_spyret_pi", t-top,
+    "_spyret_tau", t-top,
     "_spyret_e", t-top,
 
     "_spyret_apply", t-top,
