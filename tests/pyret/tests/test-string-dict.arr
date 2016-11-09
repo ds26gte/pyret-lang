@@ -235,3 +235,38 @@ check "merge-now":
   s5 is=~ [SD.mutable-string-dict: "a", 5]
 end
 
+check "map filter":
+  is21 = [SD.string-dict: "a", 21, "b", 22]
+
+  is22 = is21.map(lam(v): v + 1 end)
+  is22 is [SD.string-dict: "a", 22, "b", 23]
+
+  is23 = is21.map-kv(lam(k, v): k end)
+  is23 is [SD.string-dict: "a", "a", "b", "b"]
+
+  is24 = is21.map-kvk(lam(k, v): {k + "z"; v + 1} end)
+  is24 is [SD.string-dict: "az", 22, "bz", 23]
+
+  is25 = is21.filter(lam(v): v == 22 end)
+  is25 is [SD.string-dict: "b", 22]
+
+  is26 = is21.filter-kv(lam(k, v): k == "b" end)
+  is26 is [SD.string-dict: "b", 22]
+
+  ms21 = [SD.mutable-string-dict: "a", 21, "b", 22]
+
+  ms22 = ms21.map(lam(v): v + 1 end)
+  ms22 is [SD.mutable-string-dict: "a", 22, "b", 23]
+
+  ms23 = ms21.map-kv(lam(k, v): k end)
+  ms23 is [SD.mutable-string-dict: "a", "a", "b", "b"]
+
+  ms24 = ms21.map-kvk(lam(k, v): {k + "z"; v + 1} end)
+  ms24 is [SD.mutable-string-dict: "az", 22, "bz", 23]
+
+  ms25 = ms21.filter(lam(v): v == 22 end)
+  ms25 is [SD.mutable-string-dict: "b", 22]
+
+  ms26 = ms21.filter-kv(lam(k, v): k == "b" end)
+  ms26 is [SD.mutable-string-dict: "b", 22]
+end
