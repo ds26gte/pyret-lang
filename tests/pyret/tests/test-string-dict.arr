@@ -250,8 +250,23 @@ check "map filter":
   is25 = is21.filter(lam(v): v == 22 end)
   is25 is [SD.string-dict: "b", 22]
 
-  is26 = is21.filter-kv(lam(k, v): k == "b" end)
+  is26 = is21.filter-k(lam(k): k == "b" end)
   is26 is [SD.string-dict: "b", 22]
+
+  is27 = is21.filter-kv(lam(k, v): (k == "b") and (v == 22) end)
+  is27 is [SD.string-dict: "b", 22]
+
+  var is28 = 1
+  is21.each(lam(v): is28 := is28 + 1 end)
+  is28 is 3
+
+  var is29 = 2
+  is21.each-k(lam(k): is29 := is29 + 1 end)
+  is29 is 4
+
+  var is30 = 3
+  is21.each-kv(lam(k, v): is30 := is29 + 1 end)
+  is30 is 5
 
   ms21 = [SD.mutable-string-dict: "a", 21, "b", 22]
 
@@ -267,6 +282,21 @@ check "map filter":
   ms25 = ms21.filter(lam(v): v == 22 end)
   ms25 is [SD.mutable-string-dict: "b", 22]
 
-  ms26 = ms21.filter-kv(lam(k, v): k == "b" end)
+  ms26 = ms21.filter-k(lam(k): k == "b" end)
   ms26 is [SD.mutable-string-dict: "b", 22]
+
+  ms27 = ms21.filter-kv(lam(k, v): (k == "b") and (v == 22) end)
+  ms27 is [SD.mutable-string-dict: "b", 22]
+
+  var ms28 = 1
+  ms21.each(lam(v): ms28 := ms28 + 1 end)
+  ms28 is 3
+
+  var ms29 = 2
+  ms21.each-k(lam(k): ms29 := ms29 + 1 end)
+  ms29 is 4
+
+  var ms30 = 3
+  ms21.each-kv(lam(k, v): ms30 := ms29 + 1 end)
+  ms30 is 5
 end

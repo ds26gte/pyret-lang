@@ -48,7 +48,11 @@
         "map": ["arrow", ["Any"], "sdOfA"],
         "map-kv": ["arrow", ["Any"], "sdOfA"],
         "map-kvk": ["arrow", ["Any"], "sdOfA"],
+        "each": ["arrow", ["Any"], "Nothing"],
+        "each-k": ["arrow", ["Any"], "Nothing"],
+        "each-kv": ["arrow", ["Any"], "Nothing"],
         "filter": ["arrow", ["Any"], "sdOfA"],
+        "filter-k": ["arrow", ["Any"], "sdOfA"],
         "filter-kv": ["arrow", ["Any"], "sdOfA"]
       }],
       "MutableStringDict": ["data", "MutableStringDict", ["a"], [], {
@@ -68,7 +72,11 @@
         "map": ["arrow", ["Any"], "Any"],
         "map-kv": ["arrow", ["Any"], "Any"],
         "map-kvk": ["arrow", ["Any"], "Any"],
+        "each": ["arrow", ["Any"], "Nothing"],
+        "each-k": ["arrow", ["Any"], "Nothing"],
+        "each-kv": ["arrow", ["Any"], "Nothing"],
         "filter": ["arrow", ["Any"], "Nothing"],
+        "filter-k": ["arrow", ["Any"], "Nothing"],
         "filter-kv": ["arrow", ["Any"], "Nothing"]
       }],
     }
@@ -846,17 +854,18 @@
           if (i < keys.length) {
             var key = keys[i];
             var val = underlyingMap.get(key);
-            return runtime.safeCall(function() {
+            runtime.safeCall(function() {
               return func.app(val);
             }, function(res) {
               newMap = newMap.set(key, res);
-              return eachKey(i+1);
+              eachKey(i+1);
             }, 'map iteration');
           }
         }
         eachKey(0);
         return makeImmutableStringDict(newMap);
       });
+
 
       var mapkvISD = runtime.makeMethod1(function(_, func) {
         if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['map-kv'], 2, $a); }
@@ -866,11 +875,11 @@
           if (i < keys.length) {
             var key = keys[i];
             var val = underlyingMap.get(key);
-            return runtime.safeCall(function() {
+            runtime.safeCall(function() {
               return func.app(key, val);
             }, function(res) {
               newMap = newMap.set(key, res);
-              return eachKey(i+1);
+              eachKey(i+1);
             }, 'map iteration');
           }
         }
@@ -900,6 +909,60 @@
         return makeImmutableStringDict(newMap);
       });
 
+      var eachvISD = runtime.makeMethod1(function(_, func) {
+        if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['each'], 2, $a); }
+        var keys = underlyingMap.keys();
+        function eachKey(i) {
+          if (i < keys.length) {
+            var key = keys[i];
+            var val = underlyingMap.get(key);
+            runtime.safeCall(function() {
+              func.app(val);
+            }, function() {
+              eachKey(i+1);
+            }, 'map iteration');
+          }
+        }
+        eachKey(0);
+        return runtime.nothing;
+      });
+
+      var eachkISD = runtime.makeMethod1(function(_, func) {
+        if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['each-k'], 2, $a); }
+        var keys = underlyingMap.keys();
+        function eachKey(i) {
+          if (i < keys.length) {
+            var key = keys[i];
+            var val = underlyingMap.get(key);
+            runtime.safeCall(function() {
+              func.app(key);
+            }, function() {
+              eachKey(i+1);
+            }, 'map iteration');
+          }
+        }
+        eachKey(0);
+        return runtime.nothing;
+      });
+
+      var eachkvISD = runtime.makeMethod1(function(_, func) {
+        if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['each-kv'], 2, $a); }
+        var keys = underlyingMap.keys();
+        function eachKey(i) {
+          if (i < keys.length) {
+            var key = keys[i];
+            var val = underlyingMap.get(key);
+            runtime.safeCall(function() {
+              func.app(key, val);
+            }, function() {
+              eachKey(i+1);
+            }, 'map iteration');
+          }
+        }
+        eachKey(0);
+        return runtime.nothing;
+      });
+
       var filtervISD = runtime.makeMethod1(function(_, pred) {
         if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['filter'], 2, $a); }
         var newMap = new emptyMap();
@@ -915,6 +978,28 @@
                 newMap = newMap.set(key, val);
               }
               return eachKey(i+1);
+            }, 'map iteration');
+          }
+        }
+        eachKey(0);
+        return makeImmutableStringDict(newMap);
+      });
+
+      var filterkISD = runtime.makeMethod1(function(_, pred) {
+        if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['filter-k'], 2, $a); }
+        var newMap = new emptyMap();
+        var keys = underlyingMap.keys();
+        function eachKey(i) {
+          if (i < keys.length) {
+            var key = keys[i];
+            var val = underlyingMap.get(key);
+            runtime.safeCall(function() {
+              return pred.app(key);
+            }, function(res) {
+              if (res) {
+                newMap = newMap.set(key, val);
+              }
+              eachKey(i+1);
             }, 'map iteration');
           }
         }
@@ -960,7 +1045,11 @@
         map: mapvISD,
         'map-kv': mapkvISD,
         'map-kvk': mapkvkISD,
+        each: eachvISD,
+        'each-k': eachkISD,
+        'each-kv': eachkvISD,
         filter: filtervISD,
+        'filter-k': filterkISD,
         'filter-kv': filterkvISD
       });
 
@@ -1158,11 +1247,11 @@
           if (i < keys.length) {
             var key = keys[i];
             var val = underlyingDict[key];
-            return runtime.safeCall(function() {
+            runtime.safeCall(function() {
               return func.app(val);
             }, function(res) {
               newDict[key] = res;
-              return eachKey(i+1);
+              eachKey(i+1);
             }, 'map iteration');
           }
         }
@@ -1178,11 +1267,11 @@
           if (i < keys.length) {
             var key = keys[i];
             var val = underlyingDict[key];
-            return runtime.safeCall(function() {
+            runtime.safeCall(function() {
               return func.app(key, val);
             }, function(res) {
               newDict[key] = res;
-              return eachKey(i+1);
+              eachKey(i+1);
             }, 'map iteration');
           }
         }
@@ -1198,18 +1287,71 @@
           if (i < keys.length) {
             var key = keys[i];
             var val = underlyingDict[key];
-            return runtime.safeCall(function() {
+            runtime.safeCall(function() {
               return func.app(key, val);
             }, function(tpl) {
               var tpl0 = runtime.getTuple(tpl, 0, ['runtime']);
               var tpl1 = runtime.getTuple(tpl, 1, ['runtime']);
               newDict[tpl0] = tpl1;
-              return eachKey(i+1);
+              eachKey(i+1);
             }, 'map iteration');
           }
         }
         eachKey(0);
         return makeMutableStringDict(newDict);
+      });
+
+      var eachvMSD = runtime.makeMethod1(function(_, func) {
+        if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['each'], 2, $a); }
+        var keys = Object.keys(underlyingDict);
+        function eachKey(i) {
+          if (i < keys.length) {
+            var key = keys[i];
+            var val = underlyingDict[key];
+            runtime.safeCall(function() {
+              func.app(val);
+            }, function() {
+              eachKey(i+1);
+            }, 'map iteration');
+          }
+        }
+        eachKey(0);
+        return runtime.nothing;
+      });
+
+      var eachkMSD = runtime.makeMethod1(function(_, func) {
+        if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['each-k'], 2, $a); }
+        var keys = Object.keys(underlyingDict);
+        function eachKey(i) {
+          if (i < keys.length) {
+            var key = keys[i];
+            runtime.safeCall(function() {
+              func.app(key);
+            }, function() {
+              eachKey(i+1);
+            }, 'each-k iteration');
+          }
+        }
+        eachKey(0);
+        return runtime.nothing;
+      });
+
+      var eachkvMSD = runtime.makeMethod1(function(_, func) {
+        if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['each-kv'], 2, $a); }
+        var keys = Object.keys(underlyingDict);
+        function eachKey(i) {
+          if (i < keys.length) {
+            var key = keys[i];
+            var val = underlyingDict[key];
+            runtime.safeCall(function() {
+              func.app(key, val);
+            }, function(res) {
+              eachKey(i+1);
+            }, 'map iteration');
+          }
+        }
+        eachKey(0);
+        return runtime.nothing;
       });
 
       var filtervMSD = runtime.makeMethod1(function(_, pred) {
@@ -1220,13 +1362,35 @@
           if (i < keys.length) {
             var key = keys[i];
             var val = underlyingDict[key];
-            return runtime.safeCall(function() {
+            runtime.safeCall(function() {
               return pred.app(val);
             }, function(res) {
               if (res) {
                 newDict[key] = val;
               }
-              return eachKey(i+1);
+              eachKey(i+1);
+            }, 'map iteration');
+          }
+        }
+        eachKey(0);
+        return makeMutableStringDict(newDict);
+      });
+
+      var filterkMSD = runtime.makeMethod1(function(_, pred) {
+        if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw runtime.ffi.throwArityErrorC(['filter-k'], 2, $a); }
+        var newDict = Object.create(null);
+        var keys = Object.keys(underlyingDict);
+        function eachKey(i) {
+          if (i < keys.length) {
+            var key = keys[i];
+            var val = underlyingDict[key];
+            runtime.safeCall(function() {
+              return pred.app(key);
+            }, function(res) {
+              if (res) {
+                newDict[key] = val;
+              }
+              eachKey(i+1);
             }, 'map iteration');
           }
         }
@@ -1242,13 +1406,13 @@
           if (i < keys.length) {
             var key = keys[i];
             var val = underlyingDict[key];
-            return runtime.safeCall(function() {
+            runtime.safeCall(function() {
               return pred.app(key, val);
             }, function(res) {
               if (res) {
                 newDict[key] = val;
               }
-              return eachKey(i+1);
+              eachKey(i+1);
             }, 'map iteration');
           }
         }
@@ -1273,7 +1437,11 @@
         map: mapvMSD,
         'map-kv': mapkvMSD,
         'map-kvk': mapkvkMSD,
+        each: eachvMSD,
+        'each-k': eachkMSD,
+        'each-kv': eachkvMSD,
         filter: filtervMSD,
+        'filter-k': filterkMSD,
         'filter-kv': filterkvMSD
       });
 
