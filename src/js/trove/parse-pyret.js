@@ -1336,6 +1336,7 @@
         //console.log("There were " + countParses + " potential parses");
         if (countParses === 1) {
           var ast = grammar.constructUniqueParse(parsed);
+          console.log('py_ast_j = ', JSON.stringify(ast));
           //          console.log(ast.toString());
           return translate(ast, fileName);
         } else {
@@ -1365,7 +1366,9 @@
       RUNTIME.checkString(data);
       RUNTIME.checkString(fileName);
       var data_unser = JSON.parse(RUNTIME.unwrap(data));
-      return translate(data_unser, RUNTIME.unwrap(fileName));
+      var res= translate(data_unser, RUNTIME.unwrap(fileName));
+      console.log('xlateres=', JSON.stringify(res));
+      return res;
     }
 
     return RUNTIME.makeObject({
