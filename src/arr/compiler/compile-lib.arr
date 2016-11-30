@@ -320,6 +320,11 @@ fun is-builtin-module(uri :: String) -> Boolean:
   string-index-of(uri, "builtin://") == 0
 end
 
+fun is-builtin-or-spyret-module(uri :: String) -> Boolean:
+  (string-index-of(uri, "builtin://") == 0) or
+  (string-index-of(uri, "wescheme-collection://") == 0)
+end
+
 fun compile-module(locator :: Locator, provide-map :: SD.StringDict<CS.Provides>, modules, options) -> Loadable block:
   G.reset()
   A.global-names.reset()
@@ -353,9 +358,14 @@ fun compile-module(locator :: Locator, provide-map :: SD.StringDict<CS.Provides>
       var wf = W.check-well-formed(ast-ended, locator.dialect())
       ast-ended := nothing
       when options.collect-all: ret := phase("Checked well-formedness", wf, ret) end
-      checker = if options.check-mode and not(is-builtin-module(locator.uri())):
+      print("check-mode= ")
+      print(options.check-mode)
+      print("\n")
+      checker = if options.check-mode and not(is-builtin-module(locator.uri())) block:
+        print("desugar-checking " + locator.uri() + "\n")
         CH.desugar-check
       else:
+        print("skipping desugar for " + locator.uri() + "\n")
         CH.desugar-no-checks
       end
       cases(CS.CompileResult) wf block:
@@ -363,6 +373,9 @@ fun compile-module(locator :: Locator, provide-map :: SD.StringDict<CS.Provides>
           var wf-ast = wf.code
           wf := nothing
           var checked = checker(wf-ast)
+          print("checked=\n")
+          print(checked)
+          print("\n")
           wf-ast := nothing
           when options.collect-all:
             ret := phase(if options.check-mode: "Desugared (with checks)" else: "Desugared (skipping checks)" end,

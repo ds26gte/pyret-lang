@@ -153,8 +153,14 @@ no-checks-visitor = A.default-map-visitor.{
 }
 
 check-visitor = A.default-map-visitor.{
-  method s-block(self, l, stmts):
+  method s-block(self, l, stmts) block:
+    #print("stmts=\n")
+    #print(stmts)
+    #print("\n")
     checks-to-perform = get-checks(stmts)
+    print("checks-to-perform=\n")
+    print(checks-to-perform)
+    print("\n")
     ds-stmts = stmts.map(_.visit(self))
     do-checks = create-check-block(l, checks-to-perform)
     if is-empty(checks-to-perform): A.s-block(l, ds-stmts)
@@ -175,7 +181,7 @@ check-visitor = A.default-map-visitor.{
   end
 }
 
-fun desugar-check(prog):
+fun desugar-check(prog) block:
   doc: ```
         Desugars all check blocks to be calls to the current checker
         Preconditions on prog:
@@ -184,6 +190,9 @@ fun desugar-check(prog):
           - contains no s-check or s-check-test statements
           - all where blocks on s-lam, s-fun, s-data, s-method are none
         ```
+  print("prog=\n")
+  print(prog)
+  print("\n")
   prog.visit(check-visitor)
 end
 
