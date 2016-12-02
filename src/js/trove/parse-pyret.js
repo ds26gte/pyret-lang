@@ -1358,7 +1358,9 @@
       RUNTIME.ffi.checkArity(2, arguments, "surface-parse");
       RUNTIME.checkString(data);
       RUNTIME.checkString(fileName);
-      return parseDataRaw(RUNTIME.unwrap(data), RUNTIME.unwrap(fileName));
+      var res= parseDataRaw(RUNTIME.unwrap(data), RUNTIME.unwrap(fileName));
+      //console.log('xlateres=', JSON.stringify(res));
+      return res;
     }
 
     function parseSpyret(data, fileName) {
@@ -1367,7 +1369,7 @@
       RUNTIME.checkString(fileName);
       var data_unser = JSON.parse(RUNTIME.unwrap(data));
       var res= translate(data_unser, RUNTIME.unwrap(fileName));
-      console.log('xlateres=', JSON.stringify(res));
+      //console.log('xlateres=', JSON.stringify(res));
       return res;
     }
 
