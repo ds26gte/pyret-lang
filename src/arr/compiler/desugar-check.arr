@@ -158,9 +158,10 @@ check-visitor = A.default-map-visitor.{
     #print(stmts)
     #print("\n")
     checks-to-perform = get-checks(stmts)
-    print("checks-to-perform=\n")
-    print(checks-to-perform)
-    print("\n")
+    #ds26gte debug
+    #print("checks-to-perform=\n")
+    #print(checks-to-perform)
+    #print("\n")
     ds-stmts = stmts.map(_.visit(self))
     do-checks = create-check-block(l, checks-to-perform)
     if is-empty(checks-to-perform): A.s-block(l, ds-stmts)
@@ -190,9 +191,10 @@ fun desugar-check(prog) block:
           - contains no s-check or s-check-test statements
           - all where blocks on s-lam, s-fun, s-data, s-method are none
         ```
-  print("prog=\n")
-  print(prog)
-  print("\n")
+        #ds26gte debug
+  #print("prog=\n")
+  #print(prog)
+  #print("\n")
   prog.visit(check-visitor)
 end
 

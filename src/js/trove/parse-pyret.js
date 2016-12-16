@@ -1336,7 +1336,8 @@
         //console.log("There were " + countParses + " potential parses");
         if (countParses === 1) {
           var ast = grammar.constructUniqueParse(parsed);
-          console.log('py_ast_j = ', JSON.stringify(ast));
+          //ds26gte debug
+          //console.log('py_ast_j = ', JSON.stringify(ast));
           //          console.log(ast.toString());
           return translate(ast, fileName);
         } else {
