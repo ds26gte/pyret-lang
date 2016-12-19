@@ -326,7 +326,7 @@ fun is-builtin-or-spyret-module(uri :: String) -> Boolean:
 end
 
 fun compile-module(locator :: Locator, provide-map :: SD.StringDict<CS.Provides>, modules, options) -> Loadable block:
-  G.reset()
+  #G.reset()
   A.global-names.reset()
   #print("Compiling module: " + locator.uri() + "\n")
   env = CS.compile-env(locator.get-globals(), provide-map)
