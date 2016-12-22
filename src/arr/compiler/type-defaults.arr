@@ -173,6 +173,8 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("_spyret_num_equal_tilde").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_numerator").key(), t-arrow([list: t-number], t-number))
   default-typs.set-now(A.s-global("_spyret_odd_p").key(), t-arrow([list: t-number], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_add1").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_spyret_sub1").key(), t-arrow([list: t-number], t-number))
   default-typs.set-now(A.s-global("_spyret_plus").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_quotient").key(), t-arrow([list: t-number, t-number], t-number))
   default-typs.set-now(A.s-global("_spyret_random").key(), t-top)

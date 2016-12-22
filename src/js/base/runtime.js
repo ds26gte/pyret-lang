@@ -4777,6 +4777,18 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return !jsnums.equalsAnyZero(jsnums.modulo(n, 2));
     };
 
+    var _spyret_add1 = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["add1"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return jsnums.add(n, 1);
+    };
+
+    var _spyret_sub1 = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["sub1"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return jsnums.subtract(n, 1);
+    };
+
     var _spyret_plus = function() {
       var result = 0;
       var i, j;
@@ -6045,6 +6057,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_spyret_num_equal_tilde": makeFunction(_spyret_num_equal_tilde, "_spyret_num_equal_tilde"),
       "_spyret_numerator": makeFunction(_spyret_numerator, "_spyret_numerator"),
       "_spyret_odd_p": makeFunction(_spyret_odd_p, "_spyret_odd_p"),
+      "_spyret_add1": makeFunction(_spyret_add1, "_spyret_add1"),
+      "_spyret_sub1": makeFunction(_spyret_sub1, "_spyret_sub1"),
       "_spyret_plus": makeFunction(_spyret_plus, "_spyret_plus"),
       "_spyret_quotient": makeFunction(_spyret_quotient, "_spyret_quotient"),
       "_spyret_random": makeFunction(_spyret_random, "_spyret_random"),
