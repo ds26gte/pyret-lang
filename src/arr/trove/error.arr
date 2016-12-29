@@ -184,7 +184,7 @@ data RuntimeError:
     end
   | update-non-existent-field(loc, obj, objloc, field, fieldloc) with:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
-      if self.loc.is-builtin():        
+      if self.loc.is-builtin():
         [ED.error:
           ed-simple-intro("reference update expression", self.loc),
           [ED.para:
@@ -417,7 +417,7 @@ data RuntimeError:
       if self.loc.is-builtin():
         [ED.error:
           ed-simple-intro("tuple lookup expression", self.loc),
-          [ED.para: 
+          [ED.para:
             ED.text("The left side was a tuple of "),
             ED.ed-components(self.len),
             ED.text(", smaller than the given position ("),
@@ -442,7 +442,7 @@ data RuntimeError:
             [ED.error:
               ed-intro("tuple lookup expression", self.loc, 0, true),
               ED.cmcode(self.loc),
-              [ED.para: 
+              [ED.para:
                 ED.text("The left side was a tuple of "),
                 ED.ed-components(self.len),
                 ED.text(", smaller than the given position ("),
@@ -452,7 +452,7 @@ data RuntimeError:
       else:
         [ED.error:
           ed-simple-intro("tuple lookup expression", self.loc),
-          [ED.para: 
+          [ED.para:
             ED.text(" failed because the left side was a tuple of "),
             ED.ed-components(self.len),
             ED.text(", smaller than the given position ("),
@@ -463,7 +463,7 @@ data RuntimeError:
     method render-reason(self):
       [ED.error:
         ed-simple-intro("tuple lookup expression", self.loc),
-        [ED.para: 
+        [ED.para:
           ED.text(" failed because the left side was a tuple of "),
           ED.ed-components(self.len),
           ED.text(", smaller than the given position ("),
@@ -600,7 +600,7 @@ data RuntimeError:
             ED.ed-components(self.length),
             ED.text(":")],
           ED.embed(self.tup)]
-      end 
+      end
     end
   | lookup-non-object(loc, non-obj, field :: String) with:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
@@ -1194,12 +1194,12 @@ data RuntimeError:
       fun-app-arity = self.fun-app-args.length()
       helper =
         lam(rest):
-          [ED.error: 
+          [ED.error:
             cases(O.Option) maybe-stack-loc(
-              if self.fun-def-loc.is-builtin(): 
-                0 
-              else: 
-                1 
+              if self.fun-def-loc.is-builtin():
+                0
+              else:
+                1
               end, false):
               | some(fun-app-loc) =>
                 if fun-app-loc.is-builtin():
@@ -1236,7 +1236,7 @@ data RuntimeError:
                   end
                 else:
                   [ED.sequence:
-                    ed-simple-intro("function application expression", fun-app-loc), 
+                    ed-simple-intro("function application expression", fun-app-loc),
                     [ED.para:
                       ED.text("The applicant had "),
                       ED.ed-args(fun-app-arity),
@@ -1258,7 +1258,7 @@ data RuntimeError:
         if src-available(self.fun-def-loc):
           fun is-underscore(arg):
             cases(Any) arg:
-              | s-id(_, id) => 
+              | s-id(_, id) =>
                 cases(Any) id:
                   | s-underscore(_) => true
                   | else            => false
@@ -1331,7 +1331,7 @@ data RuntimeError:
       this-str = if num-args == 1: "this " else: "these " end
       arg-str = if num-args == 1: " argument:" else: " arguments:" end
       exp-arg-str = if self.fun-def-arity == 1: " argument" else: " arguments" end
-      
+
       ED.maybe-stack-loc(
         if self.fun-def-loc.is-builtin():
           0
@@ -1369,10 +1369,10 @@ data RuntimeError:
         lam(rest):
           [ED.error:
             cases(O.Option) maybe-stack-loc(
-              if self.fun-def-loc.is-builtin(): 
-                0 
-              else: 
-                1 
+              if self.fun-def-loc.is-builtin():
+                0
+              else:
+                1
               end, false):
               | some(fun-app-loc) =>
                 if fun-app-loc.is-builtin():
@@ -1409,7 +1409,7 @@ data RuntimeError:
                   end
                 else:
                   [ED.sequence:
-                    ed-simple-intro("function application expression", fun-app-loc), 
+                    ed-simple-intro("function application expression", fun-app-loc),
                     [ED.para:
                       ED.text("The applicant had "),
                       ED.ed-args(fun-app-arity),
@@ -1504,7 +1504,7 @@ data RuntimeError:
       this-str = if num-args == 1: "this " else: "these " end
       arg-str = if num-args == 1: " argument:" else: " arguments:" end
       exp-arg-str = if self.fun-def-arity == 1: " argument" else: " arguments" end
-      
+
       ED.maybe-stack-loc(
         if self.fun-def-loc.is-builtin():
           0
@@ -1550,7 +1550,7 @@ data RuntimeError:
               ED.cmcode(self.loc),
               [ED.para:
                 ED.text("The "),
-                ED.highlight(ED.text("left side"), [ED.locs: 
+                ED.highlight(ED.text("left side"), [ED.locs:
                   cases(Any) ast:
                     | s-app(_, _fun, _) => _fun.l
                     | else  => ast.l
@@ -1681,7 +1681,7 @@ data RuntimeError:
             end
           | none =>
             [ED.sequence:
-              [ED.para: 
+              [ED.para:
                 ED.text("An array interaction, "),
                 ED.code(ED.text(self.method-name)),
                 ED.text("It expects that the index passed to it is an integer within the bounds of the array. ")],
@@ -1825,7 +1825,11 @@ data ParseError:
       msg-split = string-split-all(self.msg, ",,")
       msg-first = msg-split.take(1).map(ED.text)
       msg-rest = msg-split.drop(1)
-      msg-rest-clumps = ED.map3(lam(a, b, c): [ED.list: ED.loc-display(a, "check-highlight", ED.styled(ED.text(b),"check-highlight")), ED.text(c)] end, self.locs, self.args, msg-rest)
+      msg-rest-clumps = ED.map3(lam(a, b, c):
+        [ED.list: ED.loc-display(a, "check-highlight",
+           ED.highlight(ED.text(b),[ED.locs: self.locs.first],0)),
+         ED.text(c)]
+      end, self.locs, self.args, msg-rest)
       final-msg = msg-rest-clumps.foldl(lam(cur, bas): bas.append(cur) end, msg-first)
       [ED.error:
         ED.h-sequence(final-msg, " ")
@@ -1835,7 +1839,11 @@ data ParseError:
       msg-split = string-split-all(self.msg, ",,")
       msg-first = msg-split.take(1).map(ED.text)
       msg-rest = msg-split.drop(1)
-      msg-rest-clumps = ED.map3(lam(a, b, c): [ED.list: ED.loc-display(a, "check-highlight", ED.styled(ED.text(b),"check-highlight")), ED.text(c)] end, self.locs, self.args, msg-rest)
+      msg-rest-clumps = ED.map3(lam(a, b, c):
+        [ED.list: ED.loc-display(a, "check-highlight",
+            ED.highlight(ED.text(b),[ED.locs: self.locs.first],0)),
+         ED.text(c)]
+      end, self.locs, self.args, msg-rest)
       final-msg = msg-rest-clumps.foldl(lam(cur, bas): bas.append(cur) end, msg-first)
       [ED.error:
         ED.h-sequence(final-msg, " ")
