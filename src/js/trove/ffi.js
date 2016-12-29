@@ -445,6 +445,11 @@
     function throwParseErrorBadOper(loc) {
       raise(err("parse-error-bad-operator")(loc));
     }
+    function makeSpyretParseException(errMsg, errArgsList, errLocsList) {
+      console.log('doing makeSpyretParseException', errMsg, errArgsList, errLocsList);
+      return runtime.makePyretFailException(err("spyret-parse-error")(errMsg, 
+        errArgsList, errLocsList));
+    }
 
     function throwModuleLoadFailureL(names) {
       raise(makeModuleLoadFailureL(names));
@@ -580,6 +585,8 @@
       throwParseErrorUnterminatedString: throwParseErrorUnterminatedString,
       throwParseErrorBadNumber: throwParseErrorBadNumber,
       throwParseErrorBadOper: throwParseErrorBadOper,
+
+      makeSpyretParseException: makeSpyretParseException,
 
       makeRecordFieldsFail: makeRecordFieldsFail,
       makeTupleAnnsFail: makeTupleAnnsFail,
