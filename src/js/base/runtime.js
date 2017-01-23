@@ -1786,12 +1786,15 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
          @param {!PBase} val the value to raise
       */
     function(val) {
+      //console.log('doing raiseJSJS', val);
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["raise"], 1, $a); }
       if(thisRuntime.isObject(val) &&
          (thisRuntime.hasField(val, "render-reason")
           || thisRuntime.hasField(val, "render-fancy-reason"))){
+            //console.log('had render-(fancy-)reason');
         throw new PyretFailException(val);
       } else {
+        //console.log('didnt have render-(fancy-)reason');
         throw new PyretFailException(thisRuntime.ffi.makeUserException(val));
       }
     };
@@ -4866,8 +4869,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC(["="], 2, [arguments[0]]);
       }
+      thisRuntime.checkNumber(arguments[0]);
       for (var i = 0; i < lastIndex; i++) {
-        thisRuntime.checkNumber(arguments[i]);
+        thisRuntime.checkNumber(arguments[i+1]);
         if (!jsnums.schemeEquals(arguments[i], arguments[i+1])) {
           return thisRuntime.makeBoolean(false);
         }
@@ -4880,8 +4884,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC(["<"], 2, [arguments[0]]);
       }
+      thisRuntime.checkNumber(arguments[0]);
       for (var i = 0; i < lastIndex; i++) {
-        thisRuntime.checkNumber(arguments[i]);
+        thisRuntime.checkNumber(arguments[i+1]);
         if (!jsnums.lessThan(arguments[i], arguments[i+1])) {
           return thisRuntime.makeBoolean(false);
         }
@@ -4894,8 +4899,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC([">"], 2, [arguments[0]]);
       }
+      thisRuntime.checkNumber(arguments[0]);
       for (var i = 0; i < lastIndex; i++) {
-        thisRuntime.checkNumber(arguments[i]);
+        thisRuntime.checkNumber(arguments[i+1]);
         if (!jsnums.greaterThan(arguments[i], arguments[i+1])) {
           return thisRuntime.makeBoolean(false);
         }
@@ -4908,8 +4914,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC(["<="], 2, [arguments[0]]);
       }
+      thisRuntime.checkNumber(arguments[0]);
       for (var i = 0; i < lastIndex; i++) {
-        thisRuntime.checkNumber(arguments[i]);
+        thisRuntime.checkNumber(arguments[i+1]);
         if (!jsnums.lessThanOrEqual(arguments[i], arguments[i+1])) {
           return thisRuntime.makeBoolean(false);
         }
@@ -4922,8 +4929,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC([">="], 2, [arguments[0]]);
       }
+      thisRuntime.checkNumber(arguments[0]);
       for (var i = 0; i < lastIndex; i++) {
-        thisRuntime.checkNumber(arguments[i]);
+        thisRuntime.checkNumber(arguments[i+1]);
         if (!jsnums.greaterThanOrEqual(arguments[i], arguments[i+1])) {
           return thisRuntime.makeBoolean(false);
         }
@@ -5010,8 +5018,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string=?", 2, [arguments[0]]);
       }
+      thisRuntime.checkString(arguments[0]);
       for (var i = 0; i < lastIndex; i++) {
-        thisRuntime.checkString(arguments[i]);
+        thisRuntime.checkString(arguments[i+1]);
         if (arguments[i] !== arguments[i+1]) {
           return thisRuntime.makeBoolean(false);
         }
@@ -5024,8 +5033,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string<?", 2, [arguments[0]]);
       }
+      thisRuntime.checkString(arguments[0]);
       for (var i = 0; i < lastIndex; i++) {
-        thisRuntime.checkString(arguments[i]);
+        thisRuntime.checkString(arguments[i+1]);
         if (!(arguments[i] < arguments[i+1])) {
           return thisRuntime.makeBoolean(false);
         }
@@ -5038,8 +5048,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string>?", 2, [arguments[0]]);
       }
+      thisRuntime.checkString(arguments[0]);
       for (var i = 0; i < lastIndex; i++) {
-        thisRuntime.checkString(arguments[i]);
+        thisRuntime.checkString(arguments[i+1]);
         if (!(arguments[i] > arguments[i+1])) {
           return thisRuntime.makeBoolean(false);
         }

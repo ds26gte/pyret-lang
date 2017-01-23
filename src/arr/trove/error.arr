@@ -1826,8 +1826,10 @@ data ParseError:
       msg-first = msg-split.take(1).map(ED.text)
       msg-rest = msg-split.drop(1)
       msg-rest-clumps = ED.map3(lam(a, b, c):
-        [ED.list: ED.loc-display(a, "check-highlight",
-           ED.highlight(ED.text(b),[ED.locs: self.locs.first],0)),
+        [ED.list: 
+         ED.highlight(ED.text(b),[ED.locs: a],0),
+        # ED.loc-display(a, "check-highlight",
+        #   ED.highlight(ED.text(b),[ED.locs: self.locs.first],0)),
          ED.text(c)]
       end, self.locs, self.args, msg-rest)
       final-msg = msg-rest-clumps.foldl(lam(cur, bas): bas.append(cur) end, msg-first)
@@ -1840,8 +1842,10 @@ data ParseError:
       msg-first = msg-split.take(1).map(ED.text)
       msg-rest = msg-split.drop(1)
       msg-rest-clumps = ED.map3(lam(a, b, c):
-        [ED.list: ED.loc-display(a, "check-highlight",
-            ED.highlight(ED.text(b),[ED.locs: self.locs.first],0)),
+        [ED.list: 
+         ED.highlight(ED.text(b),[ED.locs: a],0),
+        # ED.loc-display(a, "check-highlight",
+        #    ED.highlight(ED.text(b),[ED.locs: self.locs.first],0)),
          ED.text(c)]
       end, self.locs, self.args, msg-rest)
       final-msg = msg-rest-clumps.foldl(lam(cur, bas): bas.append(cur) end, msg-first)
