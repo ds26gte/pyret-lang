@@ -169,6 +169,8 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("_spyret_lcm").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_le").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_lt").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_max").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_min").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_minus").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_num_equal_tilde").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_numerator").key(), t-arrow([list: t-number], t-number))

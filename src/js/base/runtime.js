@@ -4939,6 +4939,40 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
+    var _spyret_max = function(l) {
+      var argLen = arguments.length;
+      if (argLen < 2) {
+        throw thisRuntime.ffi.throwArityErrorC(["max"], 2, [l]);
+      }
+      thisRuntime.checkNumber(l);
+      var result = l;
+      for (var i = 1; i < argLen; i++) {
+        var b = arguments[i];
+        thisRuntime.checkNumber(b);
+        if (jsnums.greaterThan(b, l, NumberErrbacks)) {
+          result = b;
+        }
+      }
+      return result;
+    };
+
+    var _spyret_min = function(l) {
+      var argLen = arguments.length;
+      if (argLen < 2) {
+        throw thisRuntime.ffi.throwArityErrorC(["min"], 2, [l]);
+      }
+      thisRuntime.checkNumber(l);
+      var result = l;
+      for (var i = 1; i < argLen; i++) {
+        var b = arguments[i];
+        thisRuntime.checkNumber(b);
+        if (jsnums.lessThan(b, l, NumberErrbacks)) {
+          result = b;
+        }
+      }
+      return result;
+    };
+
     var _spyret_sgn = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["sgn"], 1, $a); }
       thisRuntime.checkNumber(n);
@@ -6064,6 +6098,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_spyret_lcm": makeFunction(_spyret_lcm, "_spyret_lcm"),
       "_spyret_le": makeFunction(_spyret_le, "_spyret_le"),
       "_spyret_lt": makeFunction(_spyret_lt, "_spyret_lt"),
+      "_spyret_max": makeFunction(_spyret_max, "_spyret_max"),
+      "_spyret_min": makeFunction(_spyret_min, "_spyret_min"),
       "_spyret_minus": makeFunction(_spyret_minus, "_spyret_minus"),
       "_spyret_num_equal_tilde": makeFunction(_spyret_num_equal_tilde, "_spyret_num_equal_tilde"),
       "_spyret_numerator": makeFunction(_spyret_numerator, "_spyret_numerator"),
