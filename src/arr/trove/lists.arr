@@ -726,6 +726,17 @@ fun _spyret_foldr<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
   end
 end
 
+fun _spyret_quicksort<a>(lst :: List<a>, lt :: (a, a -> Boolean)):
+  lst.sort-by(lam(x :: a, y :: a):
+                if x == y: false
+                else: lt(x, y)
+                end
+              end,
+              lam(x :: a, y :: a):
+                x == y
+              end)
+end
+
 fun fold2<a, b, c>(f :: (a, b, c -> a), base :: a, l1 :: List<b>, l2 :: List<c>) -> a:
   doc: ```Takes a function, an initial value and two lists, and folds the function over the lists in parallel
         from the left, starting with the initial value and ending when either list is empty```

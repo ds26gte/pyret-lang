@@ -5400,12 +5400,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return f.app.apply(null, rargs);
     };
 
-    var _spyret_apply_obsolete = function(f, args) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["apply"], 2, $a); }
-      checkFunction(f);
-      checkList(args);
-      return f.app.apply(null, thisRuntime.ffi.toArray(args));
-    };
 
     var _spyret_compose = function(f, g) {
       if (arguments.length !== 2) { var $a = new Array(arguments.length); for (var $i = 0; $i < arguments.length; $i++) { $a[$i] = arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["compose"], 2, $a); }
