@@ -4949,7 +4949,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       for (var i = 1; i < argLen; i++) {
         var b = arguments[i];
         thisRuntime.checkNumber(b);
-        if (jsnums.greaterThan(b, l, NumberErrbacks)) {
+        if (jsnums.greaterThan(b, result, NumberErrbacks)) {
           result = b;
         }
       }
@@ -4966,7 +4966,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       for (var i = 1; i < argLen; i++) {
         var b = arguments[i];
         thisRuntime.checkNumber(b);
-        if (jsnums.lessThan(b, l, NumberErrbacks)) {
+        if (jsnums.lessThan(b, result, NumberErrbacks)) {
           result = b;
         }
       }
