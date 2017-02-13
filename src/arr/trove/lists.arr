@@ -867,6 +867,18 @@ fun build-list(n :: Number, f :: (Number -> Any)) -> List:
 end
 
 #for spyret
+fun make-list(n :: Number, v :: Any) -> List:
+  fun make-list-helper(m :: Number):
+    if m == n:
+      empty
+    else:
+      make-list-helper(m + 1).push(v)
+    end
+  end
+  make-list-helper(0)
+end
+
+#for spyret
 _spyret_null = empty
 _spyret_empty = empty
 

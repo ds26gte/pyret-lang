@@ -191,7 +191,7 @@ fun provides-from-raw-provides(uri, raw):
     if is-string(v) block:
       vdict.set(v, t-top)
     else:
-      #print("\n\nYOOOOOOOOOOOOOOOOOOOOOOO: " + tostring(v.name)) 
+      #print("\n\nYOOOOOOOOOOOOOOOOOOOOOOO: " + tostring(v.name))
       vdict.set(v.name, type-from-raw(uri, v.typ, SD.make-string-dict()))
     end
   end
@@ -1303,7 +1303,7 @@ data CompileError:
           ED.text(" to evaluate to a function that accepts exactly the same number of arguments as are given to it.")],
         [ED.para:
           ED.highlight(ED.ed-args(self.app-expr.args.length()), self.app-expr.args.map(_.l), 1),
-          ED.text(" " + if self.app-expr.args.length() == 1: "is " else: "are " end 
+          ED.text(" " + if self.app-expr.args.length() == 1: "is " else: "are " end
                 + "given, but the type signature of the "),
           ed-applicant],
         [ED.para:
@@ -1698,7 +1698,7 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para-nospace:
-          ED.text("Unable to infer the type of "), 
+          ED.text("Unable to infer the type of "),
           ED.highlight(ED.text("this"), [list: self.loc], 0),
           ED.text(". Please add an annotation.")]]
     end,
@@ -1950,7 +1950,7 @@ data CompileError:
     end
   | table-sanitizer-bad-column(sanitize-expr :: A.LoadTableSpec, col-defs :: A.Loc) with:
     method render-fancy-reason(self):
-      
+
       bad-column = self.sanitize-expr.name
       bad-column-name = bad-column.tosource().pretty(80)
       sanitizer = self.sanitize-expr.sanitizer
@@ -2468,6 +2468,7 @@ standard-imports = extra-imports(
           "list-member",
           "list-assoc",
           "build-list",
+          "make-list",
           "_spyret_null",
           "_spyret_empty"
         ],
