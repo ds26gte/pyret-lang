@@ -3819,12 +3819,12 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["raw-array-get"], 2, $a); }
       thisRuntime.checkArray(arr);
       thisRuntime.checkArray(keys);
-      
+
       var obj = {}
       for(var i = 0; i < keys.length; i++) {
         obj[keys[i]] = arr[i];
       }
-      
+
       return makeObject(obj);
     };
 
@@ -5234,6 +5234,18 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeString(result);
     };
 
+    var _spyret_make_string = function(n, c) {
+      if (arguments.length !== 2) { var $a = new Array(arguments.length); for (var $i = 0; $i < arguments.length; $i++) { $a[$i] = arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["make-string"], 2, $a); }
+      checkNumInteger(n); checkNumNonNegative(n);
+      checkSpyretCharacter(c);
+      var len = jsnums.toFixnum(n);
+      var result = '';
+      for (var i = 0; i < len; i++) {
+        result = result.concat(c);
+      }
+      return thisRuntime.makeString(result);
+    };
+
     var _spyret_string_append = function() {
       var result = "";
       var s;
@@ -5400,7 +5412,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return f.app.apply(null, rargs);
     };
 
-
     var _spyret_compose = function(f, g) {
       if (arguments.length !== 2) { var $a = new Array(arguments.length); for (var $i = 0; $i < arguments.length; $i++) { $a[$i] = arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["compose"], 2, $a); }
       checkFunction(f);
@@ -5547,7 +5558,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
     }
 
-    function _spyret_make_hash() { 
+    function _spyret_make_hash() {
       if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["make-hash"], 0, $a); }
       return thisRuntime.ffi._spyret_make_hash();
     }
@@ -5574,7 +5585,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
     function _spyret_struct_p(v) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash?"], 1, $a); }
-      return !!((v instanceof Object) && 
+      return !!((v instanceof Object) &&
         v.dict && v.brands && v.$name && v.$mut_fields_mask && v.$arity && v.$constructor);
     }
 
@@ -6059,7 +6070,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       // NOTE(joe): this one different because the predicate is added when Table is loaded
       // (see handalone.js)
       'is-table': makeFunction(function(v) {
-        return thisRuntime.isTable(v); 
+        return thisRuntime.isTable(v);
       }, "is-tuple"),
 
       'run-task': makeFunction(execThunk, "run-task"),
@@ -6117,6 +6128,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
       "_spyret_list_to_string": makeFunction(_spyret_list_to_string, "_spyret_list_to_string"),
       "_spyret_string": makeFunction(_spyret_string, "_spyret_string"),
+      '_spyret_make_string': makeFunction(_spyret_make_string, '_spyret_make_string'),
       "_spyret_string_append": makeFunction(_spyret_string_append, "_spyret_string_append"),
       "_spyret_string_ci_eq": makeFunction(_spyret_string_ci_eq, "_spyret_string_ci_eq"),
       "_spyret_string_ci_ge": makeFunction(_spyret_string_ci_ge, "_spyret_string_ci_ge"),

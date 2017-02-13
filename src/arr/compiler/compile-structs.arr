@@ -2181,6 +2181,7 @@ runtime-provides = provides("builtin://global",
 
     "_spyret_list_to_string", t-top,
     "_spyret_string", t-top,
+    "_spyret_make_string", t-top,
     "_spyret_string_append", t-top,
     "_spyret_string_ci_eq", t-top,
     "_spyret_string_ci_ge", t-top,
@@ -2420,7 +2421,8 @@ standard-imports = extra-imports(
           "array-set-now",
           "array-get-now",
           "array-length",
-          "array-to-list-now"
+          "array-to-list-now",
+          "make-vector"
         ],
         [list: "Array"]),
       extra-import(builtin("lists"), "lists", [list:

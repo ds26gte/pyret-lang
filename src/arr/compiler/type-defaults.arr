@@ -194,6 +194,7 @@ fun make-default-types() block:
 
   default-typs.set-now(A.s-global("_spyret_list_to_string").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_string").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_make_string").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_string_append").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_string_ci_eq").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_string_ci_ge").key(), t-top)
@@ -348,7 +349,8 @@ module-const-arrays = t-module("builtin://arrays",
     "array-set-now", t-forall([list: tva], t-arrow([list: mk-array(tva), t-number, tva], t-nothing)),
     "array-get-now", t-forall([list: tva], t-arrow([list: mk-array(tva), t-number], tva)),
     "array-length", t-forall([list: tva], t-arrow([list: mk-array(tva)], t-number)),
-    "array-to-list-now", t-forall([list: tva], t-arrow([list: mk-array(tva)], mk-list(tva)))
+    "array-to-list-now", t-forall([list: tva], t-arrow([list: mk-array(tva)], mk-list(tva))),
+    "make-vector", t-forall([list: tva], t-arrow([list: t-number, tva], mk-array(tva)))
   ]),
   SD.make-string-dict()
     .set("Array", t-data(
