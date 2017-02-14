@@ -2437,6 +2437,8 @@ standard-imports = extra-imports(
           "repeat",
           "filter",
           "partition",
+          "remove",
+          "_spyret_remove-all",
           "_spyret_remove",
           "_spyret_quicksort",
           "split-at",

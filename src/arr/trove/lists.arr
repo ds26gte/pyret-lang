@@ -425,6 +425,10 @@ fun remove<a>(lst :: List<a>, elt :: a) -> List<a>:
   end
 end
 
+fun _spyret_remove-all<a>(elt :: a, lst :: List<a>) -> List<a>:
+  remove(lst, elt)
+end
+
 fun _spyret_remove<a>(elt :: a, lst :: List<a>) -> List<a>:
   doc: ```Returns the list without the element if found, or the whole list if it is not```
   if is-empty(lst):
