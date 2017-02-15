@@ -1860,22 +1860,37 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
       var stackOfToCompare = [];
       var toCompare = { stack: [], curAns: thisRuntime.ffi.equal };
-      var cache = {left: [], right: []};
+      var cache = {left: [], right: [], equal: []};
       function findPair(obj1, obj2) {
         for (var i = 0; i < cache.left.length; i++) {
           if (cache.left[i] === obj1 && cache.right[i] === obj2)
-            return true;
+            return cache.equal[i];
         }
         return false;
+      }
+      function setCachePair(obj1, obj2, val) {
+        for (var i = 0; i < cache.left.length; i++) {
+          if (cache.left[i] === obj1 && cache.right[i] === obj2) {
+            cache.equal[i] = val;
+            return;
+          }
+        }
+// throw new Error("Internal error: tried to 
       }
       function cachePair(obj1, obj2) {
         cache.left.push(obj1);
         cache.right.push(obj2);
+        cache.equal.push(thisRuntime.ffi.equal);
+        return cache.equal.length;
       }
       function equalHelp() {
         var current, curLeft, curRight;
         while (toCompare.stack.length > 0 && !thisRuntime.ffi.isNotEqual(toCompare.curAns)) {
           current = toCompare.stack.pop();
+          if(current.setCache) {
+            cache.equal[current.index - 1] = toCompare.curAns;
+            continue;
+          }
           curLeft = current.left;
           curRight = current.right;
 
@@ -1920,10 +1935,14 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
               toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight);
             }
           } else {
-            if (findPair(curLeft, curRight)) {
-              continue; // Already checked this pair of objects
+            var curPair = findPair(curLeft, curRight);
+            if (curPair !== false) {
+              // Already checked this pair of objects
+              toCompare.curAns = curPair
+              continue;
             } else {
-              cachePair(curLeft, curRight);
+              var index = cachePair(curLeft, curRight);
+              toCompare.stack.push({ setCache: true, index: index, left: curLeft, right: curRight });
               if (isRef(curLeft) && isRef(curRight)) {
                 if (alwaysFlag && !(isRefFrozen(curLeft) && isRefFrozen(curRight))) { // In equal-always, non-identical refs are not equal
                   toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight); // We would've caught identical refs already
@@ -2082,6 +2101,12 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
               $ans = equalFun();
               break;
             case 1:
+              for(var i = 0; i < toCompare.stack.length; i++) {
+                var current = toCompare.stack[i];
+                if(current.setCache) {
+                  cache.equal[current.index - 1] = $ans;
+                }
+              }
               toCompare = stackOfToCompare.pop();
               return $ans;
             }
@@ -2455,7 +2480,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     }
 
     function isCheapAnnotation(ann) {
-      return !(ann.refinement || ann instanceof PRecordAnn || ann instanceof PTupleAnn);
+      return !(ann.refinement || ann instanceof PRecordAnn || (ann instanceof PTupleAnn && !ann.isCheap));
     }
 
     function checkAnn(compilerLoc, ann, val, after) {
@@ -2463,13 +2488,16 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         return returnOrRaise(ann.check(compilerLoc, val), val, after);
       }
       else {
-        return safeCall(function() {
+        return checkAnnSafe(compilerLoc, ann, val, after);
+      }
+    }
+    function checkAnnSafe(compilerLoc, ann, val, after) {
+      return safeCall(function() {
           return ann.check(compilerLoc, val);
         }, function(result) {
           return returnOrRaise(result, val, after);
         },
         "checkAnn");
-      }
     }
 
     function checkAnnArg(compilerLoc, ann, args, index, funName) {
@@ -2768,10 +2796,13 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       this.locs = locs;
       this.anns = anns;
       var hasRefinement = false;
+      var isCheap = true;
       for (var i = 0; i < anns.length; i++) {
         hasRefinement = hasRefinement || anns[i].refinement;
+        isCheap = isCheap && isCheapAnnotation(anns[i]);
       }
       this.refinement = hasRefinement;
+      this.isCheap = isCheap;
     }
 
     function makeTupleAnn(locs, anns) {
@@ -2788,6 +2819,15 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       if(that.anns.length != val.vals.length) {
         //return ffi.throwMessageException("lengths not equal");
         return that.createTupleLengthMismatch(makeSrcloc(compilerLoc), val, that.anns.length, val.vals.length);
+      }
+      if (this.isCheap) {
+        for (var i = 0; i < this.anns.length; i++) {
+          // is this right, or should this.locs be indexed in reversed order?
+          var result = this.anns[i].check(this.locs[i], val.vals[i]);
+          if (thisRuntime.ffi.isFail(result))
+            return this.createTupleFailureError(compilerLoc, val, this.anns[i], result);
+        }
+        return thisRuntime.ffi.contractOk;
       }
 
       function deepCheckFields(remainingAnns) {
@@ -3046,7 +3086,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
             $step = 2;
             $ans = after($fun_ans);
             break;
-          case 2: return $ans;
+          case 2: ++thisRuntime.GAS; return $ans;
           }
         }
       } catch($e) {
@@ -3088,7 +3128,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         }
         while(true) {
           started = true;
-          if(i >= stop) { return thisRuntime.nothing; }
+          if(i >= stop) { ++thisRuntime.GAS; return thisRuntime.nothing; }
           fun.app(i);
 
           if (++currentRunCount >= 1000) {
@@ -5791,7 +5831,13 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         return m.jsmod;
       }
       else {
-        return thisRuntime.getField(m, "provide-plus-types");
+        return makeObject({
+          values: thisRuntime.getField(thisRuntime.getField(m, "provide-plus-types"), "values"),
+          types: thisRuntime.getField(thisRuntime.getField(m, "provide-plus-types"), "types"),
+          internal: thisRuntime.getField(m, "provide-plus-types").dict['internal'],
+          'defined-values': m.dict['defined-values'],
+          'defined-types': m.dict['defined-types'],
+        });
       }
     }
 
@@ -5877,11 +5923,14 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return new JSModuleReturn(jsmod);
     }
 
-    function makeModuleReturn(values, types) {
+    function makeModuleReturn(values, types, internal) {
       return thisRuntime.makeObject({
+        "defined-values": values,
+        "defined-types": types,
         "provide-plus-types": thisRuntime.makeObject({
           "values": thisRuntime.makeObject(values),
-          "types": types
+          "types": types,
+          "internal": internal || {}
         })
       });
     }
@@ -5998,7 +6047,12 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     function addModuleToNamespace(namespace, valFields, typeFields, moduleObj) {
       var newns = Namespace.namespace({});
       valFields.forEach(function(vf) {
-        newns = newns.set(vf, getField(getField(moduleObj, "values"), vf));
+        if(hasField(moduleObj, "defined-values")) {
+          newns = newns.set(vf, getField(moduleObj, "defined-values")[vf]);
+        }
+        else {
+          newns = newns.set(vf, getField(getField(moduleObj, "values"), vf));
+        }
       });
       typeFields.forEach(function(tf) {
         newns = newns.setType(tf, getField(moduleObj, "types")[tf]);
@@ -6614,6 +6668,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       'addModuleToNamespace' : addModuleToNamespace,
 
       'globalModuleObject' : makeObject({
+        "defined-values": runtimeNamespaceBindings,
+        "defined-types": runtimeTypeBindings,
         "provide-plus-types": makeObject({
           "values": makeObject(runtimeNamespaceBindings),
           "types": runtimeTypeBindings
