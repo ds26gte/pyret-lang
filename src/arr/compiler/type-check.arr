@@ -103,7 +103,6 @@ var test-inference-data :: Option<{name :: Name,
                                    loc :: Loc,
                                    existential :: Type }> = none
 
-
 #######################################################
 
 fun option-bind<X, Y>(f :: (X -> Option<Y>), maybe-thing :: Option<X>) -> Option<Y>:
@@ -1272,9 +1271,9 @@ fun handle-cases(l :: Loc, ann :: A.Ann, val :: Expr, branches :: List<A.CasesBr
   end)
 end
 
-fun handle-branch(data-type :: DataType, cases-loc :: A.Loc, branch :: A.CasesBranch, maybe-check :: Option<Type>, remove :: (TypeVariant -> Any), context :: Context) -> FoldResult<{A.CasesBranch; Type}>:
+fun handle-branch(data-type :: DataType, cases-loc :: A.Loc, branch :: A.CasesBranch, maybe-check :: Option<Type>, remove-function :: (TypeVariant -> Any), context :: Context) -> FoldResult<{A.CasesBranch; Type}>:
   fun handle-body(variant :: TypeVariant, body :: A.Expr, process, shadow context :: Context) block:
-    remove(variant)
+    remove-function(variant)
     cases(Option<Type>) maybe-check:
       | some(expect-type) =>
         checking(body, expect-type, false, context)
