@@ -2610,6 +2610,7 @@ standard-imports = extra-imports(
           "fold4",
           "list-ref",
           "list-length",
+          "list-member-p",
           "list-member",
           "list-assoc",
           "build-list",

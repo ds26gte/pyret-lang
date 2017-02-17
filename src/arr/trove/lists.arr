@@ -849,8 +849,23 @@ fun list-length<a>(lst :: List<a>) -> Number:
 end
 
 #for spyret
-fun list-member<a>(e :: a, lst :: List<a>) -> Boolean:
+fun list-member-p<a>(e :: a, lst :: List<a>) -> Boolean:
   member-now(lst, e)
+end
+
+#for spyret
+fun list-member<a>(e :: a, lst :: List<a>):
+  doc: ```Returns the first list-tail containing the element```
+  fun list-member-help(lyst :: List<a>):
+    if is-empty(lyst):
+      false
+    else if e == lyst.first:
+      lst
+    else:
+      list-member-help(lyst.rest)
+    end
+  end
+  list-member-help(lst)
 end
 
 #for spyret
