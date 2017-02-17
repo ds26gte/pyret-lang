@@ -393,6 +393,26 @@ define(function() {
 
   var toExact = toRational;
 
+  var toSchemeExact = function(n) {
+    if (typeof(n) === 'number') {
+      return Rational.makeInstance(n);
+    } else if (isReal(n)) {
+      return n.toRational();
+    } else {
+      return n.toComplexRational();
+    }
+  };
+
+  var toSchemeInexact = function(n) {
+    if (typeof(n) === 'number') {
+      return Roughnum.makeInstance(n);
+    } else if (isReal(n)) {
+      return n.toRoughnum();
+    } else {
+      return n.toComplexRoughnum();
+    }
+  };
+
   //////////////////////////////////////////////////////////////////////
 
   // add: pyretnum pyretnum -> pyretnum
@@ -1077,6 +1097,14 @@ define(function() {
     return _integerRemainder(x, y);
   };
 
+  var toSchemeString = function(n, errbacks) {
+    if (typeof(n) === 'number') {
+      return n.toString();
+    } else {
+      return n.toSchemeString();
+    }
+  };
+
   //////////////////////////////////////////////////////////////////////
 
   // Helpers
@@ -1516,6 +1544,8 @@ define(function() {
       return this.n.toString() + "/" + this.d.toString();
     }
   };
+
+  Rational.prototype.toSchemeString = Rational.prototype.toString;
 
   Rational.prototype.isFinite = function() {
     return true;
@@ -2194,6 +2224,15 @@ define(function() {
       this.i.toString() + "i";
   }
 
+  ComplexRational.prototype.toSchemeString = function() {
+    var result = this.r.toString();
+    if (!equalsAnyZero(this.i)) {
+      result += (isNegative(this.i) ? "" : "+") +
+                this.i.toString() + "i";
+    }
+    return result;
+  };
+
   ComplexRational.prototype.toFixnum = function() {
     if (!(this.isReal())) {
       throwRuntimeError("toFixnum: expects real number");
@@ -2546,9 +2585,12 @@ define(function() {
   };
 
   ComplexRoughnum.prototype.toSchemeString = function() {
-    return '#i' + this.r.toString() +
-      (this.i < 0 ? "" : "+") +
-      this.i.toString() + "i";
+    var result = '#i' + this.r.toString();
+    if (!equalsAnyZero(this.i)) {
+      result += (isNegative(this.i) ? "" : "+") +
+                this.i.toString() + "i";
+    }
+    return result;
   };
 
   ComplexRoughnum.prototype.toFixnum = function() {  // REDO
@@ -2556,11 +2598,17 @@ define(function() {
   }
 
   ComplexRoughnum.prototype.toRational = function() {
-    throwRuntimeError("can't convert complex to rational")
+    if (!(this.isReal())) {
+      throwRuntimeError("toRational: expects real number");
+    }
+    return toRational(this.r);
   }
 
   ComplexRoughnum.prototype.toRoughnum = function() {
-    throwRuntimeError("can't convert complex to roughnum")
+    if (!(this.isReal())) {
+      throwRuntimeError("toRoughnum: expects real number");
+    }
+    return toRoughnum(this.r);
   }
 
   ComplexRoughnum.prototype.toComplexRational = function() {
@@ -3835,6 +3883,7 @@ define(function() {
 
   // public
   BigInteger.prototype.toString = bnToString;
+  BigInteger.prototype.toSchemeString = bnToString;
   BigInteger.prototype.negate = bnNegate;
   BigInteger.prototype.abs = bnAbs;
   BigInteger.prototype.compareTo = bnCompareTo;
@@ -4960,6 +5009,7 @@ define(function() {
   Numbers['fromFixnum'] = fromFixnum;
   Numbers['fromString'] = fromString;
   Numbers['fromSchemeString'] = fromSchemeString;
+  Numbers['toSchemeString'] = toSchemeString;
   Numbers['makeBignum'] = makeBignum;
   Numbers['makeRational'] = Rational.makeInstance;
   Numbers['makeRoughnum'] = Roughnum.makeInstance;
@@ -4983,6 +5033,8 @@ define(function() {
 
   Numbers['toFixnum'] = toFixnum;
   Numbers['toExact'] = toExact;
+  Numbers['toSchemeExact'] = toSchemeExact;
+  Numbers['toSchemeInexact'] = toSchemeInexact;
   Numbers['toRational'] = toRational;
   Numbers['toRoughnum'] = toRoughnum;
   Numbers['toComplexRational'] = toComplexRational;
