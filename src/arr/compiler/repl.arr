@@ -308,7 +308,10 @@ fun make-repl<a>(
       end
       ast
     end
-    extras-now = extra-imports
+    # Strip names from these, since they will be provided
+    extras-now = CS.extra-imports(for lists.map(ei from extra-imports.imports):
+      CS.extra-import(ei.dependency, "_", ei.values, ei.types)
+    end)
     globals-now = globals
     {
       method dialect(self): "spyret" end,
