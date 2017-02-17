@@ -33,7 +33,6 @@
     var tostring = function (val) {
       return RUNTIME.toReprJS(val, RUNTIME.ReprMethods._tostring)
     };
-    
 
     function valFromStructs(name){
       return gf(gf(STRUCTS, "values"), name);
@@ -447,7 +446,6 @@
 
       force.on("tick", tick);
 
-
       var center_view = function () {
         // Center the view on the molecule(s) and scale it so
         // that everything fits in the window
@@ -484,7 +482,6 @@
           (width - new_mol_width) / 2,
         y_trans = -(min_y) * min_ratio +
           (height - new_mol_height) / 2;
-
 
         // do the actual moving
         vis.attr("transform",
@@ -777,7 +774,6 @@
           })
           .attr('cy', 15)
 
-
         nodeUpdate.select("text")
           .style("fill-opacity", 1);
 
@@ -854,6 +850,8 @@
     }
 
     return RUNTIME.makeObject({
+      'defined-values': {},
+      'defined-types': {},
       "provide-plus-types": RUNTIME.makeObject({
         types: RUNTIME.makeObject({
           Vertex: typeFromStructs("Vertex"),
