@@ -166,6 +166,8 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("_spyret_ge").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_gt").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_integer_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_spyret_exact_to_inexact").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_spyret_inexact_to_exact").key(), t-arrow([list: t-number], t-number))
   default-typs.set-now(A.s-global("_spyret_lcm").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_le").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_lt").key(), t-top)
@@ -207,6 +209,7 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("_spyret_string_le").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_string_lt").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_string_to_number").key(), t-top)
+  default-typs.set-now(A.s-global("_spyret_number_to_string").key(), t-top)
   default-typs.set-now(A.s-global("_spyret_substring").key(), t-top)
 
   default-typs.set-now(A.s-global("_spyret_char_alphabetic_p").key(), t-top)

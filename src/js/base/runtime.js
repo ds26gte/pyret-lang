@@ -4619,6 +4619,19 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       thisRuntime.checkNumber(n);
       return thisRuntime.makeNumberBig(jsnums.toComplexRoughnum(n));
     }
+
+    var num_realpart = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-realpart"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeNumberBig(jsnums.realPart(n));
+    }
+
+    var num_imagpart = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-imagpart"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeNumberBig(jsnums.imagPart(n));
+    }
+
     var num_to_fixnum = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-to-fixnum"], 1, $a); }
       thisRuntime.checkNumber(n);
@@ -4777,6 +4790,18 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     var _spyret_real_p = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["real?"], 1, $a); }
       return isNumber(n) && jsnums.isReal(n);
+    };
+
+    var _spyret_exact_to_inexact = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["exact->inexact"], 1, $a); }
+      checkNumber(n);
+      return jsnums.toSchemeInexact(n);
+    };
+
+    var _spyret_inexact_to_exact = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["inexact->exact"], 1, $a); }
+      checkNumber(n);
+      return jsnums.toSchemeExact(n);
     };
 
     var _spyret_num_equal_tilde = function(actVal, expVal, absTol) {
@@ -5252,6 +5277,12 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
       return jsnums.fromSchemeString(s);
 
+    };
+
+    var _spyret_number_to_string = function(n) {
+      if (arguments.length > 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["number->string"], 0, $a); }
+      checkNumber(n);
+      return jsnums.toSchemeString(n);
     };
 
     var _spyret_string = function() {
@@ -6166,6 +6197,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_spyret_sinh": makeFunction(_spyret_sinh, "_spyret_sinh"),
       "_spyret_times": makeFunction(_spyret_times, "_spyret_times"),
       "_spyret_zero_p": makeFunction(_spyret_zero_p, "_spyret_zero_p"),
+      '_spyret_exact_to_inexact': makeFunction(_spyret_exact_to_inexact, '_spyret_exact_to_inexact'),
+      '_spyret_inexact_to_exact': makeFunction(_spyret_inexact_to_exact, '_spyret_inexact_to_exact'),
 
       "_spyret_false_p": makeFunction(_spyret_false_p, "_spyret_false_p"),
       "_spyret_boolean_p": makeFunction(_spyret_boolean_p, "_spyret_boolean_p"),
@@ -6186,6 +6219,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_spyret_string_le": makeFunction(_spyret_string_le, "_spyret_string_le"),
       "_spyret_string_lt": makeFunction(_spyret_string_lt, "_spyret_string_lt"),
       "_spyret_string_to_number": makeFunction(_spyret_string_to_number, "_spyret_string_to_number"),
+      '_spyret_number_to_string': makeFunction(_spyret_number_to_string, '_spyret_number_to_string'),
       "_spyret_substring": makeFunction(_spyret_substring, "_spyret_substring"),
 
       "_spyret_char_alphabetic_p": makeFunction(_spyret_char_alphabetic_p, "_spyret_char_alphabetic_p"),
@@ -6286,6 +6320,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       'num-to-roughnum': makeFunction(num_to_roughnum, "num-to-roughnum"),
       'num-to-complexrational': makeFunction(num_to_complexrational, "num-to-complexrational"),
       'num-to-complexroughnum': makeFunction(num_to_complexroughnum, "num-to-complexroughnum"),
+      'num-realpart': makeFunction(num_realpart, 'num-realpart'),
+      'num-imagpart': makeFunction(num_imagpart, 'num-imagpart'),
       'num-to-fixnum': makeFunction(num_to_fixnum, "num-to-fixnum"),
       'num-is-integer': makeFunction(num_is_integer, "num-is-integer"),
       'num-is-rational': makeFunction(num_is_rational, "num-is-rational"),
