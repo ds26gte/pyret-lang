@@ -2382,7 +2382,6 @@ runtime-provides = provides("builtin://global",
 
     "_spyret_error", t-top,
     "_spyret_dead_code_function", t-top,
-    "_spyret_check_expect", t-top,
     "_spyret_check_within", t-top,
     "_spyret_equal_tilde", t-top,
 

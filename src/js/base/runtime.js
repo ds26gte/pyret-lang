@@ -1875,7 +1875,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
             return;
           }
         }
-// throw new Error("Internal error: tried to 
+// throw new Error("Internal error: tried to
       }
       function cachePair(obj1, obj2) {
         cache.left.push(obj1);
@@ -4727,15 +4727,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return nothing;
     };
 
-    var _spyret_check_expect = function(actVal, expVal) {
-      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-expect"], 2, $a); }
-      if (!schemeEqualAlways(actVal, expVal)) {
-        displayFunc("check-expect: actual value " + actVal +
-        " differs from " + expVal + ", the expected value.");
-      }
-      return nothing;
-    };
-
     var _spyret_identity = function(x) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["identity"], 1, $a); }
       return x;
@@ -6246,7 +6237,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
       "_spyret_error": makeFunction(_spyret_error, "_spyret_error"),
       "_spyret_dead_code_function": makeFunction(_spyret_dead_code_function, "_spyret_dead_code_function"),
-      "_spyret_check_expect": makeFunction(_spyret_check_expect, "_spyret_check_expect"),
       "_spyret_check_within": makeFunction(_spyret_check_within, "_spyret_check_within"),
       "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde, "_spyret_equal_tilde"),
 

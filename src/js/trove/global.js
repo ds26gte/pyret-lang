@@ -216,7 +216,6 @@
       '_spyret_char_to_integer': 'Any',
       '_spyret_char_upper_case_p': 'Any',
       '_spyret_char_whitespace_p': 'Any',
-      '_spyret_check_expect': 'Any',
       '_spyret_check_within': 'Any',
       '_spyret_compose': 'Any',
       '_spyret_cosh': 'Any',
