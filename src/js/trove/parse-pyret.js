@@ -1369,6 +1369,21 @@
       }
     }
 
+    function parseSpyretDataRaw(dataUnserialized, fileName) {
+      try {
+        return RUNTIME.ffi.makeRight(translate(dataUnserialized, fileName));
+      } catch(e) {
+        if (RUNTIME.isPyretException(e)) {
+          return RUNTIME.ffi.makeLeft(RUNTIME.makeObject({
+            exn: e.exn,
+            message: RUNTIME.makeString(message)
+          }));
+        } else {
+          throw e;
+        }
+      }
+    }
+
     function parsePyret(data, fileName) {
       RUNTIME.ffi.checkArity(2, arguments, "surface-parse");
       RUNTIME.checkString(data);
@@ -1392,9 +1407,22 @@
       RUNTIME.checkString(data);
       RUNTIME.checkString(fileName);
       var data_unser = JSON.parse(RUNTIME.unwrap(data));
-      var res= translate(data_unser, RUNTIME.unwrap(fileName));
-      //console.log('xlateres=', JSON.stringify(res));
-      return res;
+      //console.log('calling parseSpyretDataRaw');
+      var result = parseSpyretDataRaw(data_unser, RUNTIME.unwrap(fileName));
+      //console.log('retfrom parseSpyretDataRaw');
+      return RUNTIME.ffi.cases(RUNTIME.ffi.isEither, "is-Either", result, {
+        left: function(err) {
+          //console.log('parseSpyret failing', err);
+          var exn = RUNTIME.getField(err, "exn");
+          var message = RUNTIME.getField(err, "message");
+          console.error(message);
+          RUNTIME.raise(exn);
+        },
+        right: function(ast) {
+          //console.log('parseSpyret returning', JSON.stringify(ast));
+          return ast;
+        }
+      });
     }
 
     function maybeParsePyret(data, fileName) {
