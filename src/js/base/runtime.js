@@ -1633,22 +1633,6 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         }, "print");
       }, "print");
 
-    var displayFunc = function(val) {
-        if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["display"], 1, $a); }
-        if (isString(val)) {
-          theOutsideWorld.stdout(val);
-          return val;
-        }
-        else {
-          return thisRuntime.safeCall(function() {
-            return toReprJS(val, ReprMethods._tostring);
-          }, function(repr) {
-            theOutsideWorld.stdout(repr);
-            return val;
-          });
-        }
-    };
-
     var display = makeFunction(
       /**
          Prints the value to the world by passing the repr to stdout
@@ -4748,8 +4732,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     var _spyret_check_within = function(actVal, expVal, absTol) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-within"], 3, $a); }
       checkNumNonNegative(absTol);
-      if (!(equalWithin(absTol).app(actVal, expVal))) {
-        displayFunc("check-within: actual value " + actVal +
+      if (!(equalWithinAbs3(absTol).app(actVal, expVal))) {
+        _spyret_display("check-within: actual value " + actVal +
         " is not within " + absTol + " of expected value " + expVal);
       }
       return nothing;
