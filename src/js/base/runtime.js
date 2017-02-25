@@ -201,18 +201,38 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     */
     function isBase(obj) { return obj instanceof PBase; }
 
-    function renderValueSkeleton(val, values) {
+    function renderValueSkeleton(val, values, isPatch) {
       if (thisRuntime.ffi.isVSValue(val)) { return values.pop(); } // double-check order!
       else if (thisRuntime.ffi.isVSStr(val)) { return thisRuntime.unwrap(thisRuntime.getField(val, "s")); }
       else if (thisRuntime.ffi.isVSCollection(val)) {
         var name = thisRuntime.unwrap(thisRuntime.getField(val, "name"));
+        var isPatchList = isPatch && (name === 'list');
+        var isPatchVector = isPatch && (name === 'array');
         var items = thisRuntime.ffi.toArray(thisRuntime.getField(val, "items"));
-        var s = "[" + name + ": ";
+        var s;
+        if (isPatchList) {
+          s = '(list ';
+        } else if (isPatchVector) {
+          s = '(vector ';
+        } else {
+          s = "[" + name + ": ";
+        }
         for (var i = 0; i < items.length; i++) {
-          if (i > 0) { s += ", "; }
+          if (i > 0) {
+            if (isPatch) {
+              s += ' ';
+            } else {
+              s += ", ";
+            }
+          }
           s += renderValueSkeleton(items[i], values);
         }
-        return s + "]";
+        if (isPatch) {
+          s += ')';
+        } else {
+          s += "]";
+        }
+        return s;
       } else if (thisRuntime.ffi.isVSConstr(val)) {
         var name = thisRuntime.unwrap(thisRuntime.getField(val, "name"));
         var items = thisRuntime.ffi.toArray(thisRuntime.getField(val, "args"));
@@ -377,6 +397,13 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     };
 
     ReprMethods["_tostring"] = Object.create(DefaultReprMethods);
+
+    ReprMethods['_toPatchString'] = Object.create(DefaultReprMethods);
+    ReprMethods['_toPatchString']['render-valueskeleton'] = function(top) {
+      var skel = top.extra.skeleton;
+      top.extra.skeleton = undefined;
+      return renderValueSkeleton(skel, top.done, true);
+    };
 
     ReprMethods["$cli"] = Object.create(DefaultReprMethods);
     ReprMethods["$cli"]["function"] = function(val) { return "<function:" + val.name + ">"; }
@@ -4731,12 +4758,20 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
     var _spyret_check_within = function(actVal, expVal, absTol) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-within"], 3, $a); }
-      checkNumNonNegative(absTol);
-      if (!(equalWithinAbs3(absTol).app(actVal, expVal))) {
-        _spyret_display("check-within: actual value " + actVal +
-        " is not within " + absTol + " of expected value " + expVal);
-      }
-      return nothing;
+      return safeCall(function() {
+        return equal3(actVal, expVal, true, absTol, false, true);
+      }, function(ans) {
+        if (!thisRuntime.ffi.isEqual(ans)) {
+          _spyret_display("check-within: actual value " +
+            toReprJS(actVal, ReprMethods._toPatchString) +
+            " is not within " +
+            toReprJS(absTol, ReprMethods._toPatchString) +
+            " of expected value " +
+            toReprJS(expVal, ReprMethods._toPatchString)
+          );
+        }
+        return nothing;
+      }, "check-within");
     };
 
     var _spyret_equal_tilde = function(actVal, expVal, absTol) {
@@ -5596,7 +5631,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
       else {
         return thisRuntime.safeCall(function() {
-          return toReprJS(val, ReprMethods._tostring);
+          return toReprJS(val, ReprMethods._toPatchString);
         }, function(repr) {
           theOutsideWorld.stdout(repr);
           return nothing;
