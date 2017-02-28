@@ -1348,6 +1348,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     // Stolen from https://github.com/dyoo/whalesong/blob/master\
     // /whalesong/js-assembler/runtime-src/baselib-strings.js
     var replaceUnprintableStringChars = function (s) {
+      //console.log('doing pyl/replaceUnprintableStringChars', s);
       var ret = [], i;
       for (i = 0; i < s.length; i++) {
         var val = s.charCodeAt(i);
@@ -1362,7 +1363,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         case 34: ret.push('\\"'); break;
         case 92: ret.push('\\\\'); break;
         default:
-          if (val >= 32 && val <= 126) {
+          if ((val >= 32 && val <= 126) ||
+              (val >= 0xc0 && val <= 0x3d2)
+          ) {
             ret.push( s.charAt(i) );
           }
           else {
@@ -5625,6 +5628,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
     function _spyret_display(val) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["display"], 1, $a); }
+      //console.log('doing _spyret_display', val);
       if (isString(val)) {
         theOutsideWorld.stdout(val);
         return nothing;
