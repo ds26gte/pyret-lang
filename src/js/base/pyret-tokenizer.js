@@ -6,7 +6,7 @@ define(["jglr/jglr"], function(E) {
   const GenTokenizer = E.Tokenizer;
   const STICKY_REGEXP = E.STICKY_REGEXP;
 
-  const escapes = new RegExp("^(.*?)\\\\([\\\\\"\'nrt]|u[0-9A-Fa-f]{1,4}|x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|[\r\n]{1,2})");
+  const escapes = new RegExp("^(.*?)\\\\([\\\\\"\'bnrt]|u[0-9A-Fa-f]{1,4}|x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|[\r\n]{1,2})");
   function fixEscapes(s) {
     var ret = "";
     var match = escapes.exec(s);
@@ -231,7 +231,6 @@ define(["jglr/jglr"], function(E) {
   const opneq = new RegExp(op("<>"), STICKY_REGEXP);
   const oplt = new RegExp(op("<"), STICKY_REGEXP);
   const opgt = new RegExp(op(">"), STICKY_REGEXP);
-  
 
   const opsNoSpace = new RegExp("^(?:\\^|\\+|-|\\*|/|<=|>=|<=>|>=|==|=~|<>|<|>|<-)", STICKY_REGEXP);
 
@@ -260,7 +259,7 @@ define(["jglr/jglr"], function(E) {
                "\\\\[01234567]{1,3}" +
                "|\\\\x[0-9a-fA-F]{1,2}" +
                "|\\\\u[0-9a-fA-f]{1,4}" +
-               "|\\\\[\\\\nrt\"\'`]" +
+               "|\\\\[\\\\bnrt\"\'`]" +
                "|`{1,2}(?!`)" +
                "|[^`\\\\])*```", STICKY_REGEXP); // NOTE: Allow unescaped newlines
   const dquot_str =
@@ -268,14 +267,14 @@ define(["jglr/jglr"], function(E) {
                "\\\\[01234567]{1,3}" +
                "|\\\\x[0-9a-fA-F]{1,2}" +
                "|\\\\u[0-9a-fA-f]{1,4}" +
-               "|\\\\[\\\\nrt\"\']" +
+               "|\\\\[\\\\bnrt\"\']" +
                "|[^\\\\\"\n\r])*\"", STICKY_REGEXP);
   const squot_str =
     new RegExp("^\'(?:" +
                "\\\\[01234567]{1,3}" +
                "|\\\\x[0-9a-fA-F]{1,2}" +
                "|\\\\u[0-9a-fA-f]{1,4}" +
-               "|\\\\[\\\\nrt\"\']" +
+               "|\\\\[\\\\bnrt\"\']" +
                "|[^\\\\\'\n\r])*\'", STICKY_REGEXP);
 
   const unterminated_string = new RegExp("^(?:[\"\']|```).*", STICKY_REGEXP);
