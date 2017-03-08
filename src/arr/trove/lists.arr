@@ -425,11 +425,11 @@ fun remove<a>(lst :: List<a>, elt :: a) -> List<a>:
   end
 end
 
-fun _spyret_remove-all<a>(elt :: a, lst :: List<a>) -> List<a>:
+fun _patch_remove-all<a>(elt :: a, lst :: List<a>) -> List<a>:
   remove(lst, elt)
 end
 
-fun _spyret_remove<a>(elt :: a, lst :: List<a>) -> List<a>:
+fun _patch_remove<a>(elt :: a, lst :: List<a>) -> List<a>:
   doc: ```Returns the list without the element if found, or the whole list if it is not```
   if is-empty(lst):
     empty
@@ -437,7 +437,7 @@ fun _spyret_remove<a>(elt :: a, lst :: List<a>) -> List<a>:
     if elt == lst.first:
       lst.rest
     else:
-      link(lst.first, _spyret_remove(elt, lst.rest))
+      link(lst.first, _patch_remove(elt, lst.rest))
     end
   end
 end
@@ -710,27 +710,27 @@ fun foldr<a, b>(f :: (a, b -> a), base :: a, lst :: List<b>) -> a:
   end
 end
 
-fun _spyret_foldl<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
+fun _patch_foldl<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
   doc: ```Takes a function, an initial value and a list, and folds the function over the list from the left,
         starting with the initial value```
   if is-empty(lst):
     base
   else:
-    _spyret_foldl(f, f(lst.first, base), lst.rest)
+    _patch_foldl(f, f(lst.first, base), lst.rest)
   end
 end
 
-fun _spyret_foldr<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
+fun _patch_foldr<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
   doc: ```Takes a function, an initial value and a list, and folds the function over the list from the right,
         starting with the initial value```
   if is-empty(lst):
     base
   else:
-    f(lst.first, _spyret_foldr(f, base, lst.rest))
+    f(lst.first, _patch_foldr(f, base, lst.rest))
   end
 end
 
-fun _spyret_quicksort<a>(lst :: List<a>, lt :: (a, a -> Boolean)):
+fun _patch_quicksort<a>(lst :: List<a>, lt :: (a, a -> Boolean)):
   lst.sort-by(lam(x :: a, y :: a):
                 if x == y: false
                 else: lt(x, y)
@@ -838,22 +838,22 @@ fun shuffle<a>(lst :: List<a>) -> List<a>:
   end
 end
 
-#for spyret
+#for Patch
 fun list-ref<a>(lst :: List<a>, ix :: Number) -> a:
   lst.get(ix)
 end
 
-#for spyret
+#for Patch
 fun list-length<a>(lst :: List<a>) -> Number:
   lst.length()
 end
 
-#for spyret
+#for Patch
 fun list-member-p<a>(e :: a, lst :: List<a>) -> Boolean:
   member-now(lst, e)
 end
 
-#for spyret
+#for Patch
 fun list-member<a>(e :: a, lst :: List<a>):
   doc: ```Returns the first list-tail containing the element```
   fun list-member-help(lyst :: List<a>):
@@ -868,12 +868,12 @@ fun list-member<a>(e :: a, lst :: List<a>):
   list-member-help(lst)
 end
 
-#for spyret
+#for Patch
 fun list-assoc(k, lst):
   lst.find(lam(c): c.first == k end).or-else(false)
 end
 
-#for spyret
+#for Patch
 fun build-list(n :: Number, f :: (Number -> Any)) -> List:
   fun build-list-helper(m :: Number):
     if m == n:
@@ -885,7 +885,7 @@ fun build-list(n :: Number, f :: (Number -> Any)) -> List:
   build-list-helper(0)
 end
 
-#for spyret
+#for Patch
 fun make-list(n :: Number, v :: Any) -> List:
   fun make-list-helper(m :: Number):
     if m == n:
@@ -897,9 +897,9 @@ fun make-list(n :: Number, v :: Any) -> List:
   make-list-helper(0)
 end
 
-#for spyret
-_spyret_null = empty
-_spyret_empty = empty
+#for Patch
+_patch_null = empty
+_patch_empty = empty
 
 fun filter-map<a, b>(f :: (a -> Option<b>), lst :: List<a>) -> List<b>:
   cases(List<a>) lst:

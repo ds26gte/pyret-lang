@@ -67,7 +67,6 @@ reserved-names = [SD.string-dict:
   # "table", true
 ]
 
-
 fun add-error(err) block:
   errors := err ^ link(_, errors)
   nothing
@@ -205,7 +204,6 @@ fun ensure-unique-bindings(bindings :: List<A.Bind>) block:
   bindings.each(help)
 end
 
-
 fun ensure-unique-fields(rev-fields):
   cases(List) rev-fields block:
     | empty => nothing
@@ -262,7 +260,6 @@ fun ensure-unique-variant-ids(variants :: List<A.Variant>):
   end
 end
 
-
 fun wf-last-stmt(block-loc, stmt :: A.Expr):
   cases(A.Expr) stmt:
     | s-let(l, _, _, _)                   => add-error(C.block-ending(l, block-loc, "let-binding"))
@@ -299,7 +296,7 @@ end
 fun wf-block-stmts(visitor, l, stmts :: List%(is-link)) block:
   bind-stmts = stmts.filter(lam(s): A.is-s-var(s) or A.is-s-let(s) or A.is-s-rec(s) end).map(_.name)
   ensure-unique-bindings(bind-stmts)
-  when dialect <> "spyret":
+  when dialect <> "patch":
     ensure-distinct-lines(A.dummy-loc, false, stmts)
   end
   lists.all(_.visit(visitor), stmts)
@@ -337,7 +334,6 @@ fun wf-table-headers(loc, headers):
     true
   end
 end
-
 
 fun is-underscore(e):
   A.is-s-id(e) and A.is-s-underscore(e.id)

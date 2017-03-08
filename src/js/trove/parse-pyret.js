@@ -1369,7 +1369,7 @@
       }
     }
 
-    function parseSpyretDataRaw(dataUnserialized, fileName) {
+    function parsePatchDataRaw(dataUnserialized, fileName) {
       try {
         return RUNTIME.ffi.makeRight(translate(dataUnserialized, fileName));
       } catch(e) {
@@ -1402,24 +1402,24 @@
       });
     }
 
-    function parseSpyret(data, fileName) {
-      RUNTIME.ffi.checkArity(2, arguments, "spyret-surface-parse");
+    function parsePatch(data, fileName) {
+      RUNTIME.ffi.checkArity(2, arguments, "patch-surface-parse");
       RUNTIME.checkString(data);
       RUNTIME.checkString(fileName);
       var data_unser = JSON.parse(RUNTIME.unwrap(data));
-      //console.log('calling parseSpyretDataRaw');
-      var result = parseSpyretDataRaw(data_unser, RUNTIME.unwrap(fileName));
-      //console.log('retfrom parseSpyretDataRaw');
+      //console.log('calling parsePatchDataRaw');
+      var result = parsePatchDataRaw(data_unser, RUNTIME.unwrap(fileName));
+      //console.log('retfrom parsePatchDataRaw');
       return RUNTIME.ffi.cases(RUNTIME.ffi.isEither, "is-Either", result, {
         left: function(err) {
-          //console.log('parseSpyret failing', err);
+          //console.log('parsePatch failing', err);
           var exn = RUNTIME.getField(err, "exn");
           var message = RUNTIME.getField(err, "message");
           console.error(message);
           RUNTIME.raise(exn);
         },
         right: function(ast) {
-          //console.log('parseSpyret returning', JSON.stringify(ast));
+          //console.log('parsePatch returning', JSON.stringify(ast));
           return ast;
         }
       });
@@ -1434,7 +1434,7 @@
 
     return RUNTIME.makeModuleReturn({
           'surface-parse': RUNTIME.makeFunction(parsePyret, "surface-parse"),
-          'spyret-surface-parse': RUNTIME.makeFunction(parseSpyret, "spyret-surface-parse"),
+          'patch-surface-parse': RUNTIME.makeFunction(parsePatch, "patch-surface-parse"),
           'maybe-surface-parse': RUNTIME.makeFunction(maybeParsePyret, "maybe-surface-parse"),
         }, {});
   }

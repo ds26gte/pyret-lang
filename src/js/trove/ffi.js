@@ -92,27 +92,27 @@
     var sDictMakeMutableStringDict = gf(SDict, 'make-mutable-string-dict');
     var sDictIsHash = gf(SDict, 'is-mutable-string-dict');
 
-    function _spyret_make_hash() {
+    function _patch_make_hash() {
       return sDictMakeMutableStringDict.app();
     }
 
-    function _spyret_hash_p(val) {
+    function _patch_hash_p(val) {
       return sDictIsHash.app(val);
     }
 
-    function _spyret_hash_ref(hashTable, key, defaultResult) {
+    function _patch_hash_ref(hashTable, key, defaultResult) {
       if (runtime.unwrap(runtime.getField(hashTable, "has-key-now").app(key))) {
         return runtime.unwrap(runtime.getField(hashTable, "get-value-now").app(key));
       } else {
         return defaultResult;
       }
     }
-    
-    function _spyret_hash_set(hashTable, key, value) {
+
+    function _patch_hash_set(hashTable, key, value) {
       runtime.getField(hashTable, "set-now").app(key, value);
       return runtime.namespace.get("nothing");
     }
-    
+
     function isErrorDisplay(val) { return runtime.unwrap(runtime.getField(ED, "ErrorDisplay").app(val)); }
     var checkErrorDisplay = runtime.makeCheckType(isErrorDisplay, "ErrorDisplay");
 
@@ -317,7 +317,7 @@
       checkSrcloc(objloc);
       raise(err("update-non-obj")(loc, objval, objloc));
     }
-    
+
     function throwUpdateFrozenRef(loc, objval, objloc, fieldname, fieldloc) {
       runtime.checkPyretVal(objval);
       checkSrcloc(loc);
@@ -326,7 +326,7 @@
       checkSrcloc(fieldloc);
       raise(err("update-frozen-ref")(loc, objval, objloc, fieldname, fieldloc));
     }
-    
+
     function throwUpdateNonRef(loc, objval, objloc, fieldname, fieldloc) {
       runtime.checkPyretVal(objval);
       checkSrcloc(loc);
@@ -335,7 +335,7 @@
       checkSrcloc(fieldloc);
       raise(err("update-non-ref")(loc, objval, objloc, fieldname, fieldloc));
     }
-    
+
     function throwUpdateNonExistentField(loc, objval, objloc, fieldname, fieldloc) {
       runtime.checkPyretVal(objval);
       checkSrcloc(loc);
@@ -344,7 +344,7 @@
       checkSrcloc(fieldloc);
       raise(err("update-non-existent-field")(loc, objval, objloc, fieldname, fieldloc));
     }
-  
+
     function throwUninitializedId(loc, name) {
       checkSrcloc(loc);
       runtime.checkString(name);
@@ -445,9 +445,9 @@
     function throwParseErrorBadOper(loc) {
       raise(err("parse-error-bad-operator")(loc));
     }
-    function makeSpyretParseException(errMsg, errArgsList, errLocsList) {
-      console.log('doing makeSpyretParseException', errMsg, errArgsList, errLocsList);
-      return runtime.makePyretFailException(err("spyret-parse-error")(errMsg, 
+    function makePatchParseException(errMsg, errArgsList, errLocsList) {
+      console.log('doing makePatchParseException', errMsg, errArgsList, errLocsList);
+      return runtime.makePyretFailException(err("patch-parse-error")(errMsg,
         errArgsList, errLocsList));
     }
 
@@ -464,7 +464,7 @@
       runtime.checkPyretVal(value);
       return contract("record-fields-fail")(value, failures);
     }
-  
+
     function makeTupleAnnsFail(value, failures) {
       return contract("tuple-anns-fail")(value, failures);
     }
@@ -586,7 +586,7 @@
       throwParseErrorBadNumber: throwParseErrorBadNumber,
       throwParseErrorBadOper: throwParseErrorBadOper,
 
-      makeSpyretParseException: makeSpyretParseException,
+      makePatchParseException: makePatchParseException,
 
       makeRecordFieldsFail: makeRecordFieldsFail,
       makeTupleAnnsFail: makeTupleAnnsFail,
@@ -654,12 +654,10 @@
       isLink : isLink,
       isEmpty : isEmpty,
 
-      
-      _spyret_make_hash: _spyret_make_hash,
-      _spyret_hash_p: _spyret_hash_p,
-      _spyret_hash_ref: _spyret_hash_ref,
-      _spyret_hash_set: _spyret_hash_set,
-      
+      _patch_make_hash: _patch_make_hash,
+      _patch_hash_p: _patch_hash_p,
+      _patch_hash_ref: _patch_hash_ref,
+      _patch_hash_set: _patch_hash_set,
 
       isErrorDisplay: isErrorDisplay,
       checkErrorDisplay: checkErrorDisplay,

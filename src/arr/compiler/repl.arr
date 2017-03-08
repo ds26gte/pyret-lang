@@ -295,7 +295,7 @@ fun make-repl<a>(
     }
   end
 
-  fun make-spyret-interaction-locator(get-interactions) block:
+  fun make-patch-interaction-locator(get-interactions) block:
     current-interaction := current-interaction + 1
     this-interaction = current-interaction
     uri = "interactions://" + num-to-string(this-interaction)
@@ -303,7 +303,7 @@ fun make-repl<a>(
     fun get-ast() block:
       when ast == nothing block:
         interactions = get-interactions()
-        parsed = P.spyret-surface-parse(interactions, uri)
+        parsed = P.patch-surface-parse(interactions, uri)
         ast := make-provide-for-repl(parsed)
       end
       ast
@@ -314,7 +314,7 @@ fun make-repl<a>(
     end)
     globals-now = globals
     {
-      method dialect(self): "spyret" end,
+      method dialect(self): "patch" end,
       method needs-compile(self, provs): true end,
       method get-modified-time(self): 0 end,
       method get-options(self, options): options end,
@@ -368,19 +368,19 @@ fun make-repl<a>(
     }
   end
 
-  fun make-spyret-definitions-locator(get-defs, shadow globals):
+  fun make-patch-definitions-locator(get-defs, shadow globals):
     var ast = nothing
     fun get-ast() block:
       when ast == nothing block:
         initial-definitions = get-defs()
-        parsed = P.spyret-surface-parse(initial-definitions, "definitions://")
+        parsed = P.patch-surface-parse(initial-definitions, "definitions://")
         provided = make-provide-for-repl-main(parsed, globals)
         ast := provided
       end
       ast
     end
     {
-      method dialect(self): "spyret" end,
+      method dialect(self): "patch" end,
       method needs-compile(self, provs): true end,
       method get-modified-time(self): 0 end,
       method get-options(self, options): options end,
@@ -405,8 +405,8 @@ fun make-repl<a>(
     restart-interactions: restart-interactions,
     make-interaction-locator: make-interaction-locator,
     make-definitions-locator: make-definitions-locator,
-    make-spyret-interaction-locator: make-spyret-interaction-locator,
-    make-spyret-definitions-locator: make-spyret-definitions-locator,
+    make-patch-interaction-locator: make-patch-interaction-locator,
+    make-patch-definitions-locator: make-patch-definitions-locator,
     run-interaction: run-interaction,
     runtime: runtime
   }

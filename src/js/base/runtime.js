@@ -620,8 +620,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return typeof obj === 'string';
     }
 
-    //for Spyret
-    function _spyret_single_char_string_p(obj) {
+    //for Patch
+    function _patch_single_char_string_p(obj) {
       return isString(obj) && obj.length === 1;
     }
 
@@ -1196,12 +1196,12 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return arr;
     }
 
-    function P_spyret_box(v) {
+    function P_patch_box(v) {
       this.val = v;
     }
 
-    function _spyret_boxp(b) {
-      return thisRuntime.isOpaque(b) && b.val instanceof P_spyret_box;
+    function _patch_boxp(b) {
+      return thisRuntime.isOpaque(b) && b.val instanceof P_patch_box;
     }
 
     /************************
@@ -1285,9 +1285,9 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     var checkOpaque = makeCheckType(isOpaque, "Opaque");
     var checkPyretVal = makeCheckType(isPyretVal, "Pyret Value");
 
-    //for Spyret
-    var checkSpyretCharacter = makeCheckType(_spyret_single_char_string_p, "Character");
-    var checkSpyretBox = makeCheckType(_spyret_boxp, "Box");
+    //for Patch
+    var checkPatchCharacter = makeCheckType(_patch_single_char_string_p, "Character");
+    var checkPatchBox = makeCheckType(_patch_boxp, "Box");
 
     var checkWrapBoolean = function(val) {
       checkBoolean(val);
@@ -1866,7 +1866,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
     // rel is a flag that indicates whether the tolerance should be
     // interpreted as _absolute_ (two numbers are equal +/- tol) or _relative_
     // (two numbers are equal +/- n * tol, where tol is between 0 and 1)
-    function equal3(left, right, alwaysFlag, tol, rel, spyretP) {
+    function equal3(left, right, alwaysFlag, tol, rel, patchP) {
       if(tol === undefined) { // means that we aren't doing any kind of within
         var isIdentical = identical3(left, right);
         if (!thisRuntime.ffi.isNotEqual(isIdentical)) { return isIdentical; } // if Equal or Unknown...
@@ -1923,7 +1923,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
               } else {
                 toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight);
               }
-            } else if (spyretP) {
+            } else if (patchP) {
               if (jsnums.schemeEquals(curLeft, curRight, NumberErrbacks)) {
                 continue;
               } else {
@@ -4719,20 +4719,20 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return new Date().getTime();
     }
 
-    // primitives for Spyret
+    // primitives for Patch
 
-    var _spyret_procedure_arity = function(f) {
+    var _patch_procedure_arity = function(f) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["procedure-arity"], 1, $a); }
       checkFunction(f);
       return makeNumber(f.arity);
     };
 
-    var _spyret_void = function() {
+    var _patch_void = function() {
       if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["void"], 0, $a); }
       return nothing;
     };
 
-    var _spyret_error = function(f) {
+    var _patch_error = function(f) {
       var argsn = arguments.length;
       if (argsn === 0) {
         throw thisRuntime.ffi.throwArityErrorC(["error"], 1, []);
@@ -4745,27 +4745,27 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
         for (var i = 1; i < argsn; i++) {
           args.push(arguments[i]);
         }
-        errstring += _spyret_format.apply(null, args);
+        errstring += _patch_format.apply(null, args);
       }
       thisRuntime.ffi.throwMessageException(errstring);
     };
 
-    var _spyret_dead_code_function = function() {
+    var _patch_dead_code_function = function() {
       return nothing;
     };
 
-    var _spyret_identity = function(x) {
+    var _patch_identity = function(x) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["identity"], 1, $a); }
       return x;
     };
 
-    var _spyret_check_within = function(actVal, expVal, absTol) {
+    var _patch_check_within = function(actVal, expVal, absTol) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-within"], 3, $a); }
       return safeCall(function() {
         return equal3(actVal, expVal, true, absTol, false, true);
       }, function(ans) {
         if (!thisRuntime.ffi.isEqual(ans)) {
-          _spyret_display("check-within: actual value " +
+          _patch_display("check-within: actual value " +
             toReprJS(actVal, ReprMethods._toPatchString) +
             " is not within " +
             toReprJS(absTol, ReprMethods._toPatchString) +
@@ -4777,56 +4777,56 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }, "check-within");
     };
 
-    var _spyret_equal_tilde = function(actVal, expVal, absTol) {
+    var _patch_equal_tilde = function(actVal, expVal, absTol) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal~?"], 3, $a); }
       checkNumNonNegative(absTol);
       return equalWithin(absTol).app(actVal, expVal);
     };
 
-    var _spyret_false_p = function(x) {
+    var _patch_false_p = function(x) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["false?"], 1, $a); }
       return !x;
     };
 
-    var _spyret_boolean_p = function(x) {
+    var _patch_boolean_p = function(x) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["boolean?"], 1, $a); }
       return isBoolean(x);
     };
 
-    var _spyret_boolean_eq = function(x, y) {
+    var _patch_boolean_eq = function(x, y) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["boolean=?"], 2, $a); }
       checkBoolean(x); checkBoolean(y);
       return (x === y);
     };
 
-    var _spyret_integer_p = function(n) {
+    var _patch_integer_p = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["integer?"], 1, $a); }
       return isNumber(n) && jsnums.isInteger(n);
     };
 
-    var _spyret_rational_p = function(n) {
+    var _patch_rational_p = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["rational?"], 1, $a); }
       return isNumber(n) && jsnums.isRational(n);
     };
 
-    var _spyret_real_p = function(n) {
+    var _patch_real_p = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["real?"], 1, $a); }
       return isNumber(n) && jsnums.isReal(n);
     };
 
-    var _spyret_exact_to_inexact = function(n) {
+    var _patch_exact_to_inexact = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["exact->inexact"], 1, $a); }
       checkNumber(n);
       return jsnums.toSchemeInexact(n);
     };
 
-    var _spyret_inexact_to_exact = function(n) {
+    var _patch_inexact_to_exact = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["inexact->exact"], 1, $a); }
       checkNumber(n);
       return jsnums.toSchemeExact(n);
     };
 
-    var _spyret_num_equal_tilde = function(actVal, expVal, absTol) {
+    var _patch_num_equal_tilde = function(actVal, expVal, absTol) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["=~"], 3, $a); }
       thisRuntime.checkNumber(actVal);
       thisRuntime.checkNumber(expVal);
@@ -4834,13 +4834,13 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return jsnums.roughlyEquals(actVal, expVal, absTol);
     };
 
-    var _spyret_zero_p = function(n) {
+    var _patch_zero_p = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["zero?"], 1, $a); }
       thisRuntime.checkNumber(n);
       return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
     };
 
-    var _spyret_even_p = function(n) {
+    var _patch_even_p = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["even?"], 1, $a); }
       thisRuntime.checkNumber(n);
       if (!jsnums.isInteger(n)) {
@@ -4849,7 +4849,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return jsnums.equalsAnyZero(jsnums.modulo(n, 2));
     };
 
-    var _spyret_odd_p = function(n) {
+    var _patch_odd_p = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["odd?"], 1, $a); }
       thisRuntime.checkNumber(n);
       if (!jsnums.isInteger(n)) {
@@ -4858,19 +4858,19 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return !jsnums.equalsAnyZero(jsnums.modulo(n, 2));
     };
 
-    var _spyret_add1 = function(n) {
+    var _patch_add1 = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["add1"], 1, $a); }
       thisRuntime.checkNumber(n);
       return jsnums.add(n, 1);
     };
 
-    var _spyret_sub1 = function(n) {
+    var _patch_sub1 = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["sub1"], 1, $a); }
       thisRuntime.checkNumber(n);
       return jsnums.subtract(n, 1);
     };
 
-    var _spyret_plus = function() {
+    var _patch_plus = function() {
       var result = 0;
       var i, j;
       for (i = 0; i < arguments.length; i++) {
@@ -4881,7 +4881,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return result;
     };
 
-    var _spyret_minus = function(n) {
+    var _patch_minus = function(n) {
       if (arguments.length < 1) {
         throw thisRuntime.ffi.throwArityErrorC(["-"], 1, []);
       }
@@ -4900,7 +4900,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return result;
     };
 
-    var _spyret_times = function() {
+    var _patch_times = function() {
       var result = 1;
       var i, j;
       for (i = 0; i < arguments.length; i++) {
@@ -4911,7 +4911,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return result;
     };
 
-    var _spyret_divide = function(n) {
+    var _patch_divide = function(n) {
       if (arguments.length < 1) {
         throw thisRuntime.ffi.throwArityErrorC(["/"], 1, []);
       }
@@ -4930,19 +4930,19 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return result;
     };
 
-    var _spyret_quotient = function(x, y) {
+    var _patch_quotient = function(x, y) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["quotient"], 2, $a); }
       checkNumber(x); checkNumber(y);
       return thisRuntime.makeNumber(jsnums.quotient(x, y));
     };
 
-    var _spyret_remainder = function(x, y) {
+    var _patch_remainder = function(x, y) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["remainder"], 2, $a); }
       checkNumber(x); checkNumber(y);
       return thisRuntime.makeNumber(jsnums.remainder(x, y));
     };
 
-    var _spyret_eq = function(l, r) {
+    var _patch_eq = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC(["="], 2, [arguments[0]]);
@@ -4957,7 +4957,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_lt = function(l, r) {
+    var _patch_lt = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC(["<"], 2, [arguments[0]]);
@@ -4972,7 +4972,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_gt = function(l, r) {
+    var _patch_gt = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC([">"], 2, [arguments[0]]);
@@ -4987,7 +4987,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_le = function(l, r) {
+    var _patch_le = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC(["<="], 2, [arguments[0]]);
@@ -5002,7 +5002,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_ge = function(l, r) {
+    var _patch_ge = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC([">="], 2, [arguments[0]]);
@@ -5017,7 +5017,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_max = function(l) {
+    var _patch_max = function(l) {
       var argLen = arguments.length;
       if (argLen < 2) {
         throw thisRuntime.ffi.throwArityErrorC(["max"], 2, [l]);
@@ -5034,7 +5034,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return result;
     };
 
-    var _spyret_min = function(l) {
+    var _patch_min = function(l) {
       var argLen = arguments.length;
       if (argLen < 2) {
         throw thisRuntime.ffi.throwArityErrorC(["min"], 2, [l]);
@@ -5051,7 +5051,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return result;
     };
 
-    var _spyret_sgn = function(n) {
+    var _patch_sgn = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["sgn"], 1, $a); }
       thisRuntime.checkNumber(n);
       if (jsnums.equalsAnyZero(n)) {
@@ -5063,7 +5063,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
     };
 
-    var _spyret_gcd = function() {
+    var _patch_gcd = function() {
       var $a = new Array(arguments.length);
       var j;
       for (var $i = 0; $i < arguments.length; $i++) {
@@ -5074,7 +5074,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return jsnums.gcd(0, $a);
     };
 
-    var _spyret_lcm = function() {
+    var _patch_lcm = function() {
       var $a = new Array(arguments.length);
       var j;
       for (var $i = 0; $i < arguments.length; $i++) {
@@ -5085,24 +5085,24 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return jsnums.lcm(1, $a);
     };
 
-    var _spyret_numerator = function(n) {
+    var _patch_numerator = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["numerator"], 1, $a); }
       checkNumber(n);
       return jsnums.numerator(n);
     };
 
-    var _spyret_denominator = function(n) {
+    var _patch_denominator = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["denominator"], 1, $a); }
       checkNumber(n);
       return jsnums.denominator(n);
     };
 
-    var _spyret_current_seconds = function() {
+    var _patch_current_seconds = function() {
       if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["current-seconds"], 0, $a); }
       return makeNumber(Math.floor(Date.now()/1000));
     };
 
-    var _spyret_random = function(n) {
+    var _patch_random = function(n) {
       if (arguments.length > 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["random"], 0, $a); }
       if (n) {
         checkNumber(n);
@@ -5115,17 +5115,17 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
     };
 
-    var _spyret_sinh = function(x) {
+    var _patch_sinh = function(x) {
       thisRuntime.checkNumber(x);
       return jsnums.halve(jsnums.subtract(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
     };
 
-    var _spyret_cosh = function(x) {
+    var _patch_cosh = function(x) {
       thisRuntime.checkNumber(x);
       return jsnums.halve(jsnums.add(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
     };
 
-    var _spyret_string_eq = function(l, r) {
+    var _patch_string_eq = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string=?", 2, [arguments[0]]);
@@ -5140,7 +5140,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_string_lt = function(l, r) {
+    var _patch_string_lt = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string<?", 2, [arguments[0]]);
@@ -5155,7 +5155,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_string_gt = function(l, r) {
+    var _patch_string_gt = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string>?", 2, [arguments[0]]);
@@ -5170,7 +5170,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_string_le = function(l, r) {
+    var _patch_string_le = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string<=?", 2, [arguments[0]]);
@@ -5184,7 +5184,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_string_ge = function(l, r) {
+    var _patch_string_ge = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string>=?", 2, [arguments[0]]);
@@ -5198,7 +5198,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_string_ci_eq = function(l, r) {
+    var _patch_string_ci_eq = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string-ci=?", 2, [arguments[0]]);
@@ -5212,7 +5212,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_string_ci_lt = function(l, r) {
+    var _patch_string_ci_lt = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string-ci<?", 2, [arguments[0]]);
@@ -5226,7 +5226,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_string_ci_gt = function(l, r) {
+    var _patch_string_ci_gt = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string-ci>?", 2, [arguments[0]]);
@@ -5240,7 +5240,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_string_ci_le = function(l, r) {
+    var _patch_string_ci_le = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string-ci<=?", 2, [arguments[0]]);
@@ -5254,7 +5254,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_string_ci_ge = function(l, r) {
+    var _patch_string_ci_ge = function(l, r) {
       var lastIndex = arguments.length - 1;
       if (lastIndex < 1) {
         throw thisRuntime.ffi.throwArityErrorC("string-ci>=?", 2, [arguments[0]]);
@@ -5268,14 +5268,14 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeBoolean(true);
     };
 
-    var _spyret_substring = function(s, min, max) {
+    var _patch_substring = function(s, min, max) {
       if (max === undefined) {
         max = string_length(s);
       }
       return string_substring(s, min, max)
     };
 
-    var _spyret_string_to_number = function(s, b) {
+    var _patch_string_to_number = function(s, b) {
       if (arguments.length > 2) {
         var $a = new Array(arguments.length);
         for (var $i = 0; $i < arguments.length; $i++) {
@@ -5301,27 +5301,27 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
     };
 
-    var _spyret_number_to_string = function(n) {
+    var _patch_number_to_string = function(n) {
       if (arguments.length > 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["number->string"], 0, $a); }
       checkNumber(n);
       return jsnums.toSchemeString(n);
     };
 
-    var _spyret_string = function() {
+    var _patch_string = function() {
       var result = "";
       var c;
       for (var i = 0; i < arguments.length; i++) {
         c = arguments[i];
-        checkSpyretCharacter(c);
+        checkPatchCharacter(c);
         result = result.concat(c);
       }
       return thisRuntime.makeString(result);
     };
 
-    var _spyret_make_string = function(n, c) {
+    var _patch_make_string = function(n, c) {
       if (arguments.length !== 2) { var $a = new Array(arguments.length); for (var $i = 0; $i < arguments.length; $i++) { $a[$i] = arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["make-string"], 2, $a); }
       checkNumInteger(n); checkNumNonNegative(n);
-      checkSpyretCharacter(c);
+      checkPatchCharacter(c);
       var len = jsnums.toFixnum(n);
       var result = '';
       for (var i = 0; i < len; i++) {
@@ -5330,7 +5330,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeString(result);
     };
 
-    var _spyret_string_append = function() {
+    var _patch_string_append = function() {
       var result = "";
       var s;
       for (var i = 0; i < arguments.length; i++) {
@@ -5341,65 +5341,65 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.makeString(result);
     };
 
-    var _spyret_list_to_string = function(L) {
+    var _patch_list_to_string = function(L) {
       thisRuntime.checkList(L);
       var ra = thisRuntime.ffi.toArray(L);
-      if (!ra.every(function(elt) { return _spyret_single_char_string_p(elt); })) {
+      if (!ra.every(function(elt) { return _patch_single_char_string_p(elt); })) {
         thisRuntime.ffi.throwMessageException("list->string: " + L + " is not a list of characters");
       } else {
         return thisRuntime.makeString(ra.join(""));
       }
     };
 
-    var _spyret_char_p = function(c) {
+    var _patch_char_p = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char?"], 1, $a); }
-      return _spyret_single_char_string_p(c);
+      return _patch_single_char_string_p(c);
     };
 
-    var _spyret_char_alphabetic_p = function(c) {
+    var _patch_char_alphabetic_p = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-alphabetic?"], 1, $a); }
-      checkSpyretCharacter(c);
+      checkPatchCharacter(c);
       return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
     };
 
-    var _spyret_char_lower_case_p = function(c) {
+    var _patch_char_lower_case_p = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-lower-case?"], 1, $a); }
-      checkSpyretCharacter(c);
+      checkPatchCharacter(c);
       return (c >= 'a' && c <= 'z');
     };
 
-    var _spyret_char_upper_case_p = function(c) {
+    var _patch_char_upper_case_p = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-upper-case?"], 1, $a); }
-      checkSpyretCharacter(c);
+      checkPatchCharacter(c);
       return (c >= 'A' && c <= 'Z');
     };
 
-    var _spyret_char_numeric_p = function(c) {
+    var _patch_char_numeric_p = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-numeric?"], 1, $a); }
-      checkSpyretCharacter(c);
+      checkPatchCharacter(c);
       return (c >= '0' && c <= '9');
     };
 
-    var _spyret_char_whitespace_p = function(c) {
+    var _patch_char_whitespace_p = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-whitespace?"], 1, $a); }
-      checkSpyretCharacter(c);
+      checkPatchCharacter(c);
       var n = c.charCodeAt(0);
       return (n===9 || n===10 || n===12 || n===13 || n===32);
     };
 
-    var _spyret_char_to_integer = function(c) {
+    var _patch_char_to_integer = function(c) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char->integer"], 1, $a); }
-      checkSpyretCharacter(c);
+      checkPatchCharacter(c);
       return thisRuntime.makeNumber(c.charCodeAt(0));
     };
 
-    var _spyret_integer_to_char = function(n) {
+    var _patch_integer_to_char = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["integer->char"], 1, $a); }
       thisRuntime.checkNumber(n);
       return thisRuntime.makeString(String.fromCharCode(n));
     };
 
-    var _spyret_format = function(f) {
+    var _patch_format = function(f) {
       var argsn = arguments.length;
       if (argsn === 0) {
         throw thisRuntime.ffi.throwArityErrorC(["format"], 1, []);
@@ -5440,7 +5440,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return s;
     };
 
-    var _spyret_make_cxr = function(s_rev) {
+    var _patch_make_cxr = function(s_rev) {
       var s0 = s_rev.split("").reverse().join("");
       return makeFunction(function(l) {
         if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["cxr"], 1, $a); }
@@ -5459,10 +5459,10 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
           }
         }
         return l;
-      }, "_spyret_c" + s_rev + "r");
+      }, "_patch_c" + s_rev + "r");
     };
 
-    var _spyret_append = function() {
+    var _patch_append = function() {
       var result = [];
       var L;
       for (var i = 0; i < arguments.length; i++) {
@@ -5473,11 +5473,11 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.ffi.makeList(result);
     };
 
-    var _spyret_apply_variadic_fun = function(f, args) {
+    var _patch_apply_variadic_fun = function(f, args) {
       return f.app.apply(null, args);
     };
 
-    var _spyret_apply = function(f) {
+    var _patch_apply = function(f) {
       if (arguments.length < 2) {
         var $a = new Array(arguments.length);
         for (var $i = 0; $i < arguments.length; $i++) {
@@ -5496,7 +5496,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return f.app.apply(null, rargs);
     };
 
-    var _spyret_compose = function(f, g) {
+    var _patch_compose = function(f, g) {
       if (arguments.length !== 2) { var $a = new Array(arguments.length); for (var $i = 0; $i < arguments.length; $i++) { $a[$i] = arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["compose"], 2, $a); }
       checkFunction(f);
       checkFunction(g);
@@ -5505,7 +5505,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       });
     };
 
-    var _spyret_map = function(f) {
+    var _patch_map = function(f) {
       checkFunction(f);
       var num_arg_arrays = arguments.length - 1;
       if (num_arg_arrays < 1) {
@@ -5534,7 +5534,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return thisRuntime.ffi.makeList(result);
     };
 
-    var _spyret_for_each = function(f) {
+    var _patch_for_each = function(f) {
       checkFunction(f);
       var num_arg_arrays = arguments.length - 1;
       if (num_arg_arrays < 1) {
@@ -5556,7 +5556,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return nothing;
     };
 
-    var _spyret_andmap = function(f) {
+    var _patch_andmap = function(f) {
       checkFunction(f);
       var num_arg_arrays = arguments.length - 1;
       if (num_arg_arrays < 1) {
@@ -5582,7 +5582,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return true;
     };
 
-    var _spyret_ormap = function(f) {
+    var _patch_ormap = function(f) {
       checkFunction(f);
       var num_arg_arrays = arguments.length - 1;
       if (num_arg_arrays < 1) {
@@ -5608,27 +5608,27 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return false;
     };
 
-    function _spyret_box(v) {
+    function _patch_box(v) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["box"], 1, $a); }
-      return thisRuntime.makeOpaque(new P_spyret_box(v));
+      return thisRuntime.makeOpaque(new P_patch_box(v));
     }
 
-    function _spyret_unbox(b) {
+    function _patch_unbox(b) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["unbox"], 1, $a); }
-      checkSpyretBox(b);
+      checkPatchBox(b);
       return b.val.val;
     }
 
-    function _spyret_set_box(b, v) {
+    function _patch_set_box(b, v) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["set-box!"], 2, $a); }
-      checkSpyretBox(b);
+      checkPatchBox(b);
       b.val.val = v;
       return nothing;
     }
 
-    function _spyret_display(val) {
+    function _patch_display(val) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["display"], 1, $a); }
-      //console.log('doing _spyret_display', val);
+      //console.log('doing _patch_display', val);
       if (isString(val)) {
         theOutsideWorld.stdout(val);
         return nothing;
@@ -5643,19 +5643,19 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
     }
 
-    function _spyret_make_hash() {
+    function _patch_make_hash() {
       if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["make-hash"], 0, $a); }
-      return thisRuntime.ffi._spyret_make_hash();
+      return thisRuntime.ffi._patch_make_hash();
     }
 
-    function _spyret_hash_p(val) {
+    function _patch_hash_p(val) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash?"], 1, $a); }
-      return thisRuntime.ffi._spyret_hash_p(val);
+      return thisRuntime.ffi._patch_hash_p(val);
     }
 
-    function _spyret_hash_ref(h, k, d) {
+    function _patch_hash_ref(h, k, d) {
       if (arguments.length < 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash-ref"], 2, $a); }
-      var result = thisRuntime.ffi._spyret_hash_ref(h, k, d);
+      var result = thisRuntime.ffi._patch_hash_ref(h, k, d);
       if (arguments.length === 2 && result === undefined) {
         thisRuntime.ffi.throwMessageException('hash-ref: no value found for key ' + k);
       } else {
@@ -5663,12 +5663,12 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       }
     }
 
-    function _spyret_hash_set(h, k, v) {
+    function _patch_hash_set(h, k, v) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash-set!"], 3, $a); }
-      return thisRuntime.ffi._spyret_hash_set(h, k, v);
+      return thisRuntime.ffi._patch_hash_set(h, k, v);
     }
 
-    function _spyret_struct_p(v) {
+    function _patch_struct_p(v) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash?"], 1, $a); }
       return !!((v instanceof Object) &&
         v.dict && v.brands && v.$name && v.$mut_fields_mask && v.$arity && v.$constructor);
@@ -6177,132 +6177,132 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       'gensym': gensym,
       'random': makeFunction(random, "random"),
 
-      "_spyret_false": false,
-      "_spyret_true": true,
-      "_spyret_pi": jsnums.toRoughnum(Math.PI),
-      "_spyret_tau": jsnums.toRoughnum(2*Math.PI),
-      "_spyret_e": jsnums.toRoughnum(Math.E),
+      "_patch_false": false,
+      "_patch_true": true,
+      "_patch_pi": jsnums.toRoughnum(Math.PI),
+      "_patch_tau": jsnums.toRoughnum(2*Math.PI),
+      "_patch_e": jsnums.toRoughnum(Math.E),
 
-      "_spyret_apply": makeFunction(_spyret_apply, "_spyret_apply"),
-      "_spyret_compose": makeFunction(_spyret_compose, "_spyret_compose"),
-      "_spyret_identity": makeFunction(_spyret_identity, "_spyret_identity"),
-      "_spyret_procedure_arity": makeFunction(_spyret_procedure_arity, "_spyret_procedure_arity"),
-      "_spyret_void": makeFunction(_spyret_void, "_spyret_void"),
+      "_patch_apply": makeFunction(_patch_apply, "_patch_apply"),
+      "_patch_compose": makeFunction(_patch_compose, "_patch_compose"),
+      "_patch_identity": makeFunction(_patch_identity, "_patch_identity"),
+      "_patch_procedure_arity": makeFunction(_patch_procedure_arity, "_patch_procedure_arity"),
+      "_patch_void": makeFunction(_patch_void, "_patch_void"),
 
-      "_spyret_cosh": makeFunction(_spyret_cosh, "_spyret_cosh"),
-      "_spyret_current_seconds": makeFunction(_spyret_current_seconds, "_spyret_current_seconds"),
-      "_spyret_denominator": makeFunction(_spyret_denominator, "_spyret_denominator"),
-      "_spyret_divide": makeFunction(_spyret_divide, "_spyret_divide"),
-      "_spyret_eq": makeFunction(_spyret_eq, "_spyret_eq"),
-      "_spyret_even_p": makeFunction(_spyret_even_p, "_spyret_even_p"),
-      "_spyret_gcd": makeFunction(_spyret_gcd, "_spyret_gcd"),
-      "_spyret_ge": makeFunction(_spyret_ge, "_spyret_ge"),
-      "_spyret_gt": makeFunction(_spyret_gt, "_spyret_gt"),
-      "_spyret_integer_p": makeFunction(_spyret_integer_p, "_spyret_integer_p"),
-      "_spyret_lcm": makeFunction(_spyret_lcm, "_spyret_lcm"),
-      "_spyret_le": makeFunction(_spyret_le, "_spyret_le"),
-      "_spyret_lt": makeFunction(_spyret_lt, "_spyret_lt"),
-      "_spyret_max": makeFunction(_spyret_max, "_spyret_max"),
-      "_spyret_min": makeFunction(_spyret_min, "_spyret_min"),
-      "_spyret_minus": makeFunction(_spyret_minus, "_spyret_minus"),
-      "_spyret_num_equal_tilde": makeFunction(_spyret_num_equal_tilde, "_spyret_num_equal_tilde"),
-      "_spyret_numerator": makeFunction(_spyret_numerator, "_spyret_numerator"),
-      "_spyret_odd_p": makeFunction(_spyret_odd_p, "_spyret_odd_p"),
-      "_spyret_add1": makeFunction(_spyret_add1, "_spyret_add1"),
-      "_spyret_sub1": makeFunction(_spyret_sub1, "_spyret_sub1"),
-      "_spyret_plus": makeFunction(_spyret_plus, "_spyret_plus"),
-      "_spyret_quotient": makeFunction(_spyret_quotient, "_spyret_quotient"),
-      "_spyret_random": makeFunction(_spyret_random, "_spyret_random"),
-      "_spyret_rational_p": makeFunction(_spyret_rational_p, "_spyret_rational_p"),
-      "_spyret_real_p": makeFunction(_spyret_real_p, "_spyret_real_p"),
-      "_spyret_remainder": makeFunction(_spyret_remainder, "_spyret_remainder"),
-      "_spyret_sgn": makeFunction(_spyret_sgn, "_spyret_sgn"),
-      "_spyret_sinh": makeFunction(_spyret_sinh, "_spyret_sinh"),
-      "_spyret_times": makeFunction(_spyret_times, "_spyret_times"),
-      "_spyret_zero_p": makeFunction(_spyret_zero_p, "_spyret_zero_p"),
-      '_spyret_exact_to_inexact': makeFunction(_spyret_exact_to_inexact, '_spyret_exact_to_inexact'),
-      '_spyret_inexact_to_exact': makeFunction(_spyret_inexact_to_exact, '_spyret_inexact_to_exact'),
+      "_patch_cosh": makeFunction(_patch_cosh, "_patch_cosh"),
+      "_patch_current_seconds": makeFunction(_patch_current_seconds, "_patch_current_seconds"),
+      "_patch_denominator": makeFunction(_patch_denominator, "_patch_denominator"),
+      "_patch_divide": makeFunction(_patch_divide, "_patch_divide"),
+      "_patch_eq": makeFunction(_patch_eq, "_patch_eq"),
+      "_patch_even_p": makeFunction(_patch_even_p, "_patch_even_p"),
+      "_patch_gcd": makeFunction(_patch_gcd, "_patch_gcd"),
+      "_patch_ge": makeFunction(_patch_ge, "_patch_ge"),
+      "_patch_gt": makeFunction(_patch_gt, "_patch_gt"),
+      "_patch_integer_p": makeFunction(_patch_integer_p, "_patch_integer_p"),
+      "_patch_lcm": makeFunction(_patch_lcm, "_patch_lcm"),
+      "_patch_le": makeFunction(_patch_le, "_patch_le"),
+      "_patch_lt": makeFunction(_patch_lt, "_patch_lt"),
+      "_patch_max": makeFunction(_patch_max, "_patch_max"),
+      "_patch_min": makeFunction(_patch_min, "_patch_min"),
+      "_patch_minus": makeFunction(_patch_minus, "_patch_minus"),
+      "_patch_num_equal_tilde": makeFunction(_patch_num_equal_tilde, "_patch_num_equal_tilde"),
+      "_patch_numerator": makeFunction(_patch_numerator, "_patch_numerator"),
+      "_patch_odd_p": makeFunction(_patch_odd_p, "_patch_odd_p"),
+      "_patch_add1": makeFunction(_patch_add1, "_patch_add1"),
+      "_patch_sub1": makeFunction(_patch_sub1, "_patch_sub1"),
+      "_patch_plus": makeFunction(_patch_plus, "_patch_plus"),
+      "_patch_quotient": makeFunction(_patch_quotient, "_patch_quotient"),
+      "_patch_random": makeFunction(_patch_random, "_patch_random"),
+      "_patch_rational_p": makeFunction(_patch_rational_p, "_patch_rational_p"),
+      "_patch_real_p": makeFunction(_patch_real_p, "_patch_real_p"),
+      "_patch_remainder": makeFunction(_patch_remainder, "_patch_remainder"),
+      "_patch_sgn": makeFunction(_patch_sgn, "_patch_sgn"),
+      "_patch_sinh": makeFunction(_patch_sinh, "_patch_sinh"),
+      "_patch_times": makeFunction(_patch_times, "_patch_times"),
+      "_patch_zero_p": makeFunction(_patch_zero_p, "_patch_zero_p"),
+      '_patch_exact_to_inexact': makeFunction(_patch_exact_to_inexact, '_patch_exact_to_inexact'),
+      '_patch_inexact_to_exact': makeFunction(_patch_inexact_to_exact, '_patch_inexact_to_exact'),
 
-      "_spyret_false_p": makeFunction(_spyret_false_p, "_spyret_false_p"),
-      "_spyret_boolean_p": makeFunction(_spyret_boolean_p, "_spyret_boolean_p"),
-      "_spyret_boolean_eq": makeFunction(_spyret_boolean_eq, "_spyret_boolean_eq"),
+      "_patch_false_p": makeFunction(_patch_false_p, "_patch_false_p"),
+      "_patch_boolean_p": makeFunction(_patch_boolean_p, "_patch_boolean_p"),
+      "_patch_boolean_eq": makeFunction(_patch_boolean_eq, "_patch_boolean_eq"),
 
-      "_spyret_list_to_string": makeFunction(_spyret_list_to_string, "_spyret_list_to_string"),
-      "_spyret_string": makeFunction(_spyret_string, "_spyret_string"),
-      '_spyret_make_string': makeFunction(_spyret_make_string, '_spyret_make_string'),
-      "_spyret_string_append": makeFunction(_spyret_string_append, "_spyret_string_append"),
-      "_spyret_string_ci_eq": makeFunction(_spyret_string_ci_eq, "_spyret_string_ci_eq"),
-      "_spyret_string_ci_ge": makeFunction(_spyret_string_ci_ge, "_spyret_string_ci_ge"),
-      "_spyret_string_ci_gt": makeFunction(_spyret_string_ci_gt, "_spyret_string_ci_gt"),
-      "_spyret_string_ci_le": makeFunction(_spyret_string_ci_le, "_spyret_string_ci_le"),
-      "_spyret_string_ci_lt": makeFunction(_spyret_string_ci_lt, "_spyret_string_ci_lt"),
-      "_spyret_string_eq": makeFunction(_spyret_string_eq, "_spyret_string_eq"),
-      "_spyret_string_ge": makeFunction(_spyret_string_ge, "_spyret_string_ge"),
-      "_spyret_string_gt": makeFunction(_spyret_string_gt, "_spyret_string_gt"),
-      "_spyret_string_le": makeFunction(_spyret_string_le, "_spyret_string_le"),
-      "_spyret_string_lt": makeFunction(_spyret_string_lt, "_spyret_string_lt"),
-      "_spyret_string_to_number": makeFunction(_spyret_string_to_number, "_spyret_string_to_number"),
-      '_spyret_number_to_string': makeFunction(_spyret_number_to_string, '_spyret_number_to_string'),
-      "_spyret_substring": makeFunction(_spyret_substring, "_spyret_substring"),
+      "_patch_list_to_string": makeFunction(_patch_list_to_string, "_patch_list_to_string"),
+      "_patch_string": makeFunction(_patch_string, "_patch_string"),
+      '_patch_make_string': makeFunction(_patch_make_string, '_patch_make_string'),
+      "_patch_string_append": makeFunction(_patch_string_append, "_patch_string_append"),
+      "_patch_string_ci_eq": makeFunction(_patch_string_ci_eq, "_patch_string_ci_eq"),
+      "_patch_string_ci_ge": makeFunction(_patch_string_ci_ge, "_patch_string_ci_ge"),
+      "_patch_string_ci_gt": makeFunction(_patch_string_ci_gt, "_patch_string_ci_gt"),
+      "_patch_string_ci_le": makeFunction(_patch_string_ci_le, "_patch_string_ci_le"),
+      "_patch_string_ci_lt": makeFunction(_patch_string_ci_lt, "_patch_string_ci_lt"),
+      "_patch_string_eq": makeFunction(_patch_string_eq, "_patch_string_eq"),
+      "_patch_string_ge": makeFunction(_patch_string_ge, "_patch_string_ge"),
+      "_patch_string_gt": makeFunction(_patch_string_gt, "_patch_string_gt"),
+      "_patch_string_le": makeFunction(_patch_string_le, "_patch_string_le"),
+      "_patch_string_lt": makeFunction(_patch_string_lt, "_patch_string_lt"),
+      "_patch_string_to_number": makeFunction(_patch_string_to_number, "_patch_string_to_number"),
+      '_patch_number_to_string': makeFunction(_patch_number_to_string, '_patch_number_to_string'),
+      "_patch_substring": makeFunction(_patch_substring, "_patch_substring"),
 
-      "_spyret_char_alphabetic_p": makeFunction(_spyret_char_alphabetic_p, "_spyret_char_alphabetic_p"),
-      "_spyret_char_lower_case_p": makeFunction(_spyret_char_lower_case_p, "_spyret_char_lower_case_p"),
-      "_spyret_char_numeric_p": makeFunction(_spyret_char_numeric_p, "_spyret_char_numeric_p"),
-      "_spyret_char_p": makeFunction(_spyret_char_p, "_spyret_char_p"),
-      "_spyret_char_to_integer": makeFunction(_spyret_char_to_integer, "_spyret_char_to_integer"),
-      "_spyret_char_upper_case_p": makeFunction(_spyret_char_upper_case_p, "_spyret_char_upper_case_p"),
-      "_spyret_char_whitespace_p": makeFunction(_spyret_char_whitespace_p, "_spyret_char_whitespace_p"),
-      "_spyret_integer_to_char": makeFunction(_spyret_integer_to_char, "_spyret_integer_to_char"),
-      "_spyret_format": makeFunction(_spyret_format, "_spyret_format"),
+      "_patch_char_alphabetic_p": makeFunction(_patch_char_alphabetic_p, "_patch_char_alphabetic_p"),
+      "_patch_char_lower_case_p": makeFunction(_patch_char_lower_case_p, "_patch_char_lower_case_p"),
+      "_patch_char_numeric_p": makeFunction(_patch_char_numeric_p, "_patch_char_numeric_p"),
+      "_patch_char_p": makeFunction(_patch_char_p, "_patch_char_p"),
+      "_patch_char_to_integer": makeFunction(_patch_char_to_integer, "_patch_char_to_integer"),
+      "_patch_char_upper_case_p": makeFunction(_patch_char_upper_case_p, "_patch_char_upper_case_p"),
+      "_patch_char_whitespace_p": makeFunction(_patch_char_whitespace_p, "_patch_char_whitespace_p"),
+      "_patch_integer_to_char": makeFunction(_patch_integer_to_char, "_patch_integer_to_char"),
+      "_patch_format": makeFunction(_patch_format, "_patch_format"),
 
-      "_spyret_caaar": _spyret_make_cxr("aaa"),
-      "_spyret_caadr": _spyret_make_cxr("aad"),
-      "_spyret_caar": _spyret_make_cxr("aa"),
-      "_spyret_cadar": _spyret_make_cxr("ada"),
-      "_spyret_caddr": _spyret_make_cxr("add"),
-      "_spyret_cadr": _spyret_make_cxr("ad"),
-      "_spyret_car": _spyret_make_cxr("a"),
-      "_spyret_cdaar": _spyret_make_cxr("daa"),
-      "_spyret_cdadr": _spyret_make_cxr("dad"),
-      "_spyret_cdar": _spyret_make_cxr("da"),
-      "_spyret_cddar": _spyret_make_cxr("dda"),
-      "_spyret_cdddr": _spyret_make_cxr("ddd"),
-      "_spyret_cddr": _spyret_make_cxr("dd"),
-      "_spyret_cdr": _spyret_make_cxr("d"),
+      "_patch_caaar": _patch_make_cxr("aaa"),
+      "_patch_caadr": _patch_make_cxr("aad"),
+      "_patch_caar": _patch_make_cxr("aa"),
+      "_patch_cadar": _patch_make_cxr("ada"),
+      "_patch_caddr": _patch_make_cxr("add"),
+      "_patch_cadr": _patch_make_cxr("ad"),
+      "_patch_car": _patch_make_cxr("a"),
+      "_patch_cdaar": _patch_make_cxr("daa"),
+      "_patch_cdadr": _patch_make_cxr("dad"),
+      "_patch_cdar": _patch_make_cxr("da"),
+      "_patch_cddar": _patch_make_cxr("dda"),
+      "_patch_cdddr": _patch_make_cxr("ddd"),
+      "_patch_cddr": _patch_make_cxr("dd"),
+      "_patch_cdr": _patch_make_cxr("d"),
 
-      "_spyret_first":   _spyret_make_cxr("a"),
-      "_spyret_second":  _spyret_make_cxr("ad"),
-      "_spyret_third":   _spyret_make_cxr("add"),
-      "_spyret_fourth":  _spyret_make_cxr("addd"),
-      "_spyret_fifth":   _spyret_make_cxr("adddd"),
-      "_spyret_sixth":   _spyret_make_cxr("addddd"),
-      "_spyret_seventh": _spyret_make_cxr("adddddd"),
-      "_spyret_eighth":  _spyret_make_cxr("addddddd"),
+      "_patch_first":   _patch_make_cxr("a"),
+      "_patch_second":  _patch_make_cxr("ad"),
+      "_patch_third":   _patch_make_cxr("add"),
+      "_patch_fourth":  _patch_make_cxr("addd"),
+      "_patch_fifth":   _patch_make_cxr("adddd"),
+      "_patch_sixth":   _patch_make_cxr("addddd"),
+      "_patch_seventh": _patch_make_cxr("adddddd"),
+      "_patch_eighth":  _patch_make_cxr("addddddd"),
 
-      "_spyret_append": makeFunction(_spyret_append, "_spyret_append"),
-      "_spyret_map": makeFunction(_spyret_map, "_spyret_map"),
-      "_spyret_for_each": makeFunction(_spyret_for_each, "_spyret_for_each"),
-      "_spyret_andmap": makeFunction(_spyret_andmap, "_spyret_andmap"),
-      "_spyret_ormap": makeFunction(_spyret_ormap, "_spyret_ormap"),
+      "_patch_append": makeFunction(_patch_append, "_patch_append"),
+      "_patch_map": makeFunction(_patch_map, "_patch_map"),
+      "_patch_for_each": makeFunction(_patch_for_each, "_patch_for_each"),
+      "_patch_andmap": makeFunction(_patch_andmap, "_patch_andmap"),
+      "_patch_ormap": makeFunction(_patch_ormap, "_patch_ormap"),
 
-      "_spyret_box": makeFunction(_spyret_box, "_spyret_box"),
-      "_spyret_boxp": mkPred(_spyret_boxp),
-      "_spyret_unbox": makeFunction(_spyret_unbox, "_spyret_unbox"),
-      "_spyret_set_box": makeFunction(_spyret_set_box, "_spyret_set_box"),
+      "_patch_box": makeFunction(_patch_box, "_patch_box"),
+      "_patch_boxp": mkPred(_patch_boxp),
+      "_patch_unbox": makeFunction(_patch_unbox, "_patch_unbox"),
+      "_patch_set_box": makeFunction(_patch_set_box, "_patch_set_box"),
 
-      "_spyret_display": makeFunction(_spyret_display, "_spyret_display"),
+      "_patch_display": makeFunction(_patch_display, "_patch_display"),
 
-      "_spyret_error": makeFunction(_spyret_error, "_spyret_error"),
-      "_spyret_dead_code_function": makeFunction(_spyret_dead_code_function, "_spyret_dead_code_function"),
-      "_spyret_check_within": makeFunction(_spyret_check_within, "_spyret_check_within"),
-      "_spyret_equal_tilde": makeFunction(_spyret_equal_tilde, "_spyret_equal_tilde"),
+      "_patch_error": makeFunction(_patch_error, "_patch_error"),
+      "_patch_dead_code_function": makeFunction(_patch_dead_code_function, "_patch_dead_code_function"),
+      "_patch_check_within": makeFunction(_patch_check_within, "_patch_check_within"),
+      "_patch_equal_tilde": makeFunction(_patch_equal_tilde, "_patch_equal_tilde"),
 
-      "_spyret_make_hash": makeFunction(_spyret_make_hash, "_spyret_make_hash"),
-      "_spyret_hash_p": makeFunction(_spyret_hash_p, "_spyret_hash_p"),
-      "_spyret_hash_ref": makeFunction(_spyret_hash_ref, "_spyret_hash_ref"),
-      "_spyret_hash_set": makeFunction(_spyret_hash_set, "_spyret_hash_set"),
+      "_patch_make_hash": makeFunction(_patch_make_hash, "_patch_make_hash"),
+      "_patch_hash_p": makeFunction(_patch_hash_p, "_patch_hash_p"),
+      "_patch_hash_ref": makeFunction(_patch_hash_ref, "_patch_hash_ref"),
+      "_patch_hash_set": makeFunction(_patch_hash_set, "_patch_hash_set"),
 
-      "_spyret_struct_p": makeFunction(_spyret_struct_p, "_spyret_struct_p"),
+      "_patch_struct_p": makeFunction(_patch_struct_p, "_patch_struct_p"),
 
       '_plus': makeFunction(plus, "_plus"),
       '_minus': makeFunction(minus, "_minus"),

@@ -196,8 +196,8 @@ fun get-dependencies(p :: PyretCode, uri :: URI) -> List<CS.Dependency>:
   end
 end
 
-fun spyret-surface-parse(defs, name):
-  P.spyret-surface-parse(defs, name)
+fun patch-surface-parse(defs, name):
+  P.patch-surface-parse(defs, name)
 end
 
 fun get-standard-dependencies(p :: PyretCode, uri :: URI) -> List<CS.Dependency>:
@@ -320,7 +320,7 @@ fun is-builtin-module(uri :: String) -> Boolean:
   string-index-of(uri, "builtin://") == 0
 end
 
-fun is-builtin-or-spyret-module(uri :: String) -> Boolean:
+fun is-builtin-or-patch-module(uri :: String) -> Boolean:
   (string-index-of(uri, "builtin://") == 0) or
   (string-index-of(uri, "wescheme-collection://") == 0)
 end
@@ -505,7 +505,7 @@ fun make-standalone(wl, compiled, options):
   natives = for fold(natives from empty, w from wl):
     w.locator.get-native-modules().map(_.path) + natives
   end
-  
+
   var all-compile-problems = empty
   static-modules = j-obj(for C.map_list(w from wl):
       loadable = compiled.modules.get-value-now(w.locator.uri())

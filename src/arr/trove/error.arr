@@ -1842,7 +1842,7 @@ data ParseError:
         [ED.para: ED.text("Is there something there that shouldn’t be?")]
       ]
     end
-  | spyret-parse-error(msg, args, locs) with:
+  | patch-parse-error(msg, args, locs) with:
     method render-fancy-reason(self, src-available):
       msg-split = string-split-all(self.msg, ",,")
       msg-first = msg-split.take(1).map(ED.text)
