@@ -18,6 +18,7 @@ define(["jglr/jglr"], function(E) {
       else if (esc === "\r") {}
       else if (esc === "\n\r") {}
       else if (esc === "\r\n") {}
+      else if (esc === "b") { ret += "\b"; }
       else if (esc === "n") { ret += "\n"; }
       else if (esc === "r") { ret += "\r"; }
       else if (esc === "t") { ret += "\t"; }
