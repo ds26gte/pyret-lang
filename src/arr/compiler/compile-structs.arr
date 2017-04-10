@@ -2582,6 +2582,7 @@ standard-imports = extra-imports(
           "_patch_remove-all",
           "_patch_remove",
           "_patch_quicksort",
+          "_patch_argmax",
           "split-at",
           "any",
           "find",

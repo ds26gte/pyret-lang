@@ -741,6 +741,29 @@ fun _patch_quicksort<a>(lst :: List<a>, lt :: (a, a -> Boolean)):
               end)
 end
 
+fun _patch_argmax<a>(fn :: (a -> Number), lst :: List<a>):
+  if is-empty(lst):
+    raise('argmax given empty list')
+  else:
+    var ans = lst.first
+    var ans-val = fn(ans)
+    fun help(lyst):
+      if is-empty(lyst) block:
+        ans
+      else:
+        elt = lyst.first
+        elt-val = fn(elt)
+        when elt-val > ans-val block:
+          ans := elt
+          ans-val := elt-val
+        end
+        help(lyst.rest)
+      end
+    end
+    help(lst.rest)
+  end
+end
+
 fun fold2<a, b, c>(f :: (a, b, c -> a), base :: a, l1 :: List<b>, l2 :: List<c>) -> a:
   doc: ```Takes a function, an initial value and two lists, and folds the function over the lists in parallel
         from the left, starting with the initial value and ending when either list is empty```
