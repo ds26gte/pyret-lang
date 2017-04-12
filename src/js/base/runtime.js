@@ -5507,31 +5507,39 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
 
     var _patch_map = function(f) {
       checkFunction(f);
-      var num_arg_arrays = arguments.length - 1;
-      if (num_arg_arrays < 1) {
-        throw thisRuntime.ffi.throwArityErrorC(["map"], 1, [f]);
+      var num_args = arguments.length - 1;
+      if (num_args < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(['map'], 1, [f]);
       }
-      /* can't do this!!
-      if (f.arity !== num_arg_arrays) {
-        throw makeMessageException("map: function arity " + f.arity + " does not match number of arguments " +
-        num_arg_arrays);
+      var arg_arrays = new Array(num_args);
+      for (var j = 0; j < num_args; j++) {
+        arg_arrays[j] = thisRuntime.ffi.toArray(arguments[j+1]);
       }
-      */
-      var arg_arrays = new Array(num_arg_arrays);
-      for (var i = 0; i < num_arg_arrays; i++) {
-        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+1]);
-      }
-      var arg_array_length = arg_arrays[0].length; // check each arg array same length?
-      var result = new Array(arg_array_length);
-      var jth_arg_selection;
-      for (var j = 0; j < arg_array_length; j++) {
-        jth_arg_selection = new Array(num_arg_arrays);
-        for (var i = 0; i < num_arg_arrays; i++) {
-          jth_arg_selection[i] = arg_arrays[i][j];
-        }
-        result[j] = f.app.apply(null, jth_arg_selection);
-      }
-      return thisRuntime.ffi.makeList(result);
+      var num_fcalls = arg_arrays[0].length;
+      var result = new Array(num_fcalls);
+
+      // i ranges over num_fcalls
+      // j ranges over num_args
+      return thisRuntime.safeCall(
+        function() {
+          return thisRuntime.eachLoop(
+            thisRuntime.makeFunction(
+              function(i) {
+                var ith_fcall_args = new Array(num_args);
+                for (var j = 0; j < num_args; j++) {
+                  ith_fcall_args[j] = arg_arrays[j][i];
+                }
+                return thisRuntime.safeCall(
+                  function() {
+                    return f.app.apply(null, ith_fcall_args);
+                  }, function(ith_result) {
+                    result[i] = ith_result;
+                    return result;
+                  }, '_patch_map_2');
+              }), 0, num_fcalls);
+        }, function (_) {
+          return thisRuntime.ffi.makeList(result);
+        }, '_patch_map');
     };
 
     var _patch_for_each = function(f) {
