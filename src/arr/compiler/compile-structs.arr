@@ -2573,6 +2573,7 @@ standard-imports = extra-imports(
           "is-link",
           "empty",
           "link",
+          "reverse",
           "range",
           "range-by",
           "repeat",
