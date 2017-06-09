@@ -5616,6 +5616,54 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return false;
     };
 
+    var _patch_foldl = function(f, b) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 2;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["foldl"], 2, [f, b]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+2]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var base = b;
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        jth_arg_selection.push(base);
+        base = f.app.apply(null, jth_arg_selection);
+      }
+      return base;
+    };
+
+    var _patch_foldr = function(f, b) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 2;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["foldr"], 2, [f, b]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+2]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var base = b;
+      var jth_arg_selection;
+      for (var j = arg_array_length - 1; j >= 0; j--) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        jth_arg_selection.push(base);
+        base = f.app.apply(null, jth_arg_selection);
+      }
+      return base;
+    };
+
     function _patch_box(v) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["box"], 1, $a); }
       return thisRuntime.makeOpaque(new P_patch_box(v));
@@ -6292,6 +6340,8 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_patch_for_each": makeFunction(_patch_for_each, "_patch_for_each"),
       "_patch_andmap": makeFunction(_patch_andmap, "_patch_andmap"),
       "_patch_ormap": makeFunction(_patch_ormap, "_patch_ormap"),
+      "_patch_foldl": makeFunction(_patch_foldl, "_patch_foldl"),
+      "_patch_foldr": makeFunction(_patch_foldr, "_patch_foldr"),
 
       "_patch_box": makeFunction(_patch_box, "_patch_box"),
       "_patch_boxp": mkPred(_patch_boxp),

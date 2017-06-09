@@ -237,6 +237,8 @@
       '_patch_false_p': 'Any',
       '_patch_fifth': 'Any',
       '_patch_first': 'Any',
+      '_patch_foldl': 'Any',
+      '_patch_foldr': 'Any',
       '_patch_for_each': 'Any',
       '_patch_format': 'Any',
       '_patch_fourth': 'Any',

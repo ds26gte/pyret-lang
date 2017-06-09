@@ -710,26 +710,6 @@ fun foldr<a, b>(f :: (a, b -> a), base :: a, lst :: List<b>) -> a:
   end
 end
 
-fun _patch_foldl<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
-  doc: ```Takes a function, an initial value and a list, and folds the function over the list from the left,
-        starting with the initial value```
-  if is-empty(lst):
-    base
-  else:
-    _patch_foldl(f, f(lst.first, base), lst.rest)
-  end
-end
-
-fun _patch_foldr<a, b>(f :: (b, a -> a), base :: a, lst :: List<b>) -> a:
-  doc: ```Takes a function, an initial value and a list, and folds the function over the list from the right,
-        starting with the initial value```
-  if is-empty(lst):
-    base
-  else:
-    f(lst.first, _patch_foldr(f, base, lst.rest))
-  end
-end
-
 fun _patch_quicksort<a>(lst :: List<a>, lt :: (a, a -> Boolean)):
   lst.sort-by(lam(x :: a, y :: a):
                 if x == y: false

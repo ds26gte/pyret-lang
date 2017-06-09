@@ -251,6 +251,8 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("_patch_for_each").key(), t-top)
   default-typs.set-now(A.s-global("_patch_andmap").key(), t-top)
   default-typs.set-now(A.s-global("_patch_ormap").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_foldl").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_foldr").key(), t-top)
 
   default-typs.set-now(A.s-global("_patch_box").key(), t-top)
   default-typs.set-now(A.s-global("_patch_boxp").key(), t-top)
@@ -471,8 +473,6 @@ module-const-lists = t-module("builtin://lists",
     "_patch_remove", t-top,
     "_patch_quicksort", t-top,
     "_patch_argmax", t-top,
-    "_patch_foldl", t-top,
-    "_patch_foldr", t-top,
     "list-ref", t-top,
     "list-length", t-top,
     "list-member-p", t-top,
