@@ -253,6 +253,7 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("_patch_ormap").key(), t-top)
   default-typs.set-now(A.s-global("_patch_foldl").key(), t-top)
   default-typs.set-now(A.s-global("_patch_foldr").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_range").key(), t-top)
 
   default-typs.set-now(A.s-global("_patch_box").key(), t-top)
   default-typs.set-now(A.s-global("_patch_boxp").key(), t-top)

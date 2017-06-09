@@ -272,6 +272,7 @@
       '_patch_procedure_arity': 'Any',
       '_patch_quotient': 'Any',
       '_patch_random': 'Any',
+      '_patch_range': 'Any',
       '_patch_rational_p': 'Any',
       '_patch_real_p': 'Any',
       '_patch_remainder': 'Any',

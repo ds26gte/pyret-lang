@@ -5664,6 +5664,22 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       return base;
     };
 
+    var _patch_range = function(start, stop, delta) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["range"], 3, $a); }
+      checkNumber(start);
+      checkNumber(stop);
+      checkNumber(delta);
+      if (jsnums.schemeEquals(delta, 0)) {
+        thisRuntime.ffi.throwMessageException('range: an interval of 0 would produce an infinite list');
+      } else {
+        var result = [];
+        for (var i = start; jsnums.lessThan(i, stop); i = jsnums.add(i, delta)) {
+          result.push(i);
+        }
+      }
+      return thisRuntime.ffi.makeList(result);
+    };
+
     function _patch_box(v) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["box"], 1, $a); }
       return thisRuntime.makeOpaque(new P_patch_box(v));
@@ -6342,6 +6358,7 @@ function (Namespace, jsnums, codePoint, seedrandom, util) {
       "_patch_ormap": makeFunction(_patch_ormap, "_patch_ormap"),
       "_patch_foldl": makeFunction(_patch_foldl, "_patch_foldl"),
       "_patch_foldr": makeFunction(_patch_foldr, "_patch_foldr"),
+      "_patch_range": makeFunction(_patch_range, "_patch_range"),
 
       "_patch_box": makeFunction(_patch_box, "_patch_box"),
       "_patch_boxp": mkPred(_patch_boxp),

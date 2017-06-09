@@ -2377,6 +2377,7 @@ runtime-provides = provides("builtin://global",
     "_patch_ormap", t-top,
     "_patch_foldl", t-top,
     "_patch_foldr", t-top,
+    "_patch_range", t-top,
 
     "_patch_box", t-top,
     "_patch_boxp", t-top,
