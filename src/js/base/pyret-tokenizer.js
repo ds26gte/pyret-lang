@@ -150,19 +150,23 @@ define(["jglr/jglr"], function(E) {
 
   const unsigned_rational_part = "[0-9]+/[0-9]+"
 
+
   const unsigned_mixedfrac_part = "[0-9]+[&]" + unsigned_rational_part;
 
   const unsigned_rational_or_decimal_part = "(?:" + unsigned_rational_part + "|" +
     unsigned_decimal_part + ")"
+
+  const unsigned_mixedfrac_or_decimal_part = '(?:' + unsigned_mixedfrac_part + '|' +
+    unsigned_decimal_part + ')';
 
   const unsigned_mixedfrac_rational_or_decimal_part = "(?:" +
     unsigned_mixedfrac_part + "|" +
     unsigned_rational_part + "|" +
     unsigned_decimal_part + ")";
 
-  const rational_or_decimal_string = "^[-+]?" + unsigned_mixedfrac_rational_or_decimal_part;
+  const mixedfrac_or_decimal_string = "^[-+]?" + unsigned_mixedfrac_or_decimal_part;
 
-  const roughnum_string = "^~[-+]?" + unsigned_mixedfrac_rational_or_decimal_part
+  const rough_mixedfrac_or_decimal_string = "^~[-+]?" + unsigned_mixedfrac_or_decimal_part;
 
   const real_unsigned_rect_complexrational_part = unsigned_rational_or_decimal_part +
     "[-+]" + unsigned_rational_or_decimal_part + "[iIjJ]"
@@ -184,10 +188,14 @@ define(["jglr/jglr"], function(E) {
     real_unsigned_rect_complexroughnum_part + "|" +
     mod_unsigned_polar_complexroughnum_part + ")"
 
+  const rational = new RegExp("^[-+]?" + unsigned_rational_part, STICKY_REGEXP);
+
+  const roughrational = new RegExp("^~[-+]?" + unsigned_rational_part, STICKY_REGEXP);
+
   const number = new RegExp(complexrational_string + "|" +
-                            rational_or_decimal_string + "|" +
+                            mixedfrac_or_decimal_string + "|" +
                             complexroughnum_string + "|" +
-                            roughnum_string, STICKY_REGEXP)
+                            rough_mixedfrac_or_decimal_string, STICKY_REGEXP)
 
   // end number
 
@@ -359,7 +367,8 @@ define(["jglr/jglr"], function(E) {
     {name: "COLON", val: colon, parenIsForExp: true},
     {name: "BAR", val: bar, parenIsForExp: true},
 
-    //{name: "RATIONAL", val: rational},
+    {name: "RATIONAL", val: rational},
+    {name: "ROUGHRATIONAL", val: roughrational},
     {name: "NUMBER", val: number},
     //{name: "NUMBER", val: roughnum},
     {name: "LONG_STRING", val: tquot_str},
