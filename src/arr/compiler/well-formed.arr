@@ -1,5 +1,3 @@
-#lang pyret
-
 provide {
   check-well-formed: check-well-formed
 } end
@@ -95,7 +93,7 @@ end
 is-s-block = A.is-s-block
 fun ensure-empty-block(loc, typ, block :: A.Expr % (is-s-block)):
   if not(PARAM-current-where-everywhere):
-    if block.stmts.length() == 0: nothing
+    if is-empty(block.stmts): nothing
     else:
       add-error(C.unwelcome-where(tostring(typ), loc, block.l))
     end
@@ -104,7 +102,9 @@ fun ensure-empty-block(loc, typ, block :: A.Expr % (is-s-block)):
   end
 end
 
-is-binder = A.is-binder
+fun is-block-allowed(expr):
+  A.is-binder(expr) or A.is-s-spy-block(expr)
+end
 
 fun explicitly-blocky-block(block :: A.Expr % (is-s-block)) -> Boolean block:
   var seen-non-let = false
@@ -112,9 +112,9 @@ fun explicitly-blocky-block(block :: A.Expr % (is-s-block)) -> Boolean block:
   var seen-template = false
   for each(expr from block.stmts):
     ask:
-      | A.is-s-template(expr) then: seen-template := true
-      | seen-non-let          then: is-blocky := true # even if expr is a binder, it's non-consecutive
-      | not(is-binder(expr))  then: seen-non-let := true
+      | A.is-s-template(expr)        then: seen-template := true
+      | seen-non-let                 then: is-blocky := true # even if expr is a binder, it's non-consecutive
+      | not(is-block-allowed(expr))  then: seen-non-let := true
       | otherwise: nothing
     end
   end
@@ -250,14 +250,31 @@ fun ensure-distinct-lines(loc :: Loc, prev-is-template :: Boolean, stmts :: List
   end
 end
 
-fun ensure-unique-variant-ids(variants :: List<A.Variant>):
-  cases(List) variants:
-    | empty => nothing
+fun ensure-unique-variant-ids(variants :: List<A.Variant>, name :: String, data-loc :: Loc):
+  cases(List) variants block:
+    | empty => true
     | link(f, rest) =>
-      cases(Option) lists.find(lam(b): b.name == f.name end, rest):
-        | some(found) => add-error(C.duplicate-variant(f.name, found.l, f.l))
-        | none => ensure-unique-variant-ids(rest)
+      if f.name == name:
+        add-error(C.data-variant-duplicate-name(f.name, f.l, data-loc))
+      else if f.name == ("is-" + name):
+        add-error(C.duplicate-is-data(name, f.l, data-loc))
+      else if ("is-" + f.name) == name:
+        add-error(C.duplicate-is-data-variant(f.name, data-loc, f.l))
+      else:
+        nothing
       end
+      for each(b from rest):
+        if b.name == f.name block:
+          add-error(C.duplicate-variant(f.name, b.l, f.l))
+        else if b.name == ("is-" + f.name):
+          add-error(C.duplicate-is-variant(f.name, b.l, f.l))
+        else if ("is-" + b.name) == f.name:
+          add-error(C.duplicate-is-variant(b.name, f.l, b.l))
+        else:
+          nothing
+        end
+      end
+      ensure-unique-variant-ids(rest, name, data-loc)
   end
 end
 
@@ -288,7 +305,7 @@ fun reachable-ops(self, l, op-l, op, ast):
         reachable-ops(self, l, op-l, op, left2)
         reachable-ops(self, l, op-l, op, right2)
       else:
-        add-error(C.mixed-binops(opname(op), op-l,  opname(op2), op-l2))
+        add-error(C.mixed-binops(l, opname(op), op-l,  opname(op2), op-l2))
       end
       true
     | else => ast.visit(self)
@@ -304,7 +321,7 @@ end
 
 fun wf-examples-body(visitor, body):
   for lists.all(b from body.stmts):
-    if not(A.is-s-check-test(b)) block:
+    if not(A.is-s-check-test(b) or A.is-s-template(b)) block:
       add-error(C.non-example(b))
       true
     else:
@@ -314,24 +331,27 @@ fun wf-examples-body(visitor, body):
 end
 
 fun wf-table-headers(loc, headers):
-  num-headers = headers.length()
-  if num-headers == 0 block:
-    add-error(C.table-empty-header(loc))
-    true
-  else:
-    for each(i from range(0, num-headers)) block:
-      hi = headers.get(i)
-      when (reserved-names.has-key(hi.name)):
-        reserved-name(hi.l, hi.name)
-      end
-      for each(j from range(i + 1, num-headers)):
-        hj = headers.get(j)
-        when hi.name == hj.name:
-          add-error(C.table-duplicate-column-name(hi, hj))
+  cases(List) headers block:
+    | empty =>
+      add-error(C.table-empty-header(loc))
+      true
+    | link(first, rest) =>
+      fun dups(shadow first, shadow rest) block:
+        when (reserved-names.has-key(first.name)):
+          reserved-name(first.l, first.name)
+        end
+        for each(hname from rest):
+          when first.name == hname.name:
+            add-error(C.table-duplicate-column-name(first, hname))
+          end
+        end
+        cases(List) rest:
+          | empty => nothing
+          | link(snd, tail) => dups(snd, tail)
         end
       end
-    end
-    true
+      dups(first, rest)
+      true
   end
 end
 
@@ -348,14 +368,14 @@ well-formed-visitor = A.default-iter-visitor.{
   end,
   method s-special-import(self, l, kind, args) block:
     if kind == "my-gdrive":
-      if args.length() <> 1 block:
+      if not(is-link(args) and is-empty(args.rest)) block:
         add-error(C.import-arity-mismatch(l, kind, args, 2, [list: "the name of the file"]))
         false
       else:
         true
       end
     else if kind == "shared-gdrive":
-      if args.length() <> 2 block:
+      if not(is-link(args) and is-link(args.rest) and is-empty(args.rest.rest)) block:
         add-error(C.import-arity-mismatch(l, kind, args, 2, [list: "the name of the file", "the file's id, which you can get from the share URL"]))
         false
       else:
@@ -364,7 +384,7 @@ well-formed-visitor = A.default-iter-visitor.{
     else if kind == "js-http":
       true
     else if kind == "gdrive-js":
-      if args.length() <> 2:
+      if not(is-link(args) and is-link(args.rest) and is-empty(args.rest.rest)):
         add-error(C.import-arity-mismatch(l, kind, args, 2, [list: "the name of the file", "the file's id"]))
       else:
         true
@@ -399,6 +419,10 @@ well-formed-visitor = A.default-iter-visitor.{
     ans = lists.all(_.visit(self), binds) and body.visit(self)
     parent-block-loc := old-pbl
     ans
+  end,
+  method s-contract(_, l :: Loc, name :: A.Name, ann :: A.Ann) block:
+    add-error(C.non-toplevel("contract declaration", l, parent-block-loc))
+    true
   end,
   method s-letrec-bind(self, l, bind, expr) block:
     old-pbl = parent-block-loc
@@ -749,6 +773,12 @@ well-formed-visitor = A.default-iter-visitor.{
     end
     true
   end,
+  method s-rfrac(self, l, num, den) block:
+    when den == 0:
+      add-error(C.zero-fraction(l, num))
+    end
+    true
+  end,
   method s-id(self, l, id) block:
     when (reserved-names.has-key(id.tosourcestring())):
       reserved-name(l, id.tosourcestring())
@@ -774,13 +804,14 @@ well-formed-visitor = A.default-iter-visitor.{
       fields-dict = SD.make-mutable-string-dict()
       ok-fields = C.reactor-fields
       for each(f from fields) block:
-        when not(ok-fields.member(f.name)):
-          wf-error("Valid options for reactors are " + ok-fields.join-str(", ") + ", but found one named " + f.name + " ", f.l)
+        when not(ok-fields.has-key(f.name)):
+          wf-error("Valid options for reactors are " + ok-fields.keys-list().join-str(", ") + ", but found one named " + f.name + " ", f.l)
         end
         cases(Option<A.Loc>) fields-dict.get-now(f.name):
           | none => fields-dict.set-now(f.name, f.l)
           | some(l2) => wf-error2("Duplicate option in reactor: " + f.name, f.l, l2)
         end
+        f.visit(self)
       end
       true
     end
@@ -907,12 +938,14 @@ top-level-visitor = A.default-iter-visitor.{
       add-error(C.underscore-as(underscores.first.l, "a data variant name"))
     end
     check-underscore-name(with-members, "a field name")
-    is-empty(underscores) and
-      lists.all(_.visit(well-formed-visitor), binds) and lists.all(_.visit(well-formed-visitor), with-members)
+    lists.each(_.visit(well-formed-visitor), binds)
+    lists.each(_.visit(well-formed-visitor), with-members)
+    true
   end,
   method s-singleton-variant(self, l, name, with-members) block:
     ensure-unique-ids(fields-to-binds(with-members))
-    lists.all(_.visit(well-formed-visitor), with-members)
+    lists.each(_.visit(well-formed-visitor), with-members)
+    true
   end,
   method s-data(self, l, name, params, mixins, variants, shares, _check-loc, _check) block:
     old-pbl = parent-block-loc
@@ -920,25 +953,24 @@ top-level-visitor = A.default-iter-visitor.{
       | none => l
       | some(cl) => l.upto-end(cl)
     end
-    ensure-unique-variant-ids(variants)
+    ensure-unique-variant-ids(variants, name, l)
     check-underscore-name(variants, "a data variant name")
     check-underscore-name(shares, "a shared field name")
     check-underscore-name([list: {l: l, name: name}], "a datatype name")
     the-cur-shared = cur-shared
     cur-shared := fields-to-binds(shares)
-    params-v = lists.all(_.visit(well-formed-visitor), params)
-    mixins-v = lists.all(_.visit(well-formed-visitor), mixins)
-    variants-v = lists.all(_.visit(self), variants)
-    shares-v = lists.all(_.visit(well-formed-visitor), shares)
+    lists.each(_.visit(well-formed-visitor), params)
+    lists.each(_.visit(well-formed-visitor), mixins)
+    lists.each(_.visit(self), variants)
+    lists.each(_.visit(well-formed-visitor), shares)
     cur-shared := the-cur-shared
-    ans = params-v and mixins-v and variants-v and shares-v
     cases(Option) _check-loc:
       | none => nothing
       | some(cl) => parent-block-loc := cl.upto-end(l)
     end
-    shadow ans = ans and wrap-visit-check(well-formed-visitor, _check)
+    wrap-visit-check(well-formed-visitor, _check)
     parent-block-loc := old-pbl
-    ans
+    true
   end,
   method s-data-expr(self, l, name, namet, params, mixins, variants, shared, _check-loc, _check) block:
     old-pbl = parent-block-loc
@@ -946,33 +978,31 @@ top-level-visitor = A.default-iter-visitor.{
       | none => l
       | some(cl) => l.upto-end(cl)
     end
-    ensure-unique-variant-ids(variants)
-    underscores = variants.filter(lam(v): v.name == "_" end)
-    when not(is-empty(underscores)):
-      add-error(C.underscore-as(underscores.first.l, "a data variant name"))
-    end
+    ensure-unique-variant-ids(variants, name, l)
+    check-underscore-name(variants, "a data variant name")
+    check-underscore-name(shared, "a shared field name")
+    check-underscore-name([list: {l: l, name: name}], "a datatype name")
     the-cur-shared = cur-shared
     cur-shared := fields-to-binds(shared)
-    ans = lists.all(_.visit(well-formed-visitor), params)
-    and lists.all(_.visit(well-formed-visitor), mixins)
-    and lists.all(_.visit(well-formed-visitor), variants)
-    and lists.all(_.visit(well-formed-visitor), shared)
+    lists.each(_.visit(well-formed-visitor), params)
+    lists.each(_.visit(well-formed-visitor), mixins)
+    lists.each(_.visit(well-formed-visitor), variants)
+    lists.each(_.visit(well-formed-visitor), shared)
     cur-shared := the-cur-shared
-    shadow ans = is-empty(underscores) and ans
     cases(Option) _check-loc:
       | none => nothing
       | some(cl) => parent-block-loc := cl.upto-end(l)
     end
-    shadow ans = ans and wrap-visit-check(well-formed-visitor, _check)
+    wrap-visit-check(well-formed-visitor, _check)
     parent-block-loc := old-pbl
-    ans
+    true
   end,
 
   # Everything else delegates to the non-toplevel visitor
   method s-import(_, l, import-type, name):
     well-formed-visitor.s-import(l, import-type, name)
   end,
-  method s-include(_, l, import-type, name):
+  method s-include(_, l, import-type):
     well-formed-visitor.s-include(l, import-type)
   end,
   method s-import-types(_, l, import-type, name, types):
@@ -1039,7 +1069,8 @@ top-level-visitor = A.default-iter-visitor.{
     well-formed-visitor.s-when(l, test, block, blocky)
   end,
   method s-contract(_, l :: Loc, name :: A.Name, ann :: A.Ann):
-    well-formed-visitor.s-contract(l, name, ann)
+    # TODO
+    true
   end,
   method s-assign(_, l :: Loc, id :: A.Name, value :: A.Expr):
     well-formed-visitor.s-assign(l, id, value)
@@ -1107,14 +1138,27 @@ top-level-visitor = A.default-iter-visitor.{
   method s-construct(_, l :: Loc, mod :: A.ConstructModifier, constructor :: A.Expr, values :: List<A.Expr>):
     well-formed-visitor.s-construct(l, mod, constructor, values)
   end,
-  method s-app(_, l :: Loc, _fun :: A.Expr, args :: List<A.Expr>):
-    well-formed-visitor.s-app(l, _fun, args)
+  method s-app(self, l :: Loc, _fun :: A.Expr, args :: List<A.Expr>):
+    if (A.is-s-dot(_fun) and A.is-s-id(_fun.obj)
+        and (_fun.obj.id.toname() == "builtins") and (_fun.field == "trace-value")):
+      # this is effectively still a top-level expression, so don't penalize it
+      # for being inside a desugaring-introduced function call
+      _fun.visit(self) and lists.all(_.visit(self), args)
+    else:
+      well-formed-visitor.s-app(l, _fun, args)
+    end
   end,
   method s-prim-app(_, l :: Loc, _fun :: String, args :: List<A.Expr>):
     well-formed-visitor.s-prim-app(l, _fun, args)
   end,
   method s-frac(_, l :: Loc, num, den):
     well-formed-visitor.s-frac(l, num, den)
+  end,
+  method s-reactor(self, l, fields):
+    well-formed-visitor.s-reactor(l, fields)
+  end,
+  method s-rfrac(_, l :: Loc, num, den):
+    well-formed-visitor.s-rfrac(l, num, den)
   end,
   method s-id(_, l :: Loc, id :: A.Name):
     well-formed-visitor.s-id(l, id)
@@ -1170,6 +1214,9 @@ top-level-visitor = A.default-iter-visitor.{
   method a-arrow(_, l, args, ret, use-parens):
     well-formed-visitor.a-arrow(l, args, ret, use-parens)
   end,
+  method a-arrow-argnames(_, l, args, ret, use-parens):
+    well-formed-visitor.a-arrow-argnames(l, args, ret, use-parens)
+  end,
   method a-method(_, l, args, ret):
     well-formed-visitor.a-method(l, args, ret)
   end,
@@ -1195,7 +1242,7 @@ fun check-well-formed(ast) -> C.CompileResult<A.Program, Any> block:
   errors := empty
   in-check-block := false
   ans =
-    if ast.visit(top-level-visitor) and (errors.length() == 0): C.ok(ast)
+    if ast.visit(top-level-visitor) and is-empty(errors): C.ok(ast)
     else: C.err(errors.reverse())
     end
   # cleanup

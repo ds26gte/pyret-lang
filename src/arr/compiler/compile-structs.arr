@@ -106,8 +106,12 @@ data TypeBinding:
 end
 |#
 
+data ScopeResolution:
+  | resolved-scope(ast :: A.Program, errors :: List<CompileError>)
+end
+
 data NameResolution:
-  | resolved(
+  | resolved-names(
       ast :: A.Program,
       errors :: List<CompileError>,
       bindings :: SD.MutableStringDict<ValueBind>,
@@ -135,7 +139,7 @@ end
 
 # The strings in globals should be the appropriate dependency (e.g. in mods)
 data Globals:
-  | globals(values :: StringDict<String>, types :: StringDict<String>)
+  | globals(values :: StringDict<URI>, types :: StringDict<URI>)
 end
 
 data ValueExport:
@@ -162,6 +166,16 @@ fun make-dep(raw-dep) -> Dependency:
 end
 
 rag = raw-array-get
+
+fun value-export-from-raw(uri, val-export, tyvar-env :: SD.StringDict<T.Type>) -> ValueExport block:
+  t = val-export.tag
+  typ = type-from-raw(uri, val-export.typ, tyvar-env)
+  if t == "v-fun":
+    v-fun(typ, t, none)
+  else:
+    v-just-type(typ)
+  end
+end
 
 fun type-from-raw(uri, typ, tyvar-env :: SD.StringDict<T.Type>) block:
   tfr = type-from-raw(uri, _, tyvar-env)
@@ -194,7 +208,7 @@ fun type-from-raw(uri, typ, tyvar-env :: SD.StringDict<T.Type>) block:
         tvn = A.global-names.make-atom(a)
         new-env.set(a, tvn)
       end
-      params = for map(k from new-env.keys-list()):
+      params = for SD.map-keys(k from new-env):
         T.t-var(new-env.get-value(k), l, false)
       end
       T.t-forall(params, type-from-raw(uri, typ.onto, new-env), l, false)
@@ -232,7 +246,7 @@ fun datatype-from-raw(uri, datatyp):
       tvn = A.global-names.make-atom(a)
       pdict.set(a, tvn)
     end
-    params = for map(k from pdict.keys-list()):
+    params = for SD.map-keys(k from pdict):
       T.t-var(pdict.get-value(k), l, false)
     end
     variants = map(tvariant-from-raw(uri, _, pdict), datatyp.variants)
@@ -251,6 +265,13 @@ fun provides-from-raw-provides(uri, raw):
     else:
       if v.value.bind == "var":
         vdict.set(v.name, v-var(type-from-raw(uri, v.value.typ, SD.make-string-dict())))
+      else if v.value.bind == "fun":
+        flatness = if is-number(v.value.flatness):
+          some(v.value.flatness)
+        else:
+          none
+        end
+        vdict.set(v.name, v-fun(type-from-raw(uri, v.value.typ, SD.make-string-dict()), v.value.name, flatness))
       else:
         vdict.set(v.name, v-just-type(type-from-raw(uri, v.value.typ, SD.make-string-dict())))
       end
@@ -366,6 +387,155 @@ data CompileError:
           ED.loc(self.loc),
           ED.text(" is reserved by Pyret, and cannot be used as an identifier.")]]
     end
+  | contract-on-import(loc :: Loc, name :: String, import-type :: A.ImportType) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("Contracts for functions can only be defined once, and the contract for "),
+          ED.highlight(ED.code(ED.text(self.name)), [list: self.loc], 0),
+          ED.text(" is already defined in the "),
+          ED.highlight(ED.code(ED.text(self.import-type.tosource().pretty(1000).join-str(""))),
+            [list: self.import-type.l], 1),
+          ED.text(" library.")],
+        ED.cmcode(self.loc)]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("Contracts for functions can only be defined once, and the contract for "),
+          ED.code(ED.text(self.name)), ED.text(" at "), ED.loc(self.loc),
+          ED.text(" is already defined in the "),
+          ED.code(ED.text(self.import-type.tosource().pretty(1000).join-str(""))),
+          ED.text(" library.")]]
+    end
+  | contract-redefined(loc :: Loc, name :: String, defn-loc :: Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("Contracts for functions can only be defined once, and the contract for "),
+          ED.highlight(ED.code(ED.text(self.name)), [list: self.loc], 0),
+          ED.text(" is "),
+          ED.highlight(ED.text("already defined"), [list: self.defn-loc], -1),
+          ED.text(": ")],
+        ED.cmcode(self.defn-loc)]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("Contracts for functions can only be defined once, and the contract for "),
+          ED.code(ED.text(self.name)), ED.text(" at "), ED.loc(self.loc),
+          ED.text(" is already defined at "), ED.loc(self.defn-loc)]]
+    end
+  | contract-non-function(loc :: Loc, name :: String, defn-loc :: Loc, defn-is-function :: Boolean) with:
+    method render-fancy-reason(self):
+      if self.defn-is-function:
+        [ED.error:
+          [ED.para:
+            ED.text("The contract for "),
+            ED.highlight(ED.code(ED.text(self.name)), [list: self.loc], 0),
+            ED.text(" is not a valid function contract, but "),
+            ED.highlight(ED.code(ED.text(self.name)), [list: self.defn-loc], -1),
+            ED.text(" is defined as a function.")],
+          ED.cmcode(self.loc),
+          [ED.para:
+            ED.text("The contract and the "),
+            ED.highlight(ED.text("definition"), [list: self.defn-loc], -1),
+            ED.text(" must be consistent.")],
+          ED.cmcode(self.defn-loc)]
+      else:
+        [ED.error:
+          [ED.para:
+            ED.text("The contract for "),
+            ED.highlight(ED.code(ED.text(self.name)), [list: self.loc], 0),
+            ED.text(" is a function contract, but "),
+            ED.highlight(ED.code(ED.text(self.name)), [list: self.defn-loc], -1),
+            ED.text(" is not defined as a function.")],
+          ED.cmcode(self.loc),
+          [ED.para:
+            ED.text("The contract and the "),
+            ED.highlight(ED.text("definition"), [list: self.defn-loc], -1),
+            ED.text(" must be consistent.")],
+          ED.cmcode(self.defn-loc)]
+      end
+    end,
+    method render-reason(self):
+      if self.defn-is-function:
+        [ED.error:
+          [ED.para:
+            ED.text("The contract for "),
+            ED.code(ED.text(self.name)), ED.text(" at "), ED.loc(self.loc),
+            ED.text(" is not a valid function contract, but "),
+            ED.code(ED.text(self.name)), ED.text(" at "), ED.loc(self.defn-loc),
+            ED.text(" is defined as a function.")],
+          [ED.para: ED.text("The contract and the definition must be consistent.")]]
+      else:
+        [ED.error:
+          [ED.para:
+            ED.text("The contract for "),
+            ED.code(ED.text(self.name)), ED.text(" at "), ED.loc(self.loc),
+            ED.text(" is a function contract, but "),
+            ED.code(ED.text(self.name)), ED.text(" at "), ED.loc(self.defn-loc),
+            ED.text(" is not defined as a function.")],
+          [ED.para: ED.text("The contract and the definition must be consistent.")]]
+      end
+    end
+  | contract-inconsistent-names(loc :: Loc, name :: String, defn-loc :: Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The contract for "),
+          ED.highlight(ED.code(ED.text(self.name)), [list: self.loc], 0)],
+        ED.cmcode(self.loc),
+        [ED.para:
+          ED.text("specifies arguments that are inconsistent with the "),
+          ED.highlight(ED.text("associated definition"), [list: self.defn-loc], -1), ED.text(":")],
+        ED.cmcode(self.defn-loc)]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The contract for "),
+          ED.code(ED.text(self.name)), ED.text(" at "), ED.loc(self.loc),
+          ED.text(" specifies arguments that are inconsistent with the definition at "), ED.loc(self.defn-loc)]]
+    end
+  | contract-unused(loc :: Loc, name :: String) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The contract for "),
+          ED.highlight(ED.code(ED.text(self.name)), [list: self.loc], 0)],
+        ED.cmcode(self.loc),
+        [ED.para:
+          ED.text(" does not match the name of any function definition.")],
+        [ED.para:
+          ED.text("Contracts must appear just before their function's definition (or just before the function's examples block).  Check the spelling of this contract's name, or move it closer to its function if necessary.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The contract for "), ED.code(ED.text(self.name)), ED.text(" at "), ED.loc(self.loc),
+          ED.text(" does not match the name of any function definition.")],
+        [ED.para:
+          ED.text("Contracts must appear just before their function's definition (or just before the function's examples block).  Check the spelling of this contract's name, or move it closer to its function if necessary.")]]
+    end
+  | contract-bad-loc(loc :: Loc, name :: String, defn-loc :: Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("Contracts must appear just before their associated definition (or just before the function's examples block).  The contract for "),
+          ED.highlight(ED.code(ED.text(self.name)), [list: self.loc], 0)],
+        ED.cmcode(self.loc),
+        [ED.para: ED.text(" comes after its "),
+          ED.highlight(ED.text("associated definition"), [list: self.defn-loc], -1), ED.text(".")],
+        ED.cmcode(self.defn-loc),
+        [ED.para: ED.text("Move the contract just before its function.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("Contracts must appear just before their associated definition (or just before the function's examples block).  The contract for "), ED.code(ED.text(self.name)), ED.text(" at "), ED.loc(self.loc),
+          ED.text(" comes after its associated definition at "), ED.loc(self.defn-loc), ED.text(". Move the contract just before its function.")]]
+    end
   | zero-fraction(loc, numerator) with:
     method render-fancy-reason(self):
       [ED.error:
@@ -390,14 +560,14 @@ data CompileError:
           ED.loc(self.loc),
           ED.text(" because its denominator is zero.")]]
     end
-  | mixed-binops(op-a-name, op-a-loc, op-b-name, op-b-loc) with:
+  | mixed-binops(exp-loc, op-a-name, op-a-loc, op-b-name, op-b-loc) with:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para:
           ED.text("Reading this "),
-          ED.highlight(ED.text("arithmetic expression"), [ED.locs: self.op-a-loc + self.op-b-loc], -1),
+          ED.highlight(ED.text("expression"), [ED.locs: self.exp-loc], -1),
           ED.text(" errored:")],
-        ED.cmcode(self.op-a-loc + self.op-b-loc),
+        ED.cmcode(self.exp-loc),
         [ED.para:
           ED.text("The "),
           ED.code(ED.highlight(ED.text(self.op-a-name),[list: self.op-a-loc], 0)),
@@ -590,7 +760,7 @@ data CompileError:
         [ED.para:
           ED.text("This "),
           ED.highlight(ED.text("method declaration"), [list: self.expr.l], 0),
-          ED.text(" does not accept at least one argument:")],
+          ED.text(" should accept at least one argument:")],
         ED.cmcode(self.expr.l),
         [ED.para:
           ED.text("When a method is applied, the first argument is a reference to the object it belongs to.")]]
@@ -598,7 +768,7 @@ data CompileError:
     method render-reason(self):
       [ED.error:
         [ED.para:
-          ED.text("Method declarations are expected to accept at least one argument, but the method declaration at "),
+          ED.text("Method declarations should accept at least one argument, but the method declaration at "),
           ED.loc(self.expr.l),
           ED.text(" has no arguments. When a method is applied, the first argument is a reference to the object it belongs to.")]]
     end
@@ -876,7 +1046,7 @@ data CompileError:
         | builtin(_) =>
           [ED.para:
             ED.text("ERROR: should not be allowed to have a builtin that's unbound:"),
-            ED.text(self.ann.tosource().pretty(1000)),
+            ED.text(self.ann.tosource().pretty(1000).first),
             draw-and-highlight(self.id.l)]
         | srcloc(_, _, _, _, _, _, _) =>
           [ED.error:
@@ -893,7 +1063,7 @@ data CompileError:
         | builtin(_) =>
           [ED.para:
             ED.text("ERROR: should not be allowed to have a builtin that's unbound:"),
-            ED.text(self.ann.tosource().pretty(1000)), ED.text("at"),
+            ED.text(self.ann.tosource().pretty(1000).first), ED.text("at"),
             draw-and-highlight(self.id.l)]
         | srcloc(_, _, _, _, _, _, _) =>
           ann-name = if A.is-a-name(self.ann): self.ann.id.toname() else: self.ann.obj.toname() + "." + self.ann.field end
@@ -1240,14 +1410,20 @@ data CompileError:
     end
   | duplicate-field(id :: String, new-loc :: Loc, old-loc :: Loc) with:
     method render-fancy-reason(self):
+      fun adjust(l):
+        n = string-length(self.id)
+        SL.srcloc(l.source,
+          l.start-line, l.start-column, l.start-char,
+          l.start-line, l.start-column + n, l.start-char + n)
+      end
       old-loc-color = 0
       new-loc-color = 1
       [ED.error:
         [ED.para:
           ED.text("The declaration of the field named "),
-          ED.highlight(ED.code(ED.text(self.id)), [list: self.new-loc], new-loc-color),
+          ED.highlight(ED.code(ED.text(self.id)), [list: adjust(self.new-loc)], new-loc-color),
           ED.text(" is preceeded by declaration of an field also named "),
-          ED.highlight(ED.code(ED.text(self.id)), [list: self.old-loc], old-loc-color),
+          ED.highlight(ED.code(ED.text(self.id)), [list: adjust(self.old-loc)], old-loc-color),
           ED.text(":")],
         ED.cmcode(self.old-loc + self.new-loc),
         [ED.para: ED.text("Pick a different name for one of them.")]]
@@ -1271,7 +1447,7 @@ data CompileError:
       [ED.error:
         [ED.para:
           ED.highlight(ED.text("This expression"), [list: self.a], 0),
-          ED.text(" on the same line as "),
+          ED.text(" is on the same line as "),
           ED.highlight(ED.text("another expression"), [list: self.b], 1),
           ED.text(":")],
         ED.cmcode(self.a + self.b),
@@ -1551,6 +1727,110 @@ data CompileError:
           ED.text(" at "),
           ED.loc(self.previous),
           ED.text(".")]]
+    end,
+  | data-variant-duplicate-name(id :: String, found :: Loc, data-loc :: Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("This "),
+          ED.highlight(ED.text("variant"), [list: self.found], 0),
+          ED.text(" has the same name as its "),
+          ED.highlight(ED.text("containing datatype"), [list: self.data-loc], 1), ED.text(".")],
+        ED.cmcode(self.found),
+        ED.cmcode(self.data-loc),
+        [ED.para:
+          ED.text("The "),
+          ED.code(ED.text("is-" + self.id)),
+          ED.text(" predicates will shadow each other.  Please rename either the variant or the datatype to avoid this.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The variant "),
+          ED.code(ED.text(self.id)),
+          ED.text(" at "),
+          ED.loc(self.found),
+          ED.text(" has the same name as its containing datatype.  The "),
+          ED.code(ED.text("is-" + self.id)),
+          ED.text(" predicates will shadow each other.  Please rename either the variant or the datatype to avoid this.")]]
+    end,
+  | duplicate-is-variant(id :: String, is-found :: Loc, base-found :: Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("This "),
+          ED.highlight(ED.text("variant"), [list: self.base-found], 0),
+          ED.text(" will create a predicate named "), ED.code(ED.text("is-" + self.id)),
+          ED.text(", but "),
+          ED.highlight(ED.text("another variant"), [list: self.is-found], 1),
+          ED.text(" is defined with that name:")],
+        ED.cmcode(self.base-found),
+        ED.cmcode(self.is-found),
+        [ED.para:
+          ED.text("Please rename one of the variants so their names do not collide.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The variant "),
+          ED.code(ED.text(self.id)),
+          ED.text(" at "),
+          ED.loc(self.base-found),
+          ED.text(" will create a predicate named "),
+          ED.code(ED.text("is-" + self.id)),
+          ED.text(", but another variant is defined with that name.  Please rename one of the variants so their names do not collide.")]]
+    end,
+  | duplicate-is-data(id :: String, is-found :: Loc, base-found :: Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("This "),
+          ED.highlight(ED.text("data definition"), [list: self.base-found], 0),
+          ED.text(" will create a predicate named "), ED.code(ED.text("is-" + self.id)),
+          ED.text(", but "),
+          ED.highlight(ED.text("one of its variants"), [list: self.is-found], 1),
+          ED.text(" is defined with that name:")],
+        ED.cmcode(self.base-found),
+        ED.cmcode(self.is-found),
+        [ED.para:
+          ED.text("Please rename either the variant or the data definition so their names do not collide.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The data definition "),
+          ED.code(ED.text(self.id)),
+          ED.text(" at "),
+          ED.loc(self.base-found),
+          ED.text(" will create a predicate named "),
+          ED.code(ED.text("is-" + self.id)),
+          ED.text(", but one of its variants is defined with that name.  Please rename either the variant or the data definition so their names do not collide.")]]
+    end,
+  | duplicate-is-data-variant(id :: String, is-found :: Loc, base-found :: Loc) with:
+    method render-fancy-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("This "),
+          ED.highlight(ED.text("variant"), [list: self.base-found], 0),
+          ED.text(" will create a predicate named "), ED.code(ED.text("is-" + self.id)),
+          ED.text(", but "),
+          ED.highlight(ED.text("the data definition"), [list: self.is-found], 1),
+          ED.text(" already uses that name:")],
+        ED.cmcode(self.base-found),
+        ED.cmcode(self.is-found),
+        [ED.para:
+          ED.text("Please rename either the variant or the data definition so their names do not collide.")]]
+    end,
+    method render-reason(self):
+      [ED.error:
+        [ED.para:
+          ED.text("The variant "),
+          ED.code(ED.text(self.id)),
+          ED.text(" at "),
+          ED.loc(self.base-found),
+          ED.text(" will create a predicate named "),
+          ED.code(ED.text("is-" + self.id)),
+          ED.text(", but its surrounding data definition already uses that name.  Please rename either the variant or the data definition so their names do not collide.")]]
     end,
   | duplicate-branch(id :: String, found :: Loc, previous :: Loc) with:
     method render-fancy-reason(self):
@@ -2172,9 +2452,9 @@ type CompileOptions = {
   type-check :: Boolean,
   allow-shadowed :: Boolean,
   collect-all :: Boolean,
+  collect-times :: Boolean,
   ignore-unbound :: Boolean,
   proper-tail-calls :: Boolean,
-  compile-module :: Boolean,
   compiled-cache :: String,
   display-progress :: Boolean,
   standalone-file :: String,
@@ -2184,14 +2464,16 @@ type CompileOptions = {
 }
 
 default-compile-options = {
+  this-pyret-dir: ".",
   check-mode : true,
   check-all : true,
   type-check : false,
   allow-shadowed : false,
   collect-all: false,
+  collect-times: false,
   ignore-unbound: false,
   proper-tail-calls: true,
-  compile-module: true,
+  inline-case-body-limit: 5,
   compiled-cache: "compiled",
   display-progress: true,
   log: lam(s, to-clear):
@@ -2207,8 +2489,10 @@ default-compile-options = {
   log-error: lam(s):
     print-error(s)
   end,
-  method on-compile(_, locator, loadable): loadable end,
+  method on-compile(_, locator, loadable, _): loadable end,
   method before-compile(_, _): nothing end,
+  html-file: none,
+  deps-file: "build/bundled-node-deps.js",
   standalone-file: "src/js/base/handalone.js"
 }
 
@@ -2320,6 +2604,7 @@ runtime-provides = provides("builtin://global",
     "num-atan", t-number-unop,
     "num-atan2", t-number-binop,
     "num-modulo", t-number-binop,
+    "num-remainder", t-number-binop,
     "num-truncate", t-number-unop,
     "num-sqrt", t-number-unop,
     "num-sqr", t-number-unop,
@@ -2359,7 +2644,12 @@ runtime-provides = provides("builtin://global",
     "raw-array-to-list", t-top,
     "raw-array-fold", t-top,
     "raw-array-filter", t-top,
+    "raw-array-and-mapi", t-top,
+    "raw-array-or-mapi", t-top,
     "raw-array-map", t-top,
+    "raw-array-map-1", t-top,
+    "raw-array-join-str", t-top,
+    "raw-array-from-list", t-top,
     "raw-array", t-record(
       [string-dict:
         "make", t-forall1(lam(a): t-arrow([list: t-array(a)], t-array(a)) end),
@@ -2401,14 +2691,14 @@ runtime-provides = provides("builtin://global",
      "RawArray", t-top  ],
   [string-dict:])
 
-runtime-builtins = for fold(rb from [string-dict:], k from runtime-provides.values.keys().to-list()):
+runtime-builtins = for SD.fold-keys(rb from [string-dict:], k from runtime-provides.values):
   rb.set(k, "builtin(global)")
 end
 
-runtime-types = for fold(rt from [string-dict:], k from runtime-provides.aliases.keys().to-list()):
+runtime-types = for SD.fold-keys(rt from [string-dict:], k from runtime-provides.aliases):
   rt.set(k, "builtin(global)")
 end
-shadow runtime-types = for fold(rt from runtime-types, k from runtime-provides.data-definitions.keys().to-list()):
+shadow runtime-types = for SD.fold-keys(rt from runtime-types, k from runtime-provides.data-definitions):
   rt.set(k, "builtin(global)")
 end
 
@@ -2497,5 +2787,16 @@ standard-imports = extra-imports(
         [list: "Set"])
     ])
 
-reactor-fields = [list: "init", "on-tick", "to-draw", "on-key", "on-mouse", "seconds-per-tick", "stop-when", "title", "close-when-stop"]
-reactor-optional-fields = reactor-fields.rest
+reactor-optional-fields = [SD.string-dict:
+  "last-image",       {(l): A.a-name(l, A.s-type-global("Function"))},
+  "on-tick",          {(l): A.a-name(l, A.s-type-global("Function"))},
+  "to-draw",          {(l): A.a-name(l, A.s-type-global("Function"))},
+  "on-key",           {(l): A.a-name(l, A.s-type-global("Function"))},
+  "on-mouse",         {(l): A.a-name(l, A.s-type-global("Function"))},
+  "stop-when",        {(l): A.a-name(l, A.s-type-global("Function"))},
+  "seconds-per-tick", {(l): A.a-name(l, A.s-type-global("NumPositive"))},
+  "title",            {(l): A.a-name(l, A.s-type-global("String"))},
+  "close-when-stop",  {(l): A.a-name(l, A.s-type-global("Boolean"))}
+]
+
+reactor-fields = reactor-optional-fields.set("init", {(l): A.a-any(l)})

@@ -56,11 +56,16 @@ end
 
 eq-EqualityResult = t-name(module-uri("builtin://equality"), A.s-type-global("EqualityResult"))
 
+vs-ValueSkeleton = t-name(module-uri("builtin://valueskeleton"), A.s-type-global("ValueSkeleton"))
+
 tva = t-var(A.global-names.make-atom("A"))
 tvb = t-var(A.global-names.make-atom("B"))
 tvc = t-var(A.global-names.make-atom("C"))
 tvd = t-var(A.global-names.make-atom("D"))
 tve = t-var(A.global-names.make-atom("E"))
+tvf = t-var(A.global-names.make-atom("F"))
+tvg = t-var(A.global-names.make-atom("G"))
+tvh = t-var(A.global-names.make-atom("H"))
 
 fun make-default-aliases():
   default-aliases = [SD.string-dict:
@@ -105,6 +110,15 @@ fun make-default-types() block:
   ]))
 
   # Need to be fixed to correct type:
+  default-typs.set-now(A.s-global("raw-array-get").key(), t-forall([list: tva], t-arrow([list: t-array(tva)], tva)))
+  default-typs.set-now(A.s-global("raw-array-set").key(), t-forall([list: tva], t-arrow([list: t-array(tva), t-number, tva], t-array(tva))))
+  default-typs.set-now(A.s-global("raw-array-of").key(), t-forall([list: tva], t-arrow([list: tva, t-number], t-array(tva))))
+  default-typs.set-now(A.s-global("raw-array-length").key(), t-forall([list: tva], t-arrow([list: t-array(tva)], t-number)))
+  default-typs.set-now(A.s-global("raw-array-to-list").key(), t-forall([list: tva], t-arrow([list: t-array(tva)], t-app(t-list, [list: tva]))))
+  default-typs.set-now(A.s-global("raw-array-fold").key(), t-forall([list: tva, tvb], t-arrow([list: t-arrow([list: tvb, tva, t-number], tvb), tvb, t-array(tva), t-number], tvb)))
+  default-typs.set-now(A.s-global("raw-array-from-list").key(), t-top)
+  default-typs.set-now(A.s-global("raw-array-join-str").key(), t-top)
+  default-typs.set-now(A.s-global("raw-array").key(), t-top)
   default-typs.set-now(A.s-global("ref-get").key(), t-top)
   default-typs.set-now(A.s-global("ref-set").key(), t-top)
   default-typs.set-now(A.s-global("ref-freeze").key(), t-top)
@@ -158,6 +172,15 @@ fun make-default-types() block:
   default-typs.set-now(A.s-global("print").key(), t-forall([list: tva], t-arrow([list: tva], tva)))
   default-typs.set-now(A.s-global("display").key(), t-forall([list: tva], t-arrow([list: tva], tva)))
 
+  default-typs.set-now("getMaker", t-forall([list: tva, tvb], t-arrow([list: t-record([string-dict: "make", t-arrow([list: t-array(tvb)], tva)]), t-string, t-srcloc, t-srcloc], t-arrow([list: t-array(tvb)], tva))))
+  default-typs.set-now("getLazyMaker", t-forall([list: tva, tvb], t-arrow([list: t-record([string-dict: "lazy-make", t-arrow([list: t-array(t-arrow([list: ], tvb))], tva)]), t-string, t-srcloc, t-srcloc], t-arrow([list: t-array(t-arrow([list: ], tvb))], tva))))
+  default-typs.set-now("getMaker0", t-forall([list: tva], t-arrow([list: t-record([string-dict: "make0", t-arrow([list: ], tva)]), t-string, t-srcloc, t-srcloc], t-arrow([list: ], tva))))
+  default-typs.set-now("getMaker1", t-forall([list: tva, tvb], t-arrow([list: t-record([string-dict: "make1", t-arrow([list: tvb], tva)]), t-string, t-srcloc, t-srcloc], t-arrow([list: tvb], tva))))
+  default-typs.set-now("getMaker2", t-forall([list: tva, tvb, tvc], t-arrow([list: t-record([string-dict: "make2", t-arrow([list: tvb, tvc], tva)]), t-string, t-srcloc, t-srcloc], t-arrow([list: tvb, tvc], tva))))
+  default-typs.set-now("getMaker3", t-forall([list: tva, tvb, tvc, tvd], t-arrow([list: t-record([string-dict: "make3", t-arrow([list: tvb, tvc, tvd], tva)]), t-string, t-srcloc, t-srcloc], t-arrow([list: tvb, tvc, tvd], tva))))
+  default-typs.set-now("getMaker4", t-forall([list: tva, tvb, tvc, tvd, tve], t-arrow([list: t-record([string-dict: "make4", t-arrow([list: tvb, tvc, tvd, tve], tva)]), t-string, t-srcloc, t-srcloc], t-arrow([list: tvb, tvc, tvd, tve], tva))))
+  default-typs.set-now("getMaker5", t-forall([list: tva, tvb, tvc, tvd, tve, tvf], t-arrow([list: t-record([string-dict: "make5", t-arrow([list: tvb, tvc, tvd, tve, tvf], tva)]), t-string, t-srcloc, t-srcloc], t-arrow([list: tvb, tvc, tvd, tve, tvf], tva))))
+
   default-typs.freeze()
 end
 
@@ -182,8 +205,7 @@ fun mk-set(typ :: Type):
   t-app(t-set, [list: typ])
 end
 
-t-torepr   = t-arrow([list: ], t-string)
-t-tostring = t-arrow([list: ], t-string)
+t-output = t-arrow([list: ], vs-ValueSkeleton)
 
 # Functions for adding hard-coded modules
 module-const-equality = t-module("builtin://equality",
@@ -235,8 +257,7 @@ module-const-arrays = t-module("builtin://arrays",
             "set-now", t-arrow([list: t-number, tva], t-nothing),
             "to-list-now", t-arrow(empty, mk-list(tva)),
             "length", t-arrow(empty, t-number),
-            "_torepr", t-torepr,
-            "_tostring", t-tostring
+            "_output", t-output
         ])),
   SD.make-string-dict()
     .set("Array", t-big-array)
@@ -280,7 +301,7 @@ module-const-sets = t-module("builtin://sets",
           [string-dict:
               "length", t-arrow(empty, t-number),
               "pick", t-arrow(empty, t-app(t-name(module-uri("builtin://pick"), A.s-type-global("Pick")), [list: tva, mk-set(tva)])),
-              "_torepr", t-torepr,
+              "_output", t-output,
               "fold", t-forall([list: tvb], t-arrow([list: t-arrow([list: tvb, tva], tvb), tvb], tvb)),
               "member", t-arrow([list: tva], t-boolean),
               "add", t-arrow([list: tva], tv-set),
@@ -368,7 +389,6 @@ module-const-lists = t-module("builtin://lists",
             "join-str", t-arrow([list: t-string], t-string),
             "sort", t-arrow(empty, lotv),
             "sort-by", t-arrow([list: t-arrow([list: tva, tva], t-boolean), t-arrow([list: tva, tva], t-boolean)], lotv),
-            "_tostring", t-tostring,
             "reverse", t-arrow(empty, lotv),
             "last", t-arrow(empty, tva),
             "append", t-arrow([list: lotv], lotv),
@@ -379,7 +399,7 @@ module-const-lists = t-module("builtin://lists",
             "map", t-forall([list: tvb], t-arrow([list: t-arrow([list: tva], tvb)], mk-list(tvb))),
             "each", t-arrow([list: t-arrow([list: tva], t-top)], t-nothing),
             "length", t-arrow(empty, t-number),
-            "_torepr", t-torepr,
+            "_output", t-output,
             "_match", t-top,
             "_plus", t-arrow([list: lotv], lotv),
             "push", t-arrow([list: ], lotv),
@@ -422,7 +442,6 @@ module-const-option = t-module("builtin://option",
           t-singleton-variant("none",
             [string-dict:
               "_match", t-top,
-              "_torepr", t-torepr,
               "or-else", t-arrow([list: tva], tva),
               "and-then", t-and-then
             ]
@@ -431,7 +450,6 @@ module-const-option = t-module("builtin://option",
             [list: {"value"; tva}],
             [string-dict:
               "_match", t-top,
-              "_torepr", t-torepr,
               "or-else", t-arrow([list: tva], tva),
               "and-then", t-and-then
             ]
@@ -440,7 +458,6 @@ module-const-option = t-module("builtin://option",
         [string-dict:
           "and-then", t-and-then,
           "or-else", t-arrow([list: tva], tva),
-          "_torepr", t-torepr,
           "_match", t-top
       ])),
   SD.make-string-dict()
@@ -478,9 +495,9 @@ module-const-error = t-module("builtin://error",
     "is-plus-error", t-arrow([list: t-top], t-boolean),
     "numeric-binop-error", t-arrow([list: t-top, t-top, t-top, t-top, t-top], t-runtime-error),
     "is-numeric-binop-error", t-arrow([list: t-top], t-boolean),
-    "cases-arity-mismatch", t-arrow([list: t-top, t-top, t-top, t-top], t-runtime-error),
+    "cases-arity-mismatch", t-arrow([list: t-top, t-top, t-top, t-top, t-top], t-runtime-error),
     "is-cases-arity-mismatch", t-arrow([list: t-top], t-boolean),
-    "cases-singleton-mismatch", t-arrow([list: t-top, t-boolean, t-top], t-runtime-error),
+    "cases-singleton-mismatch", t-arrow([list: t-top, t-boolean, t-top, t-top], t-runtime-error),
     "is-cases-singleton-mismatch", t-arrow([list: t-top], t-boolean),
     "arity-mismatch", t-arrow([list: t-top, t-top, t-top], t-runtime-error),
     "is-arity-mismatch", t-arrow([list: t-top], t-boolean),
@@ -504,6 +521,12 @@ module-const-error = t-module("builtin://error",
     "is-parse-error-eof", t-arrow([list: t-top], t-boolean),
     "parse-error-unterminated-string", t-arrow([list: t-top], t-parse-error),
     "is-parse-error-unterminated-string", t-arrow([list: t-top], t-boolean),
+    "parse-error-bad-number", t-arrow([list: t-top], t-parse-error),
+    "is-parse-error-bad-number", t-arrow([list: t-top], t-boolean),
+    "parse-error-bad-operator", t-arrow([list: t-top], t-parse-error),
+    "is-parse-error-bad-operator", t-arrow([list: t-top], t-boolean),
+    "parse-error-bad-check-operator", t-arrow([list: t-top], t-parse-error),
+    "is-parse-error-bad-check-operator", t-arrow([list: t-top], t-boolean),
     "empty-block", t-arrow([list: t-top], t-parse-error),
     "is-empty-block", t-arrow([list: t-top], t-boolean),
     "bad-block-stmt", t-arrow([list: t-top], t-parse-error),
@@ -547,8 +570,6 @@ module-const-error = t-module("builtin://error",
           t-singleton-variant("user-break", [string-dict: ])
         ],
         [string-dict:
-          "_torepr", t-torepr,
-          "_tostring", t-tostring,
           "_match", t-top
         ]))
     .set("ParseError", t-data(
@@ -556,6 +577,9 @@ module-const-error = t-module("builtin://error",
       [list: ],
       [list:
         t-variant("parse-error-next-token", [list: {"loc"; t-top}, {"next-token"; t-string}], [string-dict: ]),
+        t-variant("parse-error-bad-check-operator", [list: {"loc"; t-top}, {"next-token"; t-string}], [string-dict: ]),
+        t-variant("parse-error-bad-operator", [list: {"loc"; t-top}, {"next-token"; t-string}], [string-dict: ]),
+        t-variant("parse-error-bad-number", [list: {"loc"; t-top}, {"next-token"; t-string}], [string-dict: ]),
         t-variant("parse-error-eof", [list: {"loc"; t-top}], [string-dict: ]),
         t-variant("parse-error-unterminated-string", [list: {"loc"; t-top}], [string-dict: ]),
         t-variant("empty-block", [list: {"loc"; t-top}], [string-dict: ]),
@@ -570,8 +594,6 @@ module-const-error = t-module("builtin://error",
       ],
       [string-dict:
         "loc", t-top,
-        "_tostring", t-tostring,
-        "_torepr", t-torepr,
         "_match", t-top
       ])
     ),
@@ -606,7 +628,6 @@ module-const-either =
               ],
               [string-dict:
                 "_match", t-top,
-                "_torepr", t-torepr
               ]
             ),
             t-variant("right",
@@ -615,13 +636,11 @@ module-const-either =
               ],
               [string-dict:
                 "_match", t-top,
-                "_torepr", t-torepr
               ]
             )
           ],
           [string-dict:
             "v", t-top,
-            "_torepr", t-torepr,
             "_match", t-top
         ])
       ),
@@ -663,7 +682,6 @@ module-const-s-exp-structs = t-module("builtin://s-exp-structs",
           ],
           [string-dict:
             "_match", t-top,
-            "_torepr", t-torepr
           ]
         ),
         t-variant("s-num",
@@ -672,7 +690,6 @@ module-const-s-exp-structs = t-module("builtin://s-exp-structs",
           ],
           [string-dict:
             "_match", t-top,
-            "_torepr", t-torepr
           ]
         ),
         t-variant("s-str",
@@ -681,7 +698,6 @@ module-const-s-exp-structs = t-module("builtin://s-exp-structs",
           ],
           [string-dict:
             "_match", t-top,
-            "_torepr", t-torepr
           ]
         ),
         t-variant("s-sym",
@@ -690,12 +706,10 @@ module-const-s-exp-structs = t-module("builtin://s-exp-structs",
           ],
           [string-dict:
             "_match", t-top,
-            "_torepr", t-torepr
           ]
         )
       ],
       [string-dict:
-        "_torepr", t-torepr
       ])
     ),
   SD.make-string-dict()

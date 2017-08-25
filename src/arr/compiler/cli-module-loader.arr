@@ -77,12 +77,12 @@ type Loadable = CL.Loadable
 
 type Either = E.Either
 
-fun uri-to-path(uri):
-  crypto.sha256(uri)
+fun uri-to-path(uri, name):
+  name + "-" + crypto.sha256(uri)
 end
 
 fun get-cached-if-available(basedir, loc) block:
-  saved-path = P.join(basedir, uri-to-path(loc.uri()))
+  saved-path = P.join(basedir, uri-to-path(loc.uri(), loc.name()))
   #print("Looking for builtin module " + loc.uri() + " at: " + saved-path + "\n")
   if not(F.file-exists(saved-path + "-static.js")) or
      (F.file-times(saved-path + "-static.js").mtime < loc.get-modified-time()) block:
@@ -119,9 +119,9 @@ fun get-cached-if-available(basedir, loc) block:
       end,
 
       method uri(_): uri end,
-      method name(_): saved-path end,
+      method name(_): loc.name() end,
 
-      method set-compiled(_, _): nothing end,
+      method set-compiled(_, _, _): nothing end,
       method get-compiled(self):
         provs = CS.provides-from-raw-provides(self.uri(), {
             uri: self.uri(),
@@ -159,7 +159,7 @@ end
 
 fun get-loadable(basedir, l) -> Option<Loadable>:
   locuri = l.locator.uri()
-  saved-path = P.join(basedir, uri-to-path(locuri))
+  saved-path = P.join(basedir, uri-to-path(locuri, l.locator.name()))
   if not(F.file-exists(saved-path + "-static.js")) or
      (F.file-times(saved-path + "-static.js").mtime < l.locator.get-modified-time()):
     none
@@ -185,8 +185,8 @@ fun set-loadable(basedir, locator, loadable) -> String block:
     | ok(ccp) =>
       cases(JSP.CompiledCodePrinter) ccp block:
         | ccp-dict(dict) =>
-          save-static-path = P.join(basedir, uri-to-path(locuri) + "-static.js")
-          save-module-path = P.join(basedir, uri-to-path(locuri) + "-module.js")
+          save-static-path = P.join(basedir, uri-to-path(locuri, locator.name()) + "-static.js")
+          save-module-path = P.join(basedir, uri-to-path(locuri, locator.name()) + "-module.js")
           fs = F.output-file(save-static-path, false)
           fm = F.output-file(save-module-path, false)
           ccp.print-js-static(fs.display)
@@ -197,7 +197,7 @@ fun set-loadable(basedir, locator, loadable) -> String block:
           fm.close-file()
           save-module-path
         | else =>
-          save-path = P.join(basedir, uri-to-path(locuri) + ".js")
+          save-path = P.join(basedir, uri-to-path(locuri, locator.name()) + ".js")
           f = F.output-file(save-path, false)
           ccp.print-js-runnable(f.display)
           f.flush()
@@ -223,16 +223,6 @@ fun get-cli-module-storage(storage-dir :: String):
         end
       end
       modules
-    end,
-
-    method save-modules(self, loadables) block:
-      for each(l from loadables): set-loadable(storage-dir, l) end
-      s = for fold(s from "{\n", l from loadables):
-        locuri = l.provides.from-uri
-        s + "\"" + l.provides.from-uri + "\":\"" + uri-to-path(locuri) + "\"\n"
-      end
-      f = F.output-file(P.join(storage-dir, "modmap.json"), false)
-      f.display(s + "}")
     end
   }
 end
@@ -328,13 +318,15 @@ fun propagate-exit(result) block:
   end
 end
 
-fun run(path, options):
-  maybe-program = build-program(path, options)
+fun run(path, options, subsequent-command-line-arguments):
+  stats = SD.make-mutable-string-dict()
+  maybe-program = build-program(path, options, stats)
   cases(Either) maybe-program block:
     | left(problems) =>
       handle-compilation-errors(problems, options)
     | right(program) =>
-      result = L.run-program(R.make-runtime(), L.empty-realm(), program.js-ast.to-ugly-source(), options)
+      command-line-arguments = link(path, subsequent-command-line-arguments)
+      result = L.run-program(R.make-runtime(), L.empty-realm(), program.js-ast.to-ugly-source(), options, command-line-arguments)
       if L.is-success-result(result):
         L.render-check-results(result)
       else:
@@ -344,7 +336,7 @@ fun run(path, options):
   end
 end
 
-fun build-program(path, options) block:
+fun build-program(path, options, stats) block:
   doc: ```Returns the program as a JavaScript AST of module list and dependency map,
           and its native dependencies as a list of strings```
 
@@ -376,16 +368,21 @@ fun build-program(path, options) block:
   cached-modules = starter-modules.count-now()
   var num-compiled = cached-modules
   shadow options = options.{
-    compile-module: true,
     method before-compile(_, locator) block:
       num-compiled := num-compiled + 1
       clear-and-print("Compiling " + num-to-string(num-compiled) + "/" + num-to-string(total-modules)
           + ": " + locator.name())
     end,
-    method on-compile(_, locator, loadable) block:
+    method on-compile(_, locator, loadable, trace) block:
       locator.set-compiled(loadable, SD.make-mutable-string-dict()) # TODO(joe): What are these supposed to be?
       clear-and-print(num-to-string(num-compiled) + "/" + num-to-string(total-modules)
           + " modules compiled " + "(" + locator.name() + ")")
+      when options.collect-times:
+        comp = for map(stage from trace):
+          stage.name + ": " + tostring(stage.time) + "ms"
+        end
+        stats.set-now(locator.name(), comp)
+      end
       when num-compiled == total-modules:
         print-progress("\nCleaning up and generating standalone...\n")
       end
@@ -397,20 +394,20 @@ fun build-program(path, options) block:
       else:
         cases(CL.Loadable) loadable:
           | module-as-string(prov, env, rp) =>
-            CL.module-as-string(prov, env, JSP.ccp-file(module-path))
+            CL.module-as-string(prov, env, CS.ok(JSP.ccp-file(module-path)))
           | else => loadable
         end
       end
     end
   }
-
   CL.compile-standalone(wl, starter-modules, options)
 end
 
 fun build-runnable-standalone(path, require-config-path, outfile, options) block:
-  maybe-program = build-program(path, options)
+  stats = SD.make-mutable-string-dict()
+  maybe-program = build-program(path, options, stats)
   cases(Either) maybe-program block:
-    | left(problems) => 
+    | left(problems) =>
       handle-compilation-errors(problems, options)
     | right(program) =>
       config = JSON.read-json(F.file-to-string(require-config-path)).dict.unfreeze()
@@ -419,19 +416,40 @@ fun build-runnable-standalone(path, require-config-path, outfile, options) block
         config.set-now("baseUrl", JSON.j-str(options.compiled-cache))
       end
 
-      MS.make-standalone(program.natives, program.js-ast, JSON.j-obj(config.freeze()).serialize(), options.standalone-file)
+      when options.collect-times: stats.set-now("standalone", time-now()) end
+      make-standalone-res = MS.make-standalone(program.natives, program.js-ast,
+        JSON.j-obj(config.freeze()).serialize(), options.standalone-file,
+        options.deps-file, options.this-pyret-dir)
+
+      html-res = if is-some(options.html-file):
+        MS.make-html-file(outfile, options.html-file.value)
+      else:
+        true
+      end
+
+      ans = make-standalone-res and html-res
+
+      when options.collect-times block:
+        standalone-end = time-now() - stats.get-value-now("standalone")
+        stats.set-now("standalone", [list: "Outputing JS: " + tostring(standalone-end) + "ms"])
+        for SD.each-key-now(key from stats):
+          print(key + ": \n" + stats.get-value-now(key).join-str(", \n") + "\n")
+        end
+      end
+      ans
   end
 end
 
 fun build-require-standalone(path, options):
-  program = build-program(path, options)
+  stats = SD.make-mutable-string-dict()
+  program = build-program(path, options, stats)
 
   natives = j-list(true, for C.map_list(n from program.natives): n end)
 
   define-name = j-id(A.s-name(A.dummy-loc, "define"))
 
   prog = j-block([clist:
-      j-app(define-name, [clist: natives, j-fun([clist:],
+      j-app(define-name, [clist: natives, j-fun(J.next-j-fun-id(), [clist:],
         j-block([clist:
           j-return(program.js-ast)
         ]))

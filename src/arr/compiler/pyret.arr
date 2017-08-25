@@ -2,6 +2,7 @@
 
 import cmdline as C
 import file as F
+import pathlib as P
 import render-error-display as RED
 import string-dict as D
 import system as SYS
@@ -11,10 +12,16 @@ import file("compile-structs.arr") as CS
 import file("locators/builtin.arr") as B
 import file("server.arr") as S
 
+# this value is the limit of number of steps that could be inlined in case body
+DEFAULT-INLINE-CASE-LIMIT = 5
+
 success-code = 0
 failure-code = 1
 
-fun main(args :: List<String>) -> Number:
+fun main(args :: List<String>) -> Number block:
+
+  this-pyret-dir = P.dirname(P.resolve(C.file-name))
+
   options = [D.string-dict:
     "serve",
       C.flag(C.once, "Start the Pyret server"),
@@ -56,9 +63,17 @@ fun main(args :: List<String>) -> Number:
       C.flag(C.once, "Run without checking for shadowed variables"),
     "improper-tail-calls",
       C.flag(C.once, "Run without proper tail calls"),
+    "collect-times",
+      C.flag(C.once, "Collect timing information about compilation"),
     "type-check",
-      C.flag(C.once, "Type-check the program during compilation")
-  ]
+      C.flag(C.once, "Type-check the program during compilation"),
+    "inline-case-body-limit",
+      C.next-val-default(C.Number, DEFAULT-INLINE-CASE-LIMIT, none, C.once, "Set number of steps that could be inlined in case body"),
+    "deps-file",
+      C.next-val(C.String, C.once, "Provide a path to override the default dependencies file"),
+    "html-file",
+      C.next-val(C.String, C.once, "Name of the html file to generate that includes the standalone (only makes sense if deps-file is the result of browserify)")
+    ]
 
   params-parsed = C.parse-args(options, args)
 
@@ -77,12 +92,18 @@ fun main(args :: List<String>) -> Number:
         if r.has-key("library"): CS.minimal-imports
         else: CS.standard-imports end
       module-dir = r.get-value("module-load-dir")
+      inline-case-body-limit = r.get-value("inline-case-body-limit")
       check-all = r.has-key("check-all")
       type-check = r.has-key("type-check")
       tail-calls = not(r.has-key("improper-tail-calls"))
       compiled-dir = r.get-value("compiled-dir")
       standalone-file = r.get-value("standalone-file")
       display-progress = not(r.has-key("no-display-progress"))
+      html-file = if r.has-key("html-file"):
+            some(r.get-value("html-file"))
+          else:
+            none
+          end
       when r.has-key("builtin-js-dir"):
         B.set-builtin-js-dirs(r.get-value("builtin-js-dir"))
       end
@@ -107,16 +128,20 @@ fun main(args :: List<String>) -> Number:
               r.get-value("require-config"),
               outfile,
               CS.default-compile-options.{
+                this-pyret-dir: this-pyret-dir,
                 standalone-file: standalone-file,
                 check-mode : check-mode,
                 type-check : type-check,
                 allow-shadowed : allow-shadowed,
                 collect-all: false,
+                collect-times: r.has-key("collect-times") and r.get-value("collect-times"),
                 ignore-unbound: false,
                 proper-tail-calls: tail-calls,
-                compile-module: true,
                 compiled-cache: compiled-dir,
-                display-progress: display-progress
+                display-progress: display-progress,
+                inline-case-body-limit: inline-case-body-limit,
+                deps-file: r.get("deps-file").or-else(CS.default-compile-options.deps-file),
+                html-file: html-file
               })
           success-code
         else if r.has-key("serve"):
@@ -133,9 +158,9 @@ fun main(args :: List<String>) -> Number:
                 type-check : type-check,
                 allow-shadowed : allow-shadowed,
                 collect-all: false,
+                collect-times: r.has-key("collect-times") and r.get-value("collect-times"),
                 ignore-unbound: false,
                 proper-tail-calls: tail-calls,
-                compile-module: true,
                 compiled-cache: compiled-dir,
                 display-progress: display-progress
               })
@@ -166,24 +191,33 @@ fun main(args :: List<String>) -> Number:
             success-code
           end
         else if r.has-key("run"):
+          run-args =
+            if is-empty(rest):
+              empty
+            else:
+              rest.rest
+            end
           result = CLI.run(r.get-value("run"), CS.default-compile-options.{
               standalone-file: standalone-file,
-              compile-module: true,
               display-progress: display-progress,
               check-all: check-all
-            })
+            }, run-args)
           _ = print(result.message + "\n")
           result.exit-code
         else:
-          _ = print(C.usage-info(options).join-str("\n"))
-          _ = print("Unknown command line options\n")
-          failure-code
+          block:
+            print-error(C.usage-info(options).join-str("\n"))
+            print-error("Unknown command line options\n")
+            failure-code
+          end
         end
       end
     | arg-error(message, partial) =>
-      _ = print(message + "\n")
-      _ = print(C.usage-info(options).join-str("\n"))
-      failure-code
+      block:
+        print-error(message + "\n")
+        print-error(C.usage-info(options).join-str("\n"))
+        failure-code
+      end
   end
 end
 

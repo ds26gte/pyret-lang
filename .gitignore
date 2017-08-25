@@ -8,7 +8,10 @@
 *.log
 *.jarr
 
+playground/*
+
 # benchmark
+tools/benchmark/auto-report-programs/*.js
 tools/benchmark/TODO
 tools/benchmark/sandbox*
 tools/benchmark/nodelint*
@@ -42,6 +45,7 @@ build/pyretB.jarr
 build/release
 build/phaseA/program-require.js
 build/phaseA/program.js
+build/bundled-node-deps.js
 deps/closure-compiler
 node_modules/
 *#

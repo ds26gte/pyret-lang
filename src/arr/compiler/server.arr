@@ -23,12 +23,12 @@ fun compile(options):
       collect-all: options.get("collect-all").or-else(false),
       ignore-unbound: options.get("ignore-unbound").or-else(false),
       proper-tail-calls: options.get("improper-tail-calls").or-else(true),
-      compile-module: true,
       compiled-cache: options.get("compiled-dir").or-else("./compiled"),
       standalone-file: options.get("standalone-file").or-else(CS.default-compile-options.standalone-file),
       display-progress: options.get("display-progress").or-else(true),
       log: options.get("log").or-else(CS.default-compile-options.log),
-      log-error: options.get("log-error").or-else(CS.default-compile-options.log-error)
+      log-error: options.get("log-error").or-else(CS.default-compile-options.log-error),
+      bundle-dependencies: options.get("bundle-dependencies").or-else(true)
     })
 end
 

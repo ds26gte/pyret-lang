@@ -2,9 +2,9 @@
   requires: [
     { "import-type": "builtin", name: "runtime-lib" }
   ],
-  nativeRequires: ["pyret-base/js/secure-loader"],
+  nativeRequires: ["pyret-base/js/exn-stack-parser", "pyret-base/js/secure-loader"],
   provides: {},
-  theModule: function(runtime, namespace, uri, runtimeLib, loader) {
+  theModule: function(runtime, namespace, uri, runtimeLib, stackLib, loader) {
     var EXIT_SUCCESS = 0;
     var EXIT_ERROR = 1;
     var EXIT_ERROR_RENDERING_ERROR = 2;
@@ -47,13 +47,22 @@
       return m;
     }
 
-    function makeModuleResult(runtimeForModule, result, realm, compileResult) {
+    function makeModuleResult(runtimeForModule, result, realm, compileResult, program) {
       return runtime.makeOpaque({
         runtime: runtimeForModule,
         result: result,
         realm: realm,
-        compileResult: compileResult
+        compileResult: compileResult,
+        program: program
       });
+    }
+
+    function getModuleResultProgram(result) {
+      return result.val.program;
+    }
+
+    function enrichStack(exn, program) {
+      return stackLib.convertExceptionToPyretStackTrace(exn, program);
     }
 
     function checkSuccess(mr, field) {
@@ -96,6 +105,21 @@
     }
     function getResultProvides(mr) {
       return mr.val.provides;
+    }
+    function getResultStackTrace(mr) {
+      var runtime = mr.val.runtime;
+      if (!runtime.isFailureResult(mr.val.result)) {
+        runtime.ffi.throwMessageException("Tried to get stacktrace of non-failing module result.");
+      }
+
+      var res = getModuleResultResult(mr);
+      var stackString = runtime.printPyretStack(res.exn.pyretStack);
+      var stackFrames = stackString.split("\n");
+      var pyretStackFrames = stackFrames.map(function(frameString){
+        return runtime.makeString(frameString.trim());
+      });
+
+      return runtime.makeArray(pyretStackFrames);
     }
     function getModuleResultRuntime(mr) {
       return mr.val.runtime;
@@ -165,7 +189,7 @@
       return mr.val.runtime.getField(exn, "code");
     }
     function renderCheckResults(mr) {
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         var res = getModuleResultResult(mr);
         var execRt = mr.val.runtime;
         var checkerMod = execRt.modules["builtin://checker"];
@@ -212,7 +236,7 @@
     function renderErrorMessage(mr) {
       var res = getModuleResultResult(mr);
       var execRt = mr.val.runtime;
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         // TODO(joe): This works because it's a builtin and already loaded on execRt.
         // In what situations may this not work?
         var rendererrorMod = execRt.modules["builtin://render-error-display"];
@@ -264,14 +288,16 @@
     }
     /* ProgramString is a staticModules/depMap/toLoad tuple as a string */
     // TODO(joe): this should take natives as an argument, as well, and requirejs them
-    function runProgram(otherRuntimeObj, realmObj, programString, options) {
+    function runProgram(otherRuntimeObj, realmObj, programString, options, commandLineArguments) {
       var checkAll = runtime.getField(options, "check-all");
       var otherRuntime = runtime.getField(otherRuntimeObj, "runtime").val;
+      otherRuntime.setParam("command-line-arguments", runtime.ffi.toArray(commandLineArguments));
       var realm = Object.create(runtime.getField(realmObj, "realm").val);
       var program = loader.safeEval("return " + programString, {});
       var staticModules = program.staticModules;
       var depMap = program.depMap;
       var toLoad = program.toLoad;
+      var uris = program.uris;
 
       var main = toLoad[toLoad.length - 1];
       runtime.setParam("currentMainURL", main);
@@ -311,7 +337,7 @@
       };
 
 
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         var mainReached = false;
         var mainResult = "Main result unset: should not happen";
         postLoadHooks[main] = function(answer) {
@@ -325,12 +351,14 @@
           if(!mainReached) {
             // NOTE(joe): we should only reach here if there was an error earlier
             // on in the chain of loading that stopped main from running
-            restarter.resume(makeModuleResult(otherRuntime, result, makeRealm(realm), runtime.nothing));
+            result.exn.pyretStack = stackLib.convertExceptionToPyretStackTrace(result.exn, program);
+
+            restarter.resume(makeModuleResult(otherRuntime, result, makeRealm(realm), runtime.nothing, program));
           }
           else {
             var finalResult = otherRuntime.makeSuccessResult(mainResult);
             finalResult.stats = result.stats;
-            restarter.resume(makeModuleResult(otherRuntime, finalResult, makeRealm(realm), runtime.nothing));
+            restarter.resume(makeModuleResult(otherRuntime, finalResult, makeRealm(realm), runtime.nothing, program));
           }
         });
       });
@@ -343,6 +371,7 @@
       "get-result-answer": runtime.makeFunction(getAnswerForPyret, "get-result-answer"),
       "get-result-realm": runtime.makeFunction(getRealm, "get-result-realm"),
       "get-result-compile-result": runtime.makeFunction(getResultCompileResult, "get-result-compile-result"),
+      "get-result-stacktrace": runtime.makeFunction(getResultStackTrace, "get-result-stacktrace"),
       "render-check-results": runtime.makeFunction(renderCheckResults, "render-check-results"),
       "render-error-message": runtime.makeFunction(renderErrorMessage, "render-error-message"),
       "empty-realm": runtime.makeFunction(emptyRealm, "empty-realm"),
@@ -363,6 +392,8 @@
         types: types,
         internal: {
           makeRealm: makeRealm,
+          enrichStack: enrichStack,
+          getModuleResultProgram: getModuleResultProgram,
           getModuleResultAnswer: getModuleResultAnswer,
           getModuleResultChecks: getModuleResultChecks,
           getModuleResultTypes: getModuleResultTypes,

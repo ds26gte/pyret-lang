@@ -55,6 +55,7 @@ data CheckBlockResult:
   | check-block-result(
       name :: String,
       loc :: Loc,
+      keyword-check :: Boolean,
       test-results :: List<TestResult>,
       maybe-err :: Option<Any>
     )
@@ -291,6 +292,9 @@ data TestResult:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
       self.render-reason()
     end,
+    method access-stack(self, get-stack):
+      get-stack(self.actual-exn)
+    end,
     method render-reason(self):
       [ED.error:
         [ED.para: ED.text("Got unexpected exception ")],
@@ -358,6 +362,11 @@ data TestResult:
       [ED.error:
         [ED.para: ED.text("Got unexpected exception ")],
         ED.embed(self.actual-exn)]
+    end,
+    method access-stack(self, get-stack) block:
+      # print("The stack is being accessed")
+      # print(get-stack(self.actual-exn))
+      get-stack(self.actual-exn)
     end,
     method _output(self):
       VS.vs-constr("failure-exn",
@@ -482,6 +491,10 @@ data TestResult:
         [ED.para: ED.text("The custom equality funtion must return a boolean, but instead it returned: ")],
         [ED.para: ED.embed(self.test-result)]]
     end
+sharing:
+  # By default, just return an empty stack.  Override this in the cases
+  # that actually have an exception to report
+  method access-stack(self, stack-getter): empty end
 end
 
 fun make-check-context(main-module-name :: String, check-all :: Boolean):
@@ -519,14 +532,14 @@ fun make-check-context(main-module-name :: String, check-all :: Boolean):
   fun reset-results(): current-results := [list: ] end
   {
     method run-checks(self, module-name, checks):
-      when check-all or (module-name == main-module-name):
+      when check-all or (module-name == main-module-name) block:
         for each(c from checks) block:
           results-before = current-results
           reset-results()
           result = run-task(c.run)
           cases(Either) result:
-            | left(v) => add-block-result(check-block-result(c.name, c.location, current-results, none))
-            | right(err) => add-block-result(check-block-result(c.name, c.location, current-results, some(err)))
+            | left(v) => add-block-result(check-block-result(c.name, c.location, c.keyword-check, current-results, none))
+            | right(err) => add-block-result(check-block-result(c.name, c.location, c.keyword-check, current-results, some(err)))
           end
           current-results := results-before
         end
@@ -543,7 +556,7 @@ fun make-check-context(main-module-name :: String, check-all :: Boolean):
     method check-is-roughly(self, left, right, loc) block:
       for left-right-check(loc)(lv from left, rv from right):
         check-bool(loc,
-          within(~0.0)(lv, rv),
+          within(~0.000001)(lv, rv),
           lam(): failure-not-equal(loc, none, lv, rv) end)
       end
       nothing
@@ -711,8 +724,9 @@ fun results-summary(block-results :: List<CheckBlockResult>, get-stack):
             total: s.total + 1
           }
         | else =>
+          stack = tr.access-stack(get-stack)
           m = s.message + "\n  " + tr.loc.format(false) + ": failed because: \n    "
-            + RED.display-to-string(tr.render-reason(), torepr, empty)
+            + RED.display-to-string(tr.render-reason(), torepr, stack)
           s.{
             message: m,
             failed: s.failed + 1,
@@ -720,11 +734,12 @@ fun results-summary(block-results :: List<CheckBlockResult>, get-stack):
           }
       end
     end
+    block-type = if br.keyword-check: "Check" else: "Examples" end
     ended-in-error = cases(Option) br.maybe-err:
       | none => ""
       | some(err) =>
         stack = get-stack(err)
-        "\n  Block ended in the following error (all tests may not have ran): \n\n  "
+        "\n  " + block-type + " block ended in the following error (not all tests may have run): \n\n  "
           + RED.display-to-string(exn-unwrap(err).render-reason(), torepr, stack)
           + RED.display-to-string(ED.v-sequence(lists.map(ED.loc, stack)), torepr, empty)
           + "\n\n"

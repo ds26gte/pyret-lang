@@ -1,17 +1,22 @@
-define([], function() {
+define("pyret-base/js/runtime-util", [], function() {
   var gs = Math.floor(Math.random() * 10000);
   function gensym(name) {
     return name + String(gs++);
   }
   function isBrowser() {
-    return requirejs.isBrowser || typeof importScripts !== "undefined";
+    var maybeBrowser = !!(typeof window !== 'undefined' && typeof navigator !== 'undefined' && window.document);
+    return maybeBrowser || typeof importScripts !== "undefined";
   }
 
   var suspend;
   if (typeof setImmediate !== 'undefined') {
     suspend = function(f) { return setImmediate(f); };
   }
-  else if (isBrowser() && (typeof window !== "undefined") && window.postMessage) {
+  else if (isBrowser()
+    && (typeof window !== "undefined")
+    && window.postMessage
+    && window.location.origin !== "file://"
+    && window.location.origin !== "null") {
     var origin = String(window.location.origin);
     var postMessageCBToken = String(Math.random());
     var postMessageCBs = {};
@@ -48,7 +53,7 @@ define([], function() {
           }, function(moduleFunVal) {
             RUNTIME.modules[modname] = moduleFunVal;
             return moduleFunVal;
-          });
+          }, "memoModule:moduleFun");
       }
     };
   }
@@ -98,7 +103,7 @@ define([], function() {
               return func.apply(null, [runtime, namespace].concat(deps));
             }, function(result) {
               return wrap(runtime, result);
-            });
+            }, "defineModule:moduleFun");
           });
         });
       }

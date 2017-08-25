@@ -1,6 +1,7 @@
 PYRET_COMP0      = build/phase0/pyret.jarr
 CLOSURE          = java -jar deps/closure-compiler/compiler.jar
 NODE             = node -max-old-space-size=8192
+SWEETJS          = node_modules/sweet.js/bin/sjs --readable-names --module ./src/js/macros.js
 JS               = js
 JSBASE           = $(JS)/base
 JSTROVE          = $(JS)/trove
@@ -13,7 +14,16 @@ PHASEA           = build/phaseA
 PHASEB           = build/phaseB
 PHASEC           = build/phaseC
 RELEASE_DIR      = build/release
-DOCS             = docs
+BUNDLED_DEPS     = build/bundled-node-deps.js
+# HACK HACK HACK (See https://github.com/npm/npm/issues/3738)
+export PATH      := ./node_modules/.bin:../node_modules/.bin:../../node_modules/.bin:$(PATH)
+SHELL := /bin/bash
+
+
+showpath:
+	@echo my new PATH = $(PATH)
+	@echo `which browserify`
+
 
 # CUSTOMIZE THESE IF NECESSARY
 PARSERS         := $(patsubst src/js/base/%-grammar.bnf,src/js/%-parser.js,$(wildcard src/$(JSBASE)/*-grammar.bnf))
@@ -49,14 +59,10 @@ PHASEA_ALL_DEPS := $(patsubst src/%,$(PHASEA)/%,$(COPY_JS))
 PHASEB_ALL_DEPS := $(patsubst src/%,$(PHASEB)/%,$(COPY_JS))
 PHASEC_ALL_DEPS := $(patsubst src/%,$(PHASEC)/%,$(COPY_JS))
 
-DOCS_DEPS        = $(patsubst src/%,$(DOCS)/generated/%.rkt,$(SRC_JS) $(TROVE_JS) $(LIBS_JS) $(COPY_JS) $(ROOT_LIBS))
-DOCS_SKEL_DEPS   = $(patsubst src/%,$(DOCS)/skeleton/%.rkt,$(SRC_JS) $(LIBS_JS) $(ROOT_LIBS))
-
 PHASEA_DIRS     := $(sort $(dir $(PHASEA_ALL_DEPS)))
 PHASEB_DIRS     := $(sort $(dir $(PHASEB_ALL_DEPS)))
 PHASEC_DIRS     := $(sort $(dir $(PHASEC_ALL_DEPS)))
 
-DOCS_DIRS       := $(sort $(dir $(DOCS_DEPS)) $(dir $(DOCS_SKEL_DEPS)))
 
 # NOTE: Needs TWO blank lines here, dunno why
 define \n
@@ -88,13 +94,13 @@ phaseA: $(PHASEA)/pyret.jarr
 phaseA-deps: $(PYRET_COMPA) $(PHASEA_ALL_DEPS) $(COMPILER_FILES) $(patsubst src/%,$(PHASEA)/%,$(PARSERS))
 
 
-$(PHASEA)/pyret.jarr: $(PYRET_COMPA) $(PHASEA_ALL_DEPS) $(COMPILER_FILES) $(patsubst src/%,$(PHASEA)/%,$(PARSERS))
+$(PHASEA)/pyret.jarr: $(PYRET_COMPA) $(PHASEA_ALL_DEPS) $(COMPILER_FILES) $(patsubst src/%,$(PHASEA)/%,$(PARSERS)) $(BUNDLED_DEPS)
 	$(NODE) $(PYRET_COMP0) --outfile build/phaseA/pyret.jarr \
                       --build-runnable src/arr/compiler/pyret.arr \
                       --builtin-js-dir src/js/trove/ \
                       --builtin-arr-dir src/arr/trove/ \
                       --compiled-dir build/phaseA/compiled/ \
-                      -no-check-mode \
+                      -no-check-mode $(EF) \
                       --require-config src/scripts/standalone-configA.json
 
 .PHONY : phaseB
@@ -106,7 +112,7 @@ $(PHASEB)/pyret.jarr: $(PHASEA)/pyret.jarr $(PHASEB_ALL_DEPS) $(patsubst src/%,$
                       --builtin-js-dir src/js/trove/ \
                       --builtin-arr-dir src/arr/trove/ \
                       --compiled-dir build/phaseB/compiled/ \
-                      -no-check-mode \
+                      -no-check-mode $(EF) \
                       --require-config src/scripts/standalone-configB.json
 
 
@@ -119,11 +125,14 @@ $(PHASEC)/pyret.jarr: $(PHASEB)/pyret.jarr $(PHASEC_ALL_DEPS) $(patsubst src/%,$
                       --builtin-js-dir src/js/trove/ \
                       --builtin-arr-dir src/arr/trove/ \
                       --compiled-dir build/phaseC/compiled/ \
-                      -no-check-mode \
+                      -no-check-mode $(EF) \
                       --require-config src/scripts/standalone-configC.json
 
 .PHONY : show-comp
 show-comp: build/show-compilation.jarr
+
+$(BUNDLED_DEPS): src/js/trove/require-node-dependencies.js
+	browserify src/js/trove/require-node-dependencies.js -o $(BUNDLED_DEPS)
 
 build/show-compilation.jarr: $(PHASEA)/pyret.jarr src/scripts/show-compilation.arr
 	$(NODE) $(PHASEA)/pyret.jarr --outfile build/show-compilation.jarr \
@@ -147,6 +156,17 @@ endif
                       $(EXTRA_FLAGS) \
                       --require-config src/scripts/standalone-configA.json
 
+%.html: $(PHASEA)/pyret.jarr %.arr
+	$(NODE) $(PHASEA)/pyret.jarr --outfile $*.jarr \
+                      --build-runnable $*.arr \
+                      --builtin-js-dir src/js/trove/ \
+                      --builtin-arr-dir src/arr/trove/ \
+                      --compiled-dir compiled/ \
+                      $(EXTRA_FLAGS) \
+                      --require-config src/scripts/standalone-configA.json \
+                      -bundle-dependencies \
+                      --html-file $*.html
+
 $(PHASEA_ALL_DEPS): | $(PHASEA)
 
 $(PHASEB_ALL_DEPS): | $(PHASEB) phaseA
@@ -163,16 +183,15 @@ $(PHASEC):
 	@$(call MKDIR,$(PHASEC_DIRS))
 
 $(PHASEA)/$(JS)/%-parser.js: src/$(JSBASE)/%-grammar.bnf src/$(JSBASE)/%-tokenizer.js $(wildcard lib/jglr/*.js)
-	$(NODE) lib/jglr/parser-generator.js src/$(JSBASE)/$*-grammar.bnf $(PHASEA)/$(JS)/$*-grammar.js "../../../lib/jglr/jglr" "jglr/jglr"
+	$(NODE) lib/jglr/parser-generator.js src/$(JSBASE)/$*-grammar.bnf $(PHASEA)/$(JS)/$*-grammar.js "../../../lib/jglr" "jglr/jglr" "pyret-base/js/pyret-parser"
 	$(NODE) $(PHASEA)/$(JS)/$*-grammar.js $(PHASEA)/$(JS)/$*-parser.js
 
 $(PHASEB)/$(JS)/%-parser.js: src/$(JSBASE)/%-grammar.bnf src/$(JSBASE)/%-tokenizer.js $(wildcard lib/jglr/*.js)
-	$(NODE) lib/jglr/parser-generator.js src/$(JSBASE)/$*-grammar.bnf $(PHASEB)/$(JS)/$*-grammar.js "../../../lib/jglr/jglr" "jglr/jglr"
+	$(NODE) lib/jglr/parser-generator.js src/$(JSBASE)/$*-grammar.bnf $(PHASEB)/$(JS)/$*-grammar.js "../../../lib/jglr" "jglr/jglr" "pyret-base/js/pyret-parser"
 	$(NODE) $(PHASEB)/$(JS)/$*-grammar.js $(PHASEB)/$(JS)/$*-parser.js
 
-
 $(PHASEC)/$(JS)/%-parser.js: src/$(JSBASE)/%-grammar.bnf src/$(JSBASE)/%-tokenizer.js $(wildcard lib/jglr/*.js)
-	$(NODE) lib/jglr/parser-generator.js src/$(JSBASE)/$*-grammar.bnf $(PHASEC)/$(JS)/$*-grammar.js "../../../lib/jglr/jglr" "jglr/jglr"
+	$(NODE) lib/jglr/parser-generator.js src/$(JSBASE)/$*-grammar.bnf $(PHASEC)/$(JS)/$*-grammar.js "../../../lib/jglr" "jglr/jglr" "pyret-base/js/pyret-parser"
 	$(NODE) $(PHASEC)/$(JS)/$*-grammar.js $(PHASEC)/$(JS)/$*-parser.js
 
 $(PHASEA)/$(JS)/%.js : src/$(JSBASE)/%.js
@@ -181,10 +200,6 @@ $(PHASEB)/$(JS)/%.js : src/$(JSBASE)/%.js
 	cp $< $@
 $(PHASEC)/$(JS)/%.js : src/$(JSBASE)/%.js
 	cp $< $@
-
-.PHONY : docs
-docs:
-	cd docs/written && make VERSION=$(VERSION)
 
 .PHONY : install
 install:
@@ -218,10 +233,10 @@ TEST_BUILD=$(NODE) $(PYRET_TEST_PHASE)/pyret.jarr \
 old-test: runtime-test evaluator-test compiler-test pyret-test regression-test type-check-test lib-test
 
 .PHONY : old-test-all
-old-test-all: test docs-test benchmark-test
+old-test-all: test benchmark-test
 
 .PHONY : test-all
-test-all: test docs-test
+test-all: test
 
 .PHONY : test
 test: pyret-test type-check-test
@@ -300,9 +315,6 @@ tests/lib-test-main/lib-test-main.jarr: phaseA $(TROVE_ARR_FILES) tests/lib-test
 benchmark-test: tools/benchmark/*.js $(PYRET_TEST_PREREQ)
 	cd tools/benchmark/ && make test
 
-.PHONY : docs-test
-docs-test: docs
-	cd docs/written && scribble --htmls index.scrbl
 
 .PHONY : clean
 clean:
@@ -311,14 +323,16 @@ clean:
 	$(call RMDIR,$(PHASEC))
 	$(call RMDIR,build/show-comp/compiled)
 	$(call RMDIR,$(RELEASE_DIR))
+	$(call RM,$(BUNDLED_DEPS))
 
 .PHONY : test-clean
 test-clean:
 	$(call RMDIR, tests/compiled)
 
 # Written this way because cmd.exe complains about && in command lines
-new-bootstrap: no-diff-standalone
+new-bootstrap: no-diff-standalone $(PHASE0BUILD)
 	cp $(PHASEC)/pyret.jarr $(PYRET_COMP0)
+	cp -r $(PHASEC)/js $(PHASE0)/
 no-diff-standalone: phaseB phaseC
 	diff $(PHASEB)/pyret.jarr $(PHASEC)/pyret.jarr
 
@@ -345,14 +359,6 @@ release: release-gzip
 test-release: release-gzip
 	cd $(RELEASE_DIR) && \
 	find * -type f -print0 | parallel --gnu -0 $(S3) add --header 'Content-Type:text/javascript' --header 'Content-Encoding:gzip' --acl 'public-read' ':pyret-releases/$(VERSION)-test/{}' '{}'
-horizon-docs: docs
-	scp -r build/docs/ $(DOCS_TARGET)/horizon-$(VERSION)/
-	chmod -R a+rx $(DOCS_TARGET)/horizon-$(VERSION)/
-	cd $(DOCS_TARGET) && unlink horizon && ln -s horizon-$(VERSION) horizon
-release-docs: docs
-	scp -r build/docs/ $(DOCS_TARGET)/$(VERSION)/
-	chmod -R a+rx $(DOCS_TARGET)/$(VERSION)/
-	cd $(DOCS_TARGET) && unlink latest && ln -s $(VERSION) latest
 else
 release-gzip:
 	$(error Cannot release from this platform)
