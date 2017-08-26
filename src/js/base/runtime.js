@@ -4827,7 +4827,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-sqrt"], 1, $a, false); }
       thisRuntime.checkArgsInternal("Numbers", "num-sqrt",
         [n],
-        [thisRuntime.NumNonNegative]);
+        [thisRuntime.Number]);
       return thisRuntime.makeNumberBig(jsnums.sqrt(n, NumberErrbacks));
     }
     var num_sqr = function(n) {

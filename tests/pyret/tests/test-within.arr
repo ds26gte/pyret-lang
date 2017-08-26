@@ -12,7 +12,7 @@ check "num-within-abs":
    2  is-not%(num-within-abs(0.9))  ~3
    5  is%(num-within-abs(4))         3
 
-   num-within-abs(-0.1)(1, 1.05) raises "negative tolerance"
+   num-within-abs(-0.1)(1, 1.05) raises "NumNonNegative"
 end
 
 check "within":
