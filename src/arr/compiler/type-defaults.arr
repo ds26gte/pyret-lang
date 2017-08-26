@@ -157,6 +157,137 @@ fun make-default-types() block:
   default-typs.set-now("not", t-arrow([list: t-boolean], t-boolean))
   default-typs.set-now(A.s-global("raise").key(), t-arrow([list: t-top], t-bot))
   default-typs.set-now("hasField", t-arrow([list: t-record([string-dict: ]), t-string], t-boolean))
+
+  default-typs.set-now(A.s-global("_patch_false").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_true").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_pi").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_tau").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_e").key(), t-top)
+
+  default-typs.set-now(A.s-global("_patch_apply").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_compose").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_identity").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_procedure_arity").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_void").key(), t-top)
+
+  default-typs.set-now(A.s-global("_patch_cosh").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_current_seconds").key(), t-arrow([list: ], t-number))
+  default-typs.set-now(A.s-global("_patch_denominator").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_patch_divide").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_eq").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_even_p").key(), t-arrow([list: t-number], t-boolean))
+  default-typs.set-now(A.s-global("_patch_gcd").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_ge").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_gt").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_integer_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_patch_exact_to_inexact").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_patch_inexact_to_exact").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_patch_lcm").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_le").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_lt").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_max").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_min").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_minus").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_num_equal_tilde").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_numerator").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_patch_odd_p").key(), t-arrow([list: t-number], t-boolean))
+  default-typs.set-now(A.s-global("_patch_add1").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_patch_sub1").key(), t-arrow([list: t-number], t-number))
+  default-typs.set-now(A.s-global("_patch_plus").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_quotient").key(), t-arrow([list: t-number, t-number], t-number))
+  default-typs.set-now(A.s-global("_patch_random").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_rational_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_patch_real_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_patch_remainder").key(), t-arrow([list: t-number, t-number], t-number))
+  default-typs.set-now(A.s-global("_patch_sgn").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_sinh").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_times").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_zero_p").key(), t-arrow([list: t-number], t-boolean))
+
+  default-typs.set-now(A.s-global("_patch_false_p").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_boolean_p").key(), t-arrow([list: t-top], t-boolean))
+  default-typs.set-now(A.s-global("_patch_boolean_eq").key(), t-arrow([list: t-boolean, t-boolean], t-boolean))
+
+  default-typs.set-now(A.s-global("_patch_list_to_string").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_make_string").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_append").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_ci_eq").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_ci_ge").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_ci_gt").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_ci_le").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_ci_lt").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_eq").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_ge").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_gt").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_le").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_lt").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_string_to_number").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_number_to_string").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_substring").key(), t-top)
+
+  default-typs.set-now(A.s-global("_patch_char_alphabetic_p").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_char_lower_case_p").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_char_numeric_p").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_char_p").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_char_to_integer").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_char_upper_case_p").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_char_whitespace_p").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_integer_to_char").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_format").key(), t-top)
+
+  default-typs.set-now(A.s-global("_patch_caaar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_caadr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_caar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_cadar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_caddr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_cadr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_car").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_cdaar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_cdadr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_cdar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_cddar").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_cdddr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_cddr").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_cdr").key(), t-arrow([list: t-top], t-top))
+
+  default-typs.set-now(A.s-global("_patch_first").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_second").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_third").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_fourth").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_fifth").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_sixth").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_seventh").key(), t-arrow([list: t-top], t-top))
+  default-typs.set-now(A.s-global("_patch_eighth").key(), t-arrow([list: t-top], t-top))
+
+  default-typs.set-now(A.s-global("_patch_append").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_map").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_for_each").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_andmap").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_ormap").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_foldl").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_foldr").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_range").key(), t-top)
+
+  default-typs.set-now(A.s-global("_patch_box").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_boxp").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_unbox").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_set_box").key(), t-top)
+
+  default-typs.set-now(A.s-global("_patch_display").key(), t-top)
+
+  default-typs.set-now(A.s-global("_patch_error").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_dead_code_function").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_check_within").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_equal_tilde").key(), t-top)
+
+  default-typs.set-now(A.s-global("_patch_make_hash").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_hash_p").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_hash_ref").key(), t-top)
+  default-typs.set-now(A.s-global("_patch_hash_set").key(), t-top)
+
+  default-typs.set-now(A.s-global("_patch_struct_p").key(), t-top)
+
   default-typs.set-now(A.s-global("_times").key(), t-number-binop)
   default-typs.set-now(A.s-global("_minus").key(), t-number-binop)
   default-typs.set-now(A.s-global("_divide").key(), t-number-binop)
@@ -245,7 +376,8 @@ module-const-arrays = t-module("builtin://arrays",
     "array-set-now", t-forall([list: tva], t-arrow([list: mk-array(tva), t-number, tva], t-nothing)),
     "array-get-now", t-forall([list: tva], t-arrow([list: mk-array(tva), t-number], tva)),
     "array-length", t-forall([list: tva], t-arrow([list: mk-array(tva)], t-number)),
-    "array-to-list-now", t-forall([list: tva], t-arrow([list: mk-array(tva)], mk-list(tva)))
+    "array-to-list-now", t-forall([list: tva], t-arrow([list: mk-array(tva)], mk-list(tva))),
+    "make-vector", t-forall([list: tva], t-arrow([list: t-number, tva], mk-array(tva)))
   ]),
   SD.make-string-dict()
     .set("Array", t-data(
@@ -325,6 +457,7 @@ module-const-lists = t-module("builtin://lists",
     "is-empty", t-arrow([list: t-top], t-boolean),
     "link", t-forall([list: tva], t-arrow([list: tva, mk-list(tva)], t-data-refinement(mk-list(tva), "link"))),
     "is-link", t-arrow([list: t-top], t-boolean),
+    "reverse", t-forall([list: tva], t-arrow([list: tva], mk-list(tva))),
     "range", t-arrow([list: t-number, t-number], mk-list(t-number)),
     "range-by", t-arrow([list: t-number, t-number, t-number], mk-list(t-number)),
     "repeat", t-forall([list: tva], t-arrow([list: t-number, tva], mk-list(tva))),
@@ -356,6 +489,21 @@ module-const-lists = t-module("builtin://lists",
     "fold3", t-forall([list: tva, tvb, tvc, tvd], t-arrow([list: t-arrow([list: tva, tvb, tvc, tvd], tva), tva, mk-list(tvb), mk-list(tvc), mk-list(tvd)], tva)),
     "fold4", t-forall([list: tva, tvb, tvc, tvd, tve], t-arrow([list: t-arrow([list: tva, tvb, tvc, tvd, tve], tva), tva, mk-list(tvb), mk-list(tvc), mk-list(tvd), mk-list(tve)], tva)),
     "fold_n", t-forall([list: tva, tvb], t-arrow([list: t-arrow([list: t-number, tva, tvb], tva), t-number, tva, mk-list(tvb)], tva)),
+    "foldr", t-top,
+    "remove", t-top,
+    "_patch_remove-all", t-top,
+    "_patch_remove", t-top,
+    "_patch_quicksort", t-top,
+    "_patch_argmax", t-top,
+    "list-ref", t-top,
+    "list-length", t-top,
+    "list-member-p", t-top,
+    "list-member", t-top,
+    "list-assoc", t-top,
+    "build-list", t-top,
+    "make-list", t-arrow([list: t-number, t-top], t-top),
+    "_patch_null", t-top,
+    "_patch_empty", t-top,
     "length", t-forall([list: tva], t-arrow([list: mk-list(tva)], t-number)),
     "sum", t-arrow([list: mk-list(t-number)], t-number),
     "max", t-arrow([list: mk-list(t-number)], t-number),

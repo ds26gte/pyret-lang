@@ -18,6 +18,7 @@ var errors = empty
 var in-check-block = false
 var cur-shared = empty
 var PARAM-current-where-everywhere = false # TODO: What does this mean? (used by ensure-empty-block)
+var dialect = false
 
 is-s-let = A.is-s-let # ANNOYING WORKAROUND
 
@@ -63,7 +64,6 @@ reserved-names = [SD.string-dict:
   # TODO: refactor AST so this can be added
   # "table", true
 ]
-
 
 fun add-error(err) block:
   errors := err ^ link(_, errors)
@@ -204,7 +204,6 @@ fun ensure-unique-bindings(bindings :: List<A.Bind>) block:
   bindings.each(help)
 end
 
-
 fun ensure-unique-fields(rev-fields):
   cases(List) rev-fields block:
     | empty => nothing
@@ -278,7 +277,6 @@ fun ensure-unique-variant-ids(variants :: List<A.Variant>, name :: String, data-
   end
 end
 
-
 fun wf-last-stmt(block-loc, stmt :: A.Expr):
   cases(A.Expr) stmt:
     | s-let(l, _, _, _)                   => add-error(C.block-ending(l, block-loc, "let-binding"))
@@ -315,7 +313,9 @@ end
 fun wf-block-stmts(visitor, l, stmts :: List%(is-link)) block:
   bind-stmts = stmts.filter(lam(s): A.is-s-var(s) or A.is-s-let(s) or A.is-s-rec(s) end).map(_.name)
   ensure-unique-bindings(bind-stmts)
-  ensure-distinct-lines(A.dummy-loc, false, stmts)
+  when dialect <> "patch":
+    ensure-distinct-lines(A.dummy-loc, false, stmts)
+  end
   lists.all(_.visit(visitor), stmts)
 end
 
@@ -354,7 +354,6 @@ fun wf-table-headers(loc, headers):
       true
   end
 end
-
 
 fun is-underscore(e):
   A.is-s-id(e) and A.is-s-underscore(e.id)
@@ -1237,7 +1236,8 @@ top-level-visitor = A.default-iter-visitor.{
   end
 }
 
-fun check-well-formed(ast) -> C.CompileResult<A.Program, Any> block:
+fun check-well-formed(ast, this-dialect) -> C.CompileResult<A.Program, Any> block:
+  dialect := this-dialect
   cur-shared := empty
   errors := empty
   in-check-block := false

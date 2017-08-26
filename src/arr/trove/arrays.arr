@@ -9,7 +9,8 @@ provide {
   array-set-now: array-set-now,
   array-get-now: array-get-now,
   array-length: array-length,
-  array-to-list-now: array-to-list-now
+  array-to-list-now: array-to-list-now,
+  make-vector: make-vector
 } end
 provide-types *
 
@@ -82,6 +83,12 @@ end
 
 fun array-to-list-now<a>(arr :: Array<a>) -> List<a>:
   arr.to-list-now()
+end
+
+#for Patch
+fun make-vector<a>(len :: Number, val :: a) block:
+  arr = raw-array-of(val, len)
+  make(arr)
 end
 
 array = {

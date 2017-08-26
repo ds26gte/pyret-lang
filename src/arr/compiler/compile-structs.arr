@@ -292,9 +292,6 @@ fun provides-from-raw-provides(uri, raw):
   provides(uri, vdict, adict, ddict)
 end
 
-
-
-
 fun provides-to-raw-provides-ast(provs, env):
   cases(Provides) provs:
     | provides(uri, values, aliases, data-defs) =>
@@ -316,7 +313,6 @@ fun provides-to-raw-provides-ast(provs, env):
       ])
   end
 end
-
 
 data CompileResult<C>:
   | ok(code :: C)
@@ -1578,7 +1574,7 @@ data CompileError:
           ED.text(" to evaluate to a function that accepts exactly the same number of arguments as are given to it.")],
         [ED.para:
           ED.highlight(ED.ed-args(self.app-expr.args.length()), self.app-expr.args.map(_.l), 1),
-          ED.text(" " + if self.app-expr.args.length() == 1: "is " else: "are " end 
+          ED.text(" " + if self.app-expr.args.length() == 1: "is " else: "are " end
                 + "given, but the type signature of the "),
           ed-applicant],
         [ED.para:
@@ -2077,7 +2073,7 @@ data CompileError:
     method render-fancy-reason(self):
       [ED.error:
         [ED.para-nospace:
-          ED.text("Unable to infer the type of "), 
+          ED.text("Unable to infer the type of "),
           ED.highlight(ED.text("this"), [list: self.loc], 0),
           ED.text(". Please add an annotation.")]]
     end,
@@ -2357,7 +2353,7 @@ data CompileError:
     end
   | table-sanitizer-bad-column(sanitize-expr :: A.LoadTableSpec, col-defs :: A.Loc) with:
     method render-fancy-reason(self):
-      
+
       bad-column = self.sanitize-expr.name
       bad-column-name = bad-column.tosource().pretty(80)
       sanitizer = self.sanitize-expr.sanitizer
@@ -2555,6 +2551,137 @@ runtime-provides = provides("builtin://global",
     "gensym", t-top,
     "random", t-top,
     "run-task", t-top,
+
+    "_patch_false", t-top,
+    "_patch_true", t-top,
+    "_patch_pi", t-top,
+    "_patch_tau", t-top,
+    "_patch_e", t-top,
+
+    "_patch_apply", t-top,
+    "_patch_compose", t-top,
+    "_patch_identity", t-top,
+    "_patch_procedure_arity", t-top,
+    "_patch_void", t-top,
+
+    "_patch_cosh", t-top,
+    "_patch_current_seconds", t-arrow([list: ], t-number),
+    "_patch_denominator", t-arrow([list: t-number], t-number),
+    "_patch_divide", t-top,
+    "_patch_eq", t-top,
+    "_patch_even_p", t-arrow([list: t-number], t-boolean),
+    "_patch_gcd", t-top,
+    "_patch_ge", t-top,
+    "_patch_gt", t-top,
+    "_patch_integer_p", t-arrow([list: t-top], t-boolean),
+    "_patch_inexact_to_exact", t-arrow([list: t-number], t-number),
+    "_patch_exact_to_inexact", t-arrow([list: t-number], t-number),
+    "_patch_lcm", t-top,
+    "_patch_le", t-top,
+    "_patch_lt", t-top,
+    "_patch_max", t-top,
+    "_patch_min", t-top,
+    "_patch_minus", t-top,
+    "_patch_num_equal_tilde", t-top,
+    "_patch_numerator", t-arrow([list: t-number], t-number),
+    "_patch_odd_p", t-arrow([list: t-number], t-boolean),
+    "_patch_add1", t-arrow([list: t-number], t-number),
+    "_patch_sub1", t-arrow([list: t-number], t-number),
+    "_patch_plus", t-top,
+    "_patch_quotient", t-arrow([list: t-number, t-number], t-number),
+    "_patch_random", t-top,
+    "_patch_rational_p", t-arrow([list: t-top], t-boolean),
+    "_patch_real_p", t-arrow([list: t-top], t-boolean),
+    "_patch_remainder", t-arrow([list: t-number, t-number], t-number),
+    "_patch_sgn", t-top,
+    "_patch_sinh", t-top,
+    "_patch_times", t-top,
+    "_patch_zero_p", t-number-pred1,
+
+    "_patch_false_p", t-top,
+    "_patch_boolean_p", t-arrow([list: t-top], t-boolean),
+    "_patch_boolean_eq", t-arrow([list: t-boolean, t-boolean], t-boolean),
+
+    "_patch_list_to_string", t-top,
+    "_patch_string", t-top,
+    "_patch_make_string", t-top,
+    "_patch_string_append", t-top,
+    "_patch_string_ci_eq", t-top,
+    "_patch_string_ci_ge", t-top,
+    "_patch_string_ci_gt", t-top,
+    "_patch_string_ci_le", t-top,
+    "_patch_string_ci_lt", t-top,
+    "_patch_string_eq", t-top,
+    "_patch_string_ge", t-top,
+    "_patch_string_gt", t-top,
+    "_patch_string_le", t-top,
+    "_patch_string_lt", t-top,
+    "_patch_string_to_number", t-top,
+    "_patch_number_to_string", t-top,
+    "_patch_substring", t-top,
+
+    "_patch_char_alphabetic_p", t-top,
+    "_patch_char_lower_case_p", t-top,
+    "_patch_char_numeric_p", t-top,
+    "_patch_char_p", t-top,
+    "_patch_char_to_integer", t-top,
+    "_patch_char_upper_case_p", t-top,
+    "_patch_char_whitespace_p", t-top,
+    "_patch_integer_to_char", t-top,
+    "_patch_format", t-top,
+
+    "_patch_caaar", t-arrow([list: t-top], t-top),
+    "_patch_caadr", t-arrow([list: t-top], t-top),
+    "_patch_caar", t-arrow([list: t-top], t-top),
+    "_patch_cadar", t-arrow([list: t-top], t-top),
+    "_patch_caddr", t-arrow([list: t-top], t-top),
+    "_patch_cadr", t-arrow([list: t-top], t-top),
+    "_patch_car", t-arrow([list: t-top], t-top),
+    "_patch_cdaar", t-arrow([list: t-top], t-top),
+    "_patch_cdadr", t-arrow([list: t-top], t-top),
+    "_patch_cdar", t-arrow([list: t-top], t-top),
+    "_patch_cddar", t-arrow([list: t-top], t-top),
+    "_patch_cdddr", t-arrow([list: t-top], t-top),
+    "_patch_cddr", t-arrow([list: t-top], t-top),
+    "_patch_cdr", t-arrow([list: t-top], t-top),
+
+    "_patch_first", t-arrow([list: t-top], t-top),
+    "_patch_second", t-arrow([list: t-top], t-top),
+    "_patch_third", t-arrow([list: t-top], t-top),
+    "_patch_fourth", t-arrow([list: t-top], t-top),
+    "_patch_fifth", t-arrow([list: t-top], t-top),
+    "_patch_sixth", t-arrow([list: t-top], t-top),
+    "_patch_seventh", t-arrow([list: t-top], t-top),
+    "_patch_eighth", t-arrow([list: t-top], t-top),
+
+    "_patch_append", t-top,
+    "_patch_map", t-top,
+    "_patch_for_each", t-top,
+    "_patch_andmap", t-top,
+    "_patch_ormap", t-top,
+    "_patch_foldl", t-top,
+    "_patch_foldr", t-top,
+    "_patch_range", t-top,
+
+    "_patch_box", t-top,
+    "_patch_boxp", t-top,
+    "_patch_unbox", t-top,
+    "_patch_set_box", t-top,
+
+    "_patch_display", t-top,
+
+    "_patch_error", t-top,
+    "_patch_dead_code_function", t-top,
+    "_patch_check_within", t-top,
+    "_patch_equal_tilde", t-top,
+
+    "_patch_make_hash", t-top,
+    "_patch_hash_p", t-top,
+    "_patch_hash_ref", t-top,
+    "_patch_hash_set", t-top,
+
+    "_patch_struct_p", t-top,
+
     "_plus", t-top,
     "_minus", t-top,
     "_times", t-top,
@@ -2615,6 +2742,10 @@ runtime-provides = provides("builtin://global",
     "num-exact", t-number-unop,
     "num-to-rational", t-number-unop,
     "num-to-roughnum", t-number-unop,
+    "num-to-complexrational", t-number-unop,
+    "num-to-complexroughnum", t-number-unop,
+    "num-realpart", t-number-unop,
+    "num-imagpart", t-number-unop,
     "num-is-positive", t-number-pred1,
     "num-is-negative", t-number-pred1,
     "num-is-non-positive", t-number-pred1,
@@ -2724,7 +2855,8 @@ standard-imports = extra-imports(
           "array-set-now",
           "array-get-now",
           "array-length",
-          "array-to-list-now"
+          "array-to-list-now",
+          "make-vector"
         ],
         [list: "Array"]),
       extra-import(builtin("lists"), "lists", [list:
@@ -2734,11 +2866,17 @@ standard-imports = extra-imports(
           "is-link",
           "empty",
           "link",
+          "reverse",
           "range",
           "range-by",
           "repeat",
           "filter",
           "partition",
+          "remove",
+          "_patch_remove-all",
+          "_patch_remove",
+          "_patch_quicksort",
+          "_patch_argmax",
           "split-at",
           "any",
           "find",
@@ -2759,9 +2897,19 @@ standard-imports = extra-imports(
           "each3_n",
           "each4_n",
           "fold",
+          "foldr",
           "fold2",
           "fold3",
-          "fold4"
+          "fold4",
+          "list-ref",
+          "list-length",
+          "list-member-p",
+          "list-member",
+          "list-assoc",
+          "build-list",
+          "make-list",
+          "_patch_null",
+          "_patch_empty"
         ],
         [list: "List"]),
       extra-import(builtin("option"), "option", [list:

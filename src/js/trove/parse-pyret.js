@@ -1272,6 +1272,7 @@
           var direction = node.kids[1].name == "ASCENDING"  ? RUNTIME.getField(ast, 'ASCENDING')
                 : node.kids[1].name == "DESCENDING" ? RUNTIME.getField(ast, 'DESCENDING')
                 : undefined;
+          //console.log(direction);
           return RUNTIME.getField(ast, 's-column-sort').app(pos(node.pos),
                                                             column,
                                                             direction);
@@ -1419,6 +1420,8 @@
         //console.log("There were " + countParses + " potential parses");
         if (countParses === 1) {
           var ast = grammar.constructUniqueParse(parsed);
+          //ds26gte debug
+          //console.log('py_ast_j = ', JSON.stringify(ast));
           //          console.log(ast.toString());
           return RUNTIME.ffi.makeRight(translate(ast, fileName));
         } else {
@@ -1430,6 +1433,21 @@
           }
           return RUNTIME.ffi.makeRight(translate(ast, fileName));
         }
+      } catch(e) {
+        if (RUNTIME.isPyretException(e)) {
+          return RUNTIME.ffi.makeLeft(RUNTIME.makeObject({
+            exn: e.exn,
+            message: RUNTIME.makeString(message)
+          }));
+        } else {
+          throw e;
+        }
+      }
+    }
+
+    function parsePatchDataRaw(dataUnserialized, fileName) {
+      try {
+        return RUNTIME.ffi.makeRight(translate(dataUnserialized, fileName));
       } catch(e) {
         if (RUNTIME.isPyretException(e)) {
           return RUNTIME.ffi.makeLeft(RUNTIME.makeObject({
@@ -1460,6 +1478,29 @@
       });
     }
 
+    function parsePatch(data, fileName) {
+      RUNTIME.ffi.checkArity(2, arguments, "patch-surface-parse");
+      RUNTIME.checkString(data);
+      RUNTIME.checkString(fileName);
+      var data_unser = JSON.parse(RUNTIME.unwrap(data));
+      //console.log('calling parsePatchDataRaw');
+      var result = parsePatchDataRaw(data_unser, RUNTIME.unwrap(fileName));
+      //console.log('retfrom parsePatchDataRaw');
+      return RUNTIME.ffi.cases(RUNTIME.ffi.isEither, "is-Either", result, {
+        left: function(err) {
+          //console.log('parsePatch failing', err);
+          var exn = RUNTIME.getField(err, "exn");
+          var message = RUNTIME.getField(err, "message");
+          console.error(message);
+          RUNTIME.raise(exn);
+        },
+        right: function(ast) {
+          //console.log('parsePatch returning', JSON.stringify(ast));
+          return ast;
+        }
+      });
+    }
+
     function maybeParsePyret(data, fileName) {
       RUNTIME.ffi.checkArity(2, arguments, "maybe-surface-parse", false);
       RUNTIME.checkString(data);
@@ -1469,6 +1510,7 @@
 
     return RUNTIME.makeModuleReturn({
           'surface-parse': RUNTIME.makeFunction(parsePyret, "surface-parse"),
+          'patch-surface-parse': RUNTIME.makeFunction(parsePatch, "patch-surface-parse"),
           'maybe-surface-parse': RUNTIME.makeFunction(maybeParsePyret, "maybe-surface-parse"),
         }, {});
   }

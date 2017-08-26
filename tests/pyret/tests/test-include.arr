@@ -142,6 +142,7 @@ modules = [SD.mutable-string-dict:
 
 fun string-to-locator(name :: String):
   {
+    method dialect(self): "pyret" end,
     method needs-compile(self, provs): true end,
     method get-modified-time(self): 0 end,
     method get-options(self, options): options end,

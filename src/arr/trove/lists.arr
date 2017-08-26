@@ -230,7 +230,7 @@ data List<a>:
     end,
 sharing:
   method _output(self :: List<a>) -> VS.ValueSkeleton: VS.vs-collection("list", self.map(VS.vs-value)) end,
-  
+
   method _plus(self :: List<a>, other :: List<a>) -> List<a>:
     self.append(other)
   end,
@@ -479,6 +479,23 @@ fun remove<a>(lst :: List<a>, elt :: a) -> List<a>:
       remove(lst.rest, elt)
     else:
       link(lst.first, remove(lst.rest, elt))
+    end
+  end
+end
+
+fun _patch_remove-all<a>(elt :: a, lst :: List<a>) -> List<a>:
+  remove(lst, elt)
+end
+
+fun _patch_remove<a>(elt :: a, lst :: List<a>) -> List<a>:
+  doc: ```Returns the list without the element if found, or the whole list if it is not```
+  if is-empty(lst):
+    empty
+  else:
+    if elt == lst.first:
+      lst.rest
+    else:
+      link(lst.first, _patch_remove(elt, lst.rest))
     end
   end
 end
@@ -755,6 +772,40 @@ fun foldr<a, b>(f :: (a, b -> a), base :: a, lst :: List<b>) -> a:
   end
 end
 
+fun _patch_quicksort<a>(lst :: List<a>, lt :: (a, a -> Boolean)):
+  lst.sort-by(lam(x :: a, y :: a):
+                if x == y: false
+                else: lt(x, y)
+                end
+              end,
+              lam(x :: a, y :: a):
+                x == y
+              end)
+end
+
+fun _patch_argmax<a>(fn :: (a -> Number), lst :: List<a>):
+  if is-empty(lst):
+    raise('argmax given empty list')
+  else:
+    var ans = lst.first
+    var ans-val = fn(ans)
+    fun help(lyst):
+      if is-empty(lyst) block:
+        ans
+      else:
+        elt = lyst.first
+        elt-val = fn(elt)
+        when elt-val > ans-val block:
+          ans := elt
+          ans-val := elt-val
+        end
+        help(lyst.rest)
+      end
+    end
+    help(lst.rest)
+  end
+end
+
 fun fold2<a, b, c>(f :: (a, b, c -> a), base :: a, l1 :: List<b>, l2 :: List<c>) -> a:
   doc: ```Takes a function, an initial value and two lists, and folds the function over the lists in parallel
         from the left, starting with the initial value and ending when either list is empty```
@@ -852,6 +903,69 @@ fun shuffle<a>(lst :: List<a>) -> List<a>:
   end
 end
 
+#for Patch
+fun list-ref<a>(lst :: List<a>, ix :: Number) -> a:
+  lst.get(ix)
+end
+
+#for Patch
+fun list-length<a>(lst :: List<a>) -> Number:
+  lst.length()
+end
+
+#for Patch
+fun list-member-p<a>(e :: a, lst :: List<a>) -> Boolean:
+  member-now(lst, e)
+end
+
+#for Patch
+fun list-member<a>(e :: a, lst :: List<a>):
+  doc: ```Returns the first list-tail containing the element```
+  fun list-member-help(lyst :: List<a>):
+    if is-empty(lyst):
+      false
+    else if e == lyst.first:
+      lst
+    else:
+      list-member-help(lyst.rest)
+    end
+  end
+  list-member-help(lst)
+end
+
+#for Patch
+fun list-assoc(k, lst):
+  lst.find(lam(c): c.first == k end).or-else(false)
+end
+
+#for Patch
+fun build-list(n :: Number, f :: (Number -> Any)) -> List:
+  fun build-list-helper(m :: Number):
+    if m == n:
+      empty
+    else:
+      build-list-helper(m + 1).push(f(m))
+    end
+  end
+  build-list-helper(0)
+end
+
+#for Patch
+fun make-list(n :: Number, v :: Any) -> List:
+  fun make-list-helper(m :: Number):
+    if m == n:
+      empty
+    else:
+      make-list-helper(m + 1).push(v)
+    end
+  end
+  make-list-helper(0)
+end
+
+#for Patch
+_patch_null = empty
+_patch_empty = empty
+
 fun filter-map<a, b>(f :: (a -> Option<b>), lst :: List<a>) -> List<b>:
   cases(List<a>) lst:
     | empty => empty
@@ -872,7 +986,7 @@ fun filter-values<a>(lst :: List<Option<a>>) -> List<a>:
         | some(v) => link(v, filter-values(rest))
       end
   end
-end  
+end
 
 fun distinct(l :: List) -> List:
   doc: "returns a list with exactly the distinct elements of the original list removing the first instance"

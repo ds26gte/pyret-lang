@@ -65,7 +65,6 @@ check-test: binop-expr check-op [PERCENT (PARENSPACE|PARENNOSPACE) binop-expr RP
           | binop-expr check-op-postfix
           | binop-expr
 
-
 data-expr: DATA NAME ty-params COLON [first-data-variant] data-variant* data-sharing where-clause END
 variant-constructor: NAME variant-members
 first-data-variant: variant-constructor data-with | NAME data-with

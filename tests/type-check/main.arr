@@ -14,6 +14,7 @@ import file("../../src/arr/compiler/cli-module-loader.arr") as CLI
 
 fun string-to-locator(name, str :: String):
   {
+    method dialect(self): "pyret" end,
     method needs-compile(self, provs): true end,
     method get-modified-time(self): 0 end,
     method get-options(self, options): options end,

@@ -38,6 +38,7 @@ check "Worklist generation (simple)":
 
   fun string-to-locator(name :: String):
     {
+      method dialect(self): "pyret" end,
       method needs-compile(self, provs): true end,
       method get-module(self): CL.pyret-string(modules.get-value-now(name)) end,
       method get-extra-imports(self): CM.minimal-imports end,
@@ -103,6 +104,7 @@ check "Worklist generation (DAG)":
   retrievals = SD.make-mutable-string-dict()
   fun string-to-locator(name :: String):
     {
+      method dialect(self): "pyret" end,
       method needs-compile(self, provs): not(cresults.has-key-now(name)) end,
       method get-module(self) block:
         count = if retrievals.has-key-now(name): retrievals.get-value-now(name) else: 0 end
@@ -170,6 +172,7 @@ check "Worklist generation (Cycle)":
 
   fun string-to-locator(name :: String):
     {
+      method dialect(self): "pyret" end,
       method needs-compile(self, provs): true end,
       method get-module(self): CL.pyret-string(modules.get-value-now(name)) end,
       method get-extra-imports(self): CM.minimal-imports end,
@@ -233,6 +236,7 @@ check "Multiple includes":
 
   fun string-to-locator(name :: String):
     {
+      method dialect(self): "pyret" end,
       method needs-compile(self, provs): true end,
       method get-module(self): CL.pyret-string(modules.get-value-now(name)) end,
       method get-extra-imports(self): CM.standard-imports end,

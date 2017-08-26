@@ -1,6 +1,5 @@
 #lang pyret
 
-
 provide *
 
 check:
@@ -24,13 +23,14 @@ check:
   num-modulo(5, 0.5) raises "NumInteger"
   num-modulo(6, 0) raises "second argument is zero"
 
-  num-sqrt(-3) raises "NumNonNegative"
+  # patch has complex nums
+  #num-sqrt(-3) raises "NumNonNegative"
 
-  num-acos(-2) raises "acos: out of domain"
-  num-acos(2) raises "acos: out of domain"
+  #num-acos(-2) raises "acos: out of domain"
+  #num-acos(2) raises "acos: out of domain"
 
-  num-asin(-2) raises "asin: out of domain"
-  num-asin(2) raises "asin: out of domain"
+  #num-asin(-2) raises "asin: out of domain"
+  #num-asin(2) raises "asin: out of domain"
 
   num-to-string-digits(3, 1/2) raises "NumInteger"
   num-to-string-digits(3, ~3) raises "NumInteger"
@@ -158,6 +158,7 @@ check:
   num-floor(5.1) is 5
   num-floor(-5.5) is -6
 
+  # check in patch
   num-log(0) raises "NumPositive"
   num-log(1) is 0
   num-log(num-exp(1)) satisfies around(1, 0.0001)

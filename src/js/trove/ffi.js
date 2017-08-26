@@ -8,13 +8,14 @@
     { "import-type": "builtin", name: "error" },
     { "import-type": "builtin", name: "srcloc" },
     { "import-type": "builtin", name: "contracts" },
+    { "import-type": "builtin", name: "string-dict" },
     // skipping checker
     { "import-type": "builtin", name: "error-display" },
     { "import-type": "builtin", name: "valueskeleton" }
   ],
   provides: {},
   nativeRequires: [],
-  theModule: function(runtime, namespace, uri, L, Se, O, E, EQ, ERR, S, CON, /* CH, */ ED, VS) {
+  theModule: function(runtime, namespace, uri, L, Se, O, E, EQ, ERR, S, CON, SDict, /* CH, */ ED, VS) {
     var gf = runtime.getField;
     L = gf(L, "values");
     Se = gf(Se, "values");
@@ -24,6 +25,7 @@
     ERR = gf(ERR, "values");
     S = gf(S, "values");
     CON = gf(CON, "values");
+    SDict = gf(SDict, "values");
     ED = gf(ED, "values");
     VS = gf(VS, "values");
     var link = gf(L, "link");
@@ -86,6 +88,30 @@
     function isTestResult(val) { return runtime.unwrap(runtime.getField(CH, "TestResult").app(val)); }
     var checkTestResult = runtime.makeCheckType(isTestResult, "TestResult");
 */
+
+    var sDictMakeMutableStringDict = gf(SDict, 'make-mutable-string-dict');
+    var sDictIsHash = gf(SDict, 'is-mutable-string-dict');
+
+    function _patch_make_hash() {
+      return sDictMakeMutableStringDict.app();
+    }
+
+    function _patch_hash_p(val) {
+      return sDictIsHash.app(val);
+    }
+
+    function _patch_hash_ref(hashTable, key, defaultResult) {
+      if (runtime.unwrap(runtime.getField(hashTable, "has-key-now").app(key))) {
+        return runtime.unwrap(runtime.getField(hashTable, "get-value-now").app(key));
+      } else {
+        return defaultResult;
+      }
+    }
+
+    function _patch_hash_set(hashTable, key, value) {
+      runtime.getField(hashTable, "set-now").app(key, value);
+      return runtime.namespace.get("nothing");
+    }
 
     function isErrorDisplay(val) { return runtime.unwrap(runtime.getField(ED, "ErrorDisplay").app(val)); }
     var checkErrorDisplay = runtime.makeCheckType(isErrorDisplay, "ErrorDisplay");
@@ -299,7 +325,7 @@
       checkSrcloc(objloc);
       raise(err("update-non-obj")(loc, objval, objloc));
     }
-    
+
     function throwUpdateFrozenRef(loc, objval, objloc, fieldname, fieldloc) {
       runtime.checkPyretVal(objval);
       checkSrcloc(loc);
@@ -308,7 +334,7 @@
       checkSrcloc(fieldloc);
       raise(err("update-frozen-ref")(loc, objval, objloc, fieldname, fieldloc));
     }
-    
+
     function throwUpdateNonRef(loc, objval, objloc, fieldname, fieldloc) {
       runtime.checkPyretVal(objval);
       checkSrcloc(loc);
@@ -317,7 +343,7 @@
       checkSrcloc(fieldloc);
       raise(err("update-non-ref")(loc, objval, objloc, fieldname, fieldloc));
     }
-    
+
     function throwUpdateNonExistentField(loc, objval, objloc, fieldname, fieldloc) {
       runtime.checkPyretVal(objval);
       checkSrcloc(loc);
@@ -326,7 +352,7 @@
       checkSrcloc(fieldloc);
       raise(err("update-non-existent-field")(loc, objval, objloc, fieldname, fieldloc));
     }
-  
+
     function throwUninitializedId(loc, name) {
       checkSrcloc(loc);
       runtime.checkString(name);
@@ -453,6 +479,12 @@
     function throwParseErrorBadCheckOper(loc) {
       raise(err("parse-error-bad-check-operator")(loc));
     }
+    function makePatchParseException(errMsg, errArgsList, errLocsList) {
+      // does this need to use raise like the rest? --ds26gte
+      console.log('doing makePatchParseException', errMsg, errArgsList, errLocsList);
+      return runtime.makePyretFailException(err("patch-parse-error")(errMsg,
+        errArgsList, errLocsList));
+    }
 
     function throwModuleLoadFailureL(names) {
       raise(makeModuleLoadFailureL(names));
@@ -467,7 +499,7 @@
       runtime.checkPyretVal(value);
       return contract("record-fields-fail")(value, failures);
     }
-  
+
     function makeTupleAnnsFail(value, failures) {
       return contract("tuple-anns-fail")(value, failures);
     }
@@ -597,6 +629,8 @@
       throwParseErrorBadOper: throwParseErrorBadOper,
       throwParseErrorBadCheckOper: throwParseErrorBadCheckOper,
 
+      makePatchParseException: makePatchParseException,
+
       makeRecordFieldsFail: makeRecordFieldsFail,
       makeTupleAnnsFail: makeTupleAnnsFail,
       makeFieldFailure: makeFieldFailure,
@@ -663,6 +697,11 @@
       isList: isList,
       isLink: isLink,
       isEmpty : isEmpty,
+
+      _patch_make_hash: _patch_make_hash,
+      _patch_hash_p: _patch_hash_p,
+      _patch_hash_ref: _patch_hash_ref,
+      _patch_hash_set: _patch_hash_set,
 
       isErrorDisplay: isErrorDisplay,
       checkErrorDisplay: checkErrorDisplay,

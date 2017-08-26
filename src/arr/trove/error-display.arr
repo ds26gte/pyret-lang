@@ -23,7 +23,6 @@ data ErrorDisplay:
   | highlight(contents :: ErrorDisplay, locs #|:: List<S.Srcloc>|#, color :: Number)
 end
 
-
 locs = {
   make:  lam(arr):           raw-array-to-list(arr) end,
   make0: lam():              raw-array-to-list([raw-array: ]) end,
@@ -86,6 +85,16 @@ opt = {
   make5: lam(a, b, c, d, e): optional(v-sequence(raw-array-to-list([raw-array: a, b, c, d, e]))) end
 }
 
+list = {
+  make:  lam(arr):           raw-array-to-list(arr) end,
+  make0: lam():              raw-array-to-list([raw-array: ]) end,
+  make1: lam(a):             raw-array-to-list([raw-array: a]) end,
+  make2: lam(a, b):          raw-array-to-list([raw-array: a, b]) end,
+  make3: lam(a, b, c):       raw-array-to-list([raw-array: a, b, c]) end,
+  make4: lam(a, b, c, d):    raw-array-to-list([raw-array: a, b, c, d]) end,
+  make5: lam(a, b, c, d, e): raw-array-to-list([raw-array: a, b, c, d, e]) end,
+}
+
 fun ed-args(n):
   [sequence:
     embed(n),
@@ -138,4 +147,12 @@ fun ed-nth(n):
         | otherwise:            "ᵗʰ"
       end
     end)
+end
+
+fun map3(f, la, lb, lc):
+  if la.length() == 0:
+    la
+  else:
+    map3(f, la.rest, lb.rest, lc.rest).push(f(la.first, lb.first, lc.first))
+  end
 end

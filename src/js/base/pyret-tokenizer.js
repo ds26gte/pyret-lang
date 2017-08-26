@@ -6,7 +6,7 @@ define("pyret-base/js/pyret-tokenizer", ["jglr/jglr"], function(E) {
   const GenTokenizer = E.Tokenizer;
   const STICKY_REGEXP = E.STICKY_REGEXP;
 
-  const escapes = new RegExp("^(.*?)\\\\([\\\\\"\'nrt]|u[0-9A-Fa-f]{1,4}|x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|[\r\n]{1,2})");
+  const escapes = new RegExp("^(.*?)\\\\([\\\\\"\'bnrt]|u[0-9A-Fa-f]{1,4}|x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|[\r\n]{1,2})");
   function fixEscapes(s) {
     var ret = "";
     var match = escapes.exec(s);
@@ -18,6 +18,7 @@ define("pyret-base/js/pyret-tokenizer", ["jglr/jglr"], function(E) {
       else if (esc === "\r") {}
       else if (esc === "\n\r") {}
       else if (esc === "\r\n") {}
+      else if (esc === "b") { ret += "\b"; }
       else if (esc === "n") { ret += "\n"; }
       else if (esc === "r") { ret += "\r"; }
       else if (esc === "t") { ret += "\t"; }
@@ -112,20 +113,90 @@ define("pyret-base/js/pyret-tokenizer", ["jglr/jglr"], function(E) {
   function anyOf(strs) { return "(?:" + strs.join("|") + ")(?![-_a-zA-Z0-9])"; }
   function op(str) { return "^\\s+" + str + ws_after; }
 
-  const name = new RegExp("^[_a-zA-Z][_a-zA-Z0-9]*(?:-+[_a-zA-Z0-9]+)*", STICKY_REGEXP);
+  //const name = new RegExp("^[_a-zA-Z][_a-zA-Z0-9]*(?:-+[_a-zA-Z0-9]+)*", STICKY_REGEXP);
+  const extended_letter = // letters only from
+    "_a-zA-Z" +        // ascii
+    "\u00C0-\u00D6" + // latin1 supplement
+    "\u00D8-\u00F6" +
+    "\u00F8-\u00FF" +
+    "\u0100-\u0148" + // latin extended A
+    "\u014A-\u017F" +
+    "\u0180-\u01BF" + // latin extended B
+    "\u01CD-\u024F" +
+    "\u0393-\u0394" + // greek (used in math and don't look latin)
+    "\u0398\u039b\u039e\u03a0\u03a3\u03a6" +
+    "\u03a8-\u03a9" +
+    "\u03b1-\u03b8" +
+    "\u03ba-\u03be" +
+    "\u03c0-\u03c4" +
+    "\u03c6-\u03c9" +
+    "\u03d1-\u03d2";
 
-  const unsigned_decimal_part = "[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?";
-  const unsigned_rational_part = "[0-9]+/[0-9]+"; 
+  const name = new RegExp("^[" + extended_letter + "]" +
+                          "[" + extended_letter + "0-9]*" +
+                          "(?:-+[" + extended_letter + "0-9]+)*", STICKY_REGEXP);
 
-  const number = new RegExp("^[-+]?" + unsigned_decimal_part, STICKY_REGEXP);
+  //const number = new RegExp("^[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
 
-  const badNumber = new RegExp("^~?[+-]?\\.[0-9]+(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
+  //const badNumber = new RegExp("^~?[+-]?\\.[0-9]+(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
+  const badNumber = new RegExp("^[+-]?\\.[0-9]+(?:[eE][-+]?[0-9]+)?", STICKY_REGEXP);
 
-  const roughnum = new RegExp("^~[-+]?"  + unsigned_decimal_part, STICKY_REGEXP);
+  // number
+
+  const unsigned_decimal_part = "[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?"
+  //
+  //const roughnum = new RegExp("^~[-+]?"  + unsigned_decimal_part, STICKY_REGEXP);
+
+  const unsigned_rational_part = "[0-9]+/[0-9]+"
+
+
+  const unsigned_mixedfrac_part = "[0-9]+[&]" + unsigned_rational_part;
+
+  const unsigned_rational_or_decimal_part = "(?:" + unsigned_rational_part + "|" +
+    unsigned_decimal_part + ")"
+
+  const unsigned_mixedfrac_or_decimal_part = '(?:' + unsigned_mixedfrac_part + '|' +
+    unsigned_decimal_part + ')';
+
+  const unsigned_mixedfrac_rational_or_decimal_part = "(?:" +
+    unsigned_mixedfrac_part + "|" +
+    unsigned_rational_part + "|" +
+    unsigned_decimal_part + ")";
+
+  const mixedfrac_or_decimal_string = "^[-+]?" + unsigned_mixedfrac_or_decimal_part;
+
+  const rough_mixedfrac_or_decimal_string = "^~[-+]?" + unsigned_mixedfrac_or_decimal_part;
+
+  const real_unsigned_rect_complexrational_part = unsigned_rational_or_decimal_part +
+    "[-+]" + unsigned_rational_or_decimal_part + "[iIjJ]"
+
+  const mod_unsigned_polar_complexrational_part = unsigned_rational_or_decimal_part +
+    "@[-+]?" + unsigned_rational_or_decimal_part
+
+  const complexrational_string = "^[-+]?(?:" +
+    real_unsigned_rect_complexrational_part + "|" +
+    mod_unsigned_polar_complexrational_part + ")"
+
+  const real_unsigned_rect_complexroughnum_part = unsigned_decimal_part +
+    "[-+]" + unsigned_decimal_part + "[iIjJ]"
+
+  const mod_unsigned_polar_complexroughnum_part = unsigned_decimal_part +
+    "@[-+]?" + unsigned_decimal_part
+
+  const complexroughnum_string = "^~[-+]?(?:" +
+    real_unsigned_rect_complexroughnum_part + "|" +
+    mod_unsigned_polar_complexroughnum_part + ")"
 
   const rational = new RegExp("^[-+]?" + unsigned_rational_part, STICKY_REGEXP);
 
   const roughrational = new RegExp("^~[-+]?" + unsigned_rational_part, STICKY_REGEXP);
+
+  const number = new RegExp(complexrational_string + "|" +
+                            mixedfrac_or_decimal_string + "|" +
+                            complexroughnum_string + "|" +
+                            rough_mixedfrac_or_decimal_string, STICKY_REGEXP)
+
+  // end number
 
   const parenparen = new RegExp("^\\((?=\\()", STICKY_REGEXP); // NOTE: Don't include the following paren
   const spaceparen = new RegExp("^\\s+\\(", STICKY_REGEXP);
@@ -168,7 +239,6 @@ define("pyret-base/js/pyret-tokenizer", ["jglr/jglr"], function(E) {
   const opneq = new RegExp(op("<>"), STICKY_REGEXP);
   const oplt = new RegExp(op("<"), STICKY_REGEXP);
   const opgt = new RegExp(op(">"), STICKY_REGEXP);
-  
 
   const opsNoSpace = new RegExp("^(?:\\^|\\+|-|\\*|/|<=|>=|<=>|>=|==|=~|<>|<|>|<-)", STICKY_REGEXP);
 
@@ -197,7 +267,7 @@ define("pyret-base/js/pyret-tokenizer", ["jglr/jglr"], function(E) {
                "\\\\[01234567]{1,3}" +
                "|\\\\x[0-9a-fA-F]{1,2}" +
                "|\\\\u[0-9a-fA-f]{1,4}" +
-               "|\\\\[\\\\nrt\"\'`]" +
+               "|\\\\[\\\\bnrt\"\'`]" +
                "|`{1,2}(?!`)" +
                "|[^`\\\\])*```", STICKY_REGEXP); // NOTE: Allow unescaped newlines
   const dquot_str =
@@ -205,14 +275,14 @@ define("pyret-base/js/pyret-tokenizer", ["jglr/jglr"], function(E) {
                "\\\\[01234567]{1,3}" +
                "|\\\\x[0-9a-fA-F]{1,2}" +
                "|\\\\u[0-9a-fA-f]{1,4}" +
-               "|\\\\[\\\\nrt\"\']" +
+               "|\\\\[\\\\bnrt\"\']" +
                "|[^\\\\\"\n\r])*\"", STICKY_REGEXP);
   const squot_str =
     new RegExp("^\'(?:" +
                "\\\\[01234567]{1,3}" +
                "|\\\\x[0-9a-fA-F]{1,2}" +
                "|\\\\u[0-9a-fA-f]{1,4}" +
-               "|\\\\[\\\\nrt\"\']" +
+               "|\\\\[\\\\bnrt\"\']" +
                "|[^\\\\\'\n\r])*\'", STICKY_REGEXP);
 
   const unterminated_string = new RegExp("^(?:[\"\']|```).*", STICKY_REGEXP);
@@ -301,7 +371,7 @@ define("pyret-base/js/pyret-tokenizer", ["jglr/jglr"], function(E) {
     {name: "RATIONAL", val: rational},
     {name: "ROUGHRATIONAL", val: roughrational},
     {name: "NUMBER", val: number},
-    {name: "NUMBER", val: roughnum},
+    //{name: "NUMBER", val: roughnum},
     {name: "LONG_STRING", val: tquot_str},
     {name: "STRING", val: dquot_str},
     {name: "STRING", val: squot_str},

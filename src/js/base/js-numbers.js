@@ -134,24 +134,40 @@ define("pyret-base/js/js-numbers", function() {
         y = liftFixnumInteger(y, x);
       }
 
-      if (x instanceof Roughnum) {
-        // y is rough, rat or bigint
+      if (x instanceof ComplexRoughnum) {
+        if (!(y instanceof ComplexRoughnum)) {
+          y = y.toComplexRoughnum();
+        }
+      } else if (y instanceof ComplexRoughnum) {
+        x = x.toComplexRoughnum();
+      } else if (x instanceof ComplexRational) {
+        if (!(y instanceof ComplexRational)) {
+          if (y instanceof Roughnum) {
+            x = x.toComplexRoughnum();
+            y = y.toComplexRoughnum();
+          } else {
+            y = y.toComplexRational();
+          }
+        }
+      } else if (y instanceof ComplexRational) {
+        if (x instanceof Roughnum) {
+          x = x.toComplexRoughnum();
+          y = y.toComplexRoughnum();
+        } else {
+          x = x.toComplexRational();
+        }
+      } else if (x instanceof Roughnum) {
         if (!(y instanceof Roughnum)) {
-          // y is rat or bigint
           y = y.toRoughnum(errbacks);
         }
       } else if (y instanceof Roughnum) {
-        // x is rat or bigint
-        x = x.toRoughnum(errbacks);
+          x = x.toRoughnum(errbacks);
       } else if (x instanceof Rational) {
-        // y is rat or bigint
         if (!(y instanceof Rational)) {
-          // y is bigint
-          y = new Rational(y, 1);
+          y = new Rational(y);
         }
       } else if (y instanceof Rational) {
-        // x is bigint
-        x = new Rational(x, 1);
+        x = new Rational(x);
       }
 
       return onBoxednums(x, y, errbacks);
@@ -179,9 +195,9 @@ define("pyret-base/js/js-numbers", function() {
         var factorToInt = Math.pow(10, match[2].length);
         var extraFactor = _integerGcd(factorToInt, afterDecimal);
         var multFactor = factorToInt / extraFactor;
-        return Rational.makeInstance(Math.round(x*multFactor), Math.round(factorToInt/extraFactor), errbacks);
+        return Rational.makeInstance(Math.round(x*multFactor), Math.round(factorToInt/extraFactor), undefined, errbacks);
       } else {
-        return Rational.makeInstance(x, 1, errbacks);
+        return Rational.makeInstance(x, 1, undefined, errbacks);
       }
 
     }
@@ -225,14 +241,35 @@ define("pyret-base/js/js-numbers", function() {
   // Lifts up fixnum integers to a boxed type.
 
   var liftFixnumInteger = function(x, other, errbacks) {
+    if (other instanceof ComplexRoughnum)
+      return new ComplexRoughnum(x, 0);
+    if (other instanceof ComplexRational)
+      return new ComplexRational(x, 0);
     if (other instanceof Roughnum)
       return new Roughnum(x, errbacks);
-    else if (other instanceof BigInteger)
-      return makeBignum(x);
-    else
+    if (other instanceof Rational)
       return new Rational(x, 1, errbacks);
+    if (other instanceof BigInteger)
+      return makeBignum(x);
+    return x; //deadcode
   };
 
+  // throwRuntimeError: string (pyretnum | undefined) (pyretnum | undefined) -> void
+  // Throws a runtime error with the given message string.
+  var throwRuntimeError = function(msg, x, y) {
+    Numbers['onThrowRuntimeError'](msg, x, y);
+  };
+
+  var setThrowRuntimeError = function(fn) {
+    throwRuntimeError = fn;
+  };
+
+  // onThrowRuntimeError: string (pyretnum | undefined) (pyretnum | undefined) -> void
+  // By default, will throw a new Error with the given message.
+  // Override Numbers['onThrowRuntimeError'] if you need to do something special.
+  var onThrowRuntimeError = function(msg, x, y) {
+    throw new Error(msg);
+  };
 
   // isPyretNumber: any -> boolean
   // Returns true if the thing is a pyretnum
@@ -240,21 +277,9 @@ define("pyret-base/js/js-numbers", function() {
     return (typeof(thing) === 'number'
             || (thing instanceof Rational ||
                 thing instanceof Roughnum ||
-                thing instanceof BigInteger));
-  };
-
-  // isRational: pyretnum -> boolean
-  var isRational = function(n) {
-    return (typeof(n) === 'number' ||
-            (isPyretNumber(n) && n.isRational()));
-  };
-
-  var isExact = isRational;
-
-  // isReal: pyretnum -> boolean
-  var isReal = function(n) {
-    return (typeof(n) === 'number' ||
-            (isPyretNumber(n) && n.isReal()));
+                thing instanceof BigInteger ||
+               thing instanceof ComplexRoughnum ||
+               thing instanceof ComplexRational));
   };
 
   // isInteger: pyretnum -> boolean
@@ -263,12 +288,39 @@ define("pyret-base/js/js-numbers", function() {
             (isPyretNumber(n) && n.isInteger()));
   };
 
+  // isRational: pyretnum -> boolean
+  var isRational = function(n) {
+    return (typeof(n) === 'number' ||
+            (isPyretNumber(n) && n.isRational()));
+  };
+
   var isRoughnum = function(n) {
     if (typeof(n) === 'number') {
       return false;
     } else {
       return (isPyretNumber(n) && n.isRoughnum());
     }
+  };
+
+  var isComplexRational = function(n) {
+    if (typeof(n) === 'number') { return true; }
+    return (isPyretNumber(n) && n.isComplexRational())
+  }
+
+  var isComplexRoughnum = function(n) {
+    if (typeof(n) === 'number') { return false; }
+    return (isPyretNumber(n) && n.isComplexRoughnum())
+  }
+
+  var isExact = function(n) {
+    return (typeof(n) === 'number' ||
+            (isPyretNumber(n) && n.isExact()));
+  }
+
+  // isReal: pyretnum -> boolean
+  var isReal = function(n) {
+    return (typeof(n) === 'number' ||
+            (isPyretNumber(n) && n.isReal()));
   };
 
   var isPositive = function(n) {
@@ -317,8 +369,6 @@ define("pyret-base/js/js-numbers", function() {
     return n.toRational(errbacks);
   };
 
-  var toExact = toRational;
-
   // toRoughnum: pyretnum -> pyretnum
 
   var toRoughnum = function(n, errbacks) {
@@ -326,6 +376,42 @@ define("pyret-base/js/js-numbers", function() {
       return Roughnum.makeInstance(n, errbacks);
     } else {
       return n.toRoughnum(errbacks);
+    }
+  };
+
+  var toComplexRational = function(n) {
+    if (typeof(n) === 'number') {
+      return ComplexRational.makeInstance(n);
+    }
+    return n.toComplexRational();
+  }
+
+  var toComplexRoughnum = function(n) {
+    if (typeof(n) === 'number') {
+      return ComplexRoughnum.makeInstance(n);
+    }
+    return n.toComplexRoughnum();
+  }
+
+  var toExact = toRational;
+
+  var toSchemeExact = function(n) {
+    if (typeof(n) === 'number') {
+      return Rational.makeInstance(n);
+    } else if (isReal(n)) {
+      return n.toRational();
+    } else {
+      return n.toComplexRational();
+    }
+  };
+
+  var toSchemeInexact = function(n) {
+    if (typeof(n) === 'number') {
+      return Roughnum.makeInstance(n);
+    } else if (isReal(n)) {
+      return n.toRoughnum();
+    } else {
+      return n.toComplexRoughnum();
     }
   };
 
@@ -457,7 +543,7 @@ define("pyret-base/js/js-numbers", function() {
       if (isOverflow(div)) {
         return (makeBignum(x)).divide(makeBignum(y), errbacks);
       } else if (Math.floor(div) !== div) {
-        return Rational.makeInstance(x, y, errbacks);
+        return Rational.makeInstance(x, y, undefined, errbacks);
       } else {
         return div;
       }
@@ -504,21 +590,40 @@ define("pyret-base/js/js-numbers", function() {
       return x.equals(y, errbacks);
     });
 
+  var schemeEquals = makeNumericBinop(
+    function(x, y, errbacks) {
+      return x === y;
+    },
+    function(x, y, errbacks) {
+      return x.schemeEquals(y, errbacks);
+    });
+
   var equalsAnyZero = function(x, errbacks) {
     if (typeof(x) === 'number') return x === 0;
     if (isRoughnum(x)) return x.n === 0;
+    if (isComplexRoughnum(x)) {
+      return (x.r === 0 &&  x.i === 0)
+    }
     return x.equals(0, errbacks);
   };
 
   // eqv: pyretnum pyretnum -> boolean
   var eqv = function(x, y, errbacks) {
-    if (x === y)
-      return true;
+    if (x === y) return true;
+    return equals(x, y, errbacks);
+    /*
     if (typeof(x) === 'number' && typeof(y) === 'number')
       return x === y;
     var ex = isRational(x), ey = isRational(y);
-    return (((ex && ey) || (!ex && !ey)) && equals(x, y, errbacks));
+    return (((ex && ey) || (!ex && !ey)) && equals(x, y));
+    */
   };
+
+  var exactlyEquals = function(x, y, errbacks) {
+    if (x === y) return true;
+    if (isExact(x) && isExact(y)) return equals(x, y, errbacks);
+    return false;
+  }
 
   // approxEqual: pyretnum pyretnum pyretnum -> boolean
   var approxEquals = function(x, y, delta, errbacks) {
@@ -646,27 +751,25 @@ define("pyret-base/js/js-numbers", function() {
     },
     {
       isXSpecialCase: function(x, errbacks) {
-        return eqv(x, 0, errbacks) || eqv(x, 1, errbacks);
+        // check diff between eqv and exactlyEquals -- ds26gte
+        return (exactlyEquals(x, 0) || exactlyEquals(x,1));
       },
       onXSpecialCase: function(x, y, errbacks) {
-        if (eqv(x, 0, errbacks)) {
-          if (eqv(y, 0, errbacks)) {
-            return 1;
-          } else if (lessThan(y, 0, errbacks)) {
+        if (exactlyEquals(x, 0)) {
+          if (exactlyEquals(y, 0)) return 1;
+          var yre = realPart(y), yim = imagPart(y);
+          if (lessThan(yre, 0, errbacks) || (exactlyEquals(yre, 0) && lessThan(yim, 0, errbacks)))
             errbacks.throwDivByZero("expt: division by zero");
-          } else {
-            return 0;
-          }
-        } else { // i.e., x is 1
-          return 1;
+          return 0;
         }
+        return 1;
       },
 
       isYSpecialCase: function(y, errbacks) {
-        return eqv(y, 0, errbacks) || lessThan(y, 0, errbacks);
+        return (exactlyEquals(y, 0) || isReal(y) && lessThan(y, 0, errbacks));
       },
       onYSpecialCase: function(x, y, errbacks) {
-        if (eqv(y, 0, errbacks)) {
+        if (exactlyEquals(y, 0)) {
           return 1;
         } else { // i.e., y is negative
           return expt(divide(1, x, errbacks), negate(y, errbacks), errbacks);
@@ -676,7 +779,7 @@ define("pyret-base/js/js-numbers", function() {
 
   // exp: pyretnum -> pyretnum
   var exp = function(n, errbacks) {
-    if ( eqv(n, 0, errbacks) ) {
+    if ( exactlyEquals(n, 0) ) {
       return 1;
     }
     if (typeof(n) === 'number') {
@@ -748,15 +851,16 @@ define("pyret-base/js/js-numbers", function() {
 
   // sqrt: pyretnum -> pyretnum
   var sqrt = function(n, errbacks) {
-    if (lessThan(n, 0, errbacks)) {
-      errbacks.throwSqrtNegative('sqrt: negative argument ' + n);
-    }
     if (typeof(n) === 'number') {
-      var result = Math.sqrt(n);
-      if (Math.floor(result) === result) {
-        return result;
+      if (n >= 0) {
+        var result = Math.sqrt(n);
+        if (Math.floor(result) === result) {
+          return result;
+        } else {
+          return Roughnum.makeInstance(result, errbacks);
+        }
       } else {
-        return Roughnum.makeInstance(result, errbacks);
+        return makeComplexNumber(0, sqrt(-n));
       }
     }
     return n.sqrt(errbacks);
@@ -797,26 +901,57 @@ define("pyret-base/js/js-numbers", function() {
     return n.roundEven(errbacks);
   };
 
+  var realPart = function(n) {
+    if (typeof(n) === 'number')  return n;
+    return n.realPart();
+  }
+
+  var imagPart = function(n) {
+    if (typeof(n) === 'number')  return 0;
+    return n.imagPart();
+  }
+
+  var magnitude = function(n) {
+    if (typeof(n) === 'number')  return Math.abs(n);
+    return n.magnitude();
+  }
+
+  var angle = function(n) {
+    if (typeof(n) === 'number') {
+      if (n > 0) { return 0 }
+      return Roughnum.pi
+    }
+    return n.angle()
+  }
+
+  var conjugate = function(n) {
+    if (typeof(n) === 'number') { return n }
+    return n.conjugate()
+  }
+
   // NB: all of these trig-gy generic functions should now return roughnum rather than float
   // (except for an arg of 0, etc)
 
   // log: pyretnum -> pyretnum
   var log = function(n, errbacks) {
-    if ( eqv(n, 1, errbacks) ) {
+    if ( exactlyEquals(n, 1) ) {
       return 0;
     }
-    if (lessThanOrEqual(n, 0, errbacks)) {
-      errbacks.throwLogNonPositive('log: non-positive argument ' + n);
-    }
     if (typeof(n) === 'number') {
-      return Roughnum.makeInstance(Math.log(n), errbacks);
+      if (n === 0) {
+        throwRuntimeError('log: zero argument');
+      }
+      if (n > 0) {
+        return Roughnum.makeInstance(Math.log(n), errbacks);
+      }
+      return makeComplexNumber(n).log();
     }
     return n.log(errbacks);
   };
 
   // tan: pyretnum -> pyretnum
   var tan = function(n, errbacks) {
-    if (eqv(n, 0, errbacks)) { return 0; }
+    if (exactlyEquals(n, 0)) { return 0; }
     if (typeof(n) === 'number') {
       return Roughnum.makeInstance(Math.tan(n), errbacks);
     }
@@ -825,7 +960,7 @@ define("pyret-base/js/js-numbers", function() {
 
   // atan: pyretnum -> pyretnum
   var atan = function(n, errbacks) {
-    if (eqv(n, 0, errbacks)) { return 0; }
+    if (exactlyEquals(n, 0)) { return 0; }
     if (typeof(n) === 'number') {
       return Roughnum.makeInstance(Math.atan(n), errbacks);
     }
@@ -861,7 +996,7 @@ define("pyret-base/js/js-numbers", function() {
 
   // cos: pyretnum -> pyretnum
   var cos = function(n, errbacks) {
-    if (eqv(n, 0, errbacks)) { return 1; }
+    if (exactlyEquals(n, 0)) { return 1; }
     if (typeof(n) === 'number') {
       return Roughnum.makeInstance(Math.cos(n), errbacks);
     }
@@ -870,7 +1005,7 @@ define("pyret-base/js/js-numbers", function() {
 
   // sin: pyretnum -> pyretnum
   var sin = function(n, errbacks) {
-    if (eqv(n, 0, errbacks)) { return 0; }
+    if (exactlyEquals(n, 0)) { return 0; }
     if (typeof(n) === 'number') {
       return Roughnum.makeInstance(Math.sin(n), errbacks);
     }
@@ -879,24 +1014,26 @@ define("pyret-base/js/js-numbers", function() {
 
   // acos: pyretnum -> pyretnum
   var acos = function(n, errbacks) {
-    if (eqv(n, 1, errbacks)) { return 0; }
-    if (lessThan(n, -1, errbacks) || greaterThan(n, 1, errbacks)) {
-      errbacks.throwDomainError('acos: out of domain argument ' + n);
-    }
+    if (exactlyEquals(n, 1)) { return 0; }
     if (typeof(n) === 'number') {
-      return Roughnum.makeInstance(Math.acos(n), errbacks);
+      if (n >= -1 && n <= 1) {
+        return Roughnum.makeInstance(Math.acos(n), errbacks);
+      } else {
+        return makeComplexNumber(n).acos();
+      }
     }
     return n.acos(errbacks);
   };
 
   // asin: pyretnum -> pyretnum
   var asin = function(n, errbacks) {
-    if (eqv(n, 0, errbacks)) { return 0; }
-    if (lessThan(n, -1, errbacks) || greaterThan(n, 1, errbacks)) {
-      errbacks.throwDomainError('asin: out of domain argument ' + n);
-    }
+    if (exactlyEquals(n, 0)) { return 0; }
     if (typeof(n) === 'number') {
-      return Roughnum.makeInstance(Math.asin(n), errbacks);
+      if (n >= -1 && n <= 1) {
+        return Roughnum.makeInstance(Math.asin(n), errbacks);
+      } else {
+        return makeComplexNumber(n).asin();
+      }
     }
     return n.asin(errbacks);
   };
@@ -994,6 +1131,14 @@ define("pyret-base/js/js-numbers", function() {
     }
   };
 
+  var toSchemeString = function(n, errbacks) {
+    if (typeof(n) === 'number') {
+      return n.toString();
+    } else {
+      return n.toSchemeString();
+    }
+  };
+
   //////////////////////////////////////////////////////////////////////
 
   // Helpers
@@ -1055,6 +1200,12 @@ define("pyret-base/js/js-numbers", function() {
   var makeIntegerBinop = function(onFixnums, onBignums, options) {
     options = options || {};
     return (function(m, n) {
+      if (m instanceof ComplexRational) {
+        m = m.r;
+      }
+      if (n instanceof ComplexRational) {
+        n = n.r;
+      }
       if (m instanceof Rational) {
         m = numerator(m);
       }
@@ -1087,6 +1238,9 @@ define("pyret-base/js/js-numbers", function() {
   var makeIntegerUnOp = function(onFixnums, onBignums, options, errbacks) {
     options = options || {};
     return (function(m) {
+      if (m instanceof ComplexRational) {
+        m = m.r;
+      }
       if (m instanceof Rational) {
         m = numerator(m);
       }
@@ -1429,15 +1583,21 @@ define("pyret-base/js/js-numbers", function() {
   // Rationals
 
   var Rational = function(n, d) {
+    if (!d) { d = 1; }
     this.n = n;
     this.d = d;
   };
 
-  Rational.makeInstance = function(n, d, errbacks) {
+  // Rational.makeInstance takes third 'i' argument!
+  Rational.makeInstance = function(n, d, i, errbacks) {
     if (n === undefined)
       errbacks.throwUndefinedValue("n undefined", n, d);
 
     if (d === undefined) { d = 1; }
+
+    if (_integerIsZero(d)) {
+      throwRuntimeError("can't make rational with denominator zero")
+    }
 
     if (_integerLessThan(d, 0)) {
       n = negate(n, errbacks);
@@ -1447,6 +1607,13 @@ define("pyret-base/js/js-numbers", function() {
     var divisor = _integerGcd(abs(n, errbacks), abs(d, errbacks));
     n = _integerQuotient(n, divisor);
     d = _integerQuotient(d, divisor);
+
+    if (i !== undefined) {
+      if (_integerLessThan(i, 0)) {
+        n = negate(n);
+      }
+      n = _integerAdd(n, _integerMultiply(i, d));
+    }
 
     // Optimization: if we can get around construction the rational
     // in favor of just returning n, do it:
@@ -1465,6 +1632,8 @@ define("pyret-base/js/js-numbers", function() {
     }
   };
 
+  Rational.prototype.toSchemeString = Rational.prototype.toString;
+
   Rational.prototype.isFinite = function() {
     return true;
   };
@@ -1475,23 +1644,34 @@ define("pyret-base/js/js-numbers", function() {
             _integerEquals(this.d, other.d));
   };
 
+  Rational.prototype.schemeEquals = Rational.prototype.equals;
+
   Rational.prototype.isInteger = function() {
     return _integerIsOne(this.d);
   };
 
-  Rational.prototype.isRational = function() {
+  Rational.prototype.isExact = function() {
     return true;
-  };
-
-  Rational.prototype.isExact = Rational.prototype.isRational;
+  }
 
   Rational.prototype.isReal = function() {
     return true;
   };
 
+  Rational.prototype.isRational = function() {
+    return true;
+  };
   Rational.prototype.isRoughnum = function() {
     return false;
   };
+
+  Rational.prototype.isComplexRational = function() {
+    return true;
+  }
+
+  Rational.prototype.isComplexRoughnum = function() {
+    return false;
+  }
 
   Rational.prototype.isPositive = function() {
     // don't care about this.d
@@ -1510,25 +1690,48 @@ define("pyret-base/js/js-numbers", function() {
     return this.n <= 0;
   };
 
+  Rational.prototype.realPart = function() {
+    return this
+  }
+
+  Rational.prototype.imagPart = function() {
+    return 0;
+  }
+
+  Rational.prototype.magnitude = function() {
+    return this
+  }
+
+  Rational.prototype.angle = function() {
+    if (_integerIsZero(this.n) || _integerGreaterThan(this.n, 0))
+      return 0;
+    else
+      return Roughnum.pi;
+  }
+
+  Rational.prototype.conjugate = function() {
+    return this
+  }
+
   Rational.prototype.add = function(other, errbacks) {
     return Rational.makeInstance(_integerAdd(_integerMultiply(this.n, other.d),
                                              _integerMultiply(this.d, other.n)),
-                                 _integerMultiply(this.d, other.d), errbacks);
+                                 _integerMultiply(this.d, other.d), undefined, errbacks);
   };
 
   Rational.prototype.subtract = function(other, errbacks) {
     return Rational.makeInstance(_integerSubtract(_integerMultiply(this.n, other.d),
                                                   _integerMultiply(this.d, other.n)),
-                                 _integerMultiply(this.d, other.d), errbacks);
+                                 _integerMultiply(this.d, other.d), undefined, errbacks);
   };
 
   Rational.prototype.negate = function(errbacks) {
-    return Rational.makeInstance(negate(this.n, errbacks), this.d, errbacks)
+    return Rational.makeInstance(negate(this.n, errbacks), this.d, undefined, errbacks)
   };
 
   Rational.prototype.multiply = function(other, errbacks) {
     return Rational.makeInstance(_integerMultiply(this.n, other.n),
-                                 _integerMultiply(this.d, other.d), errbacks);
+                                 _integerMultiply(this.d, other.d), undefined, errbacks);
   };
 
   Rational.prototype.divide = function(other, errbacks) {
@@ -1536,7 +1739,7 @@ define("pyret-base/js/js-numbers", function() {
       errbacks.throwDivByZero("/: division by zero", this, other);
     }
     return Rational.makeInstance(_integerMultiply(this.n, other.d),
-                                 _integerMultiply(this.d, other.n), errbacks);
+                                 _integerMultiply(this.d, other.n), undefined, errbacks);
   };
 
   Rational.prototype.toRational = function() {
@@ -1553,6 +1756,14 @@ define("pyret-base/js/js-numbers", function() {
   Rational.prototype.toRoughnum = function(errbacks) {
     return Roughnum.makeInstance(this.toFixnum(), errbacks);
   };
+
+  Rational.prototype.toComplexRoughnum = function() {
+    return ComplexRoughnum.makeInstance(this.toFixnum());
+  }
+
+  Rational.prototype.toComplexRational = function() {
+    return ComplexRational.makeInstance(this);
+  }
 
   Rational.prototype.numerator = function() {
     return this.n;
@@ -1572,7 +1783,7 @@ define("pyret-base/js/js-numbers", function() {
                                       _integerMultiply(this.d, other.n));
   };
 
-  Rational.prototype.lessThan = function(other, errbacks) {
+  Rational.prototype.lessThan = function(other) {
     return _integerLessThan(_integerMultiply(this.n, other.d),
                             _integerMultiply(this.d, other.n));
   };
@@ -1588,20 +1799,24 @@ define("pyret-base/js/js-numbers", function() {
   };
 
   Rational.prototype.sqrt = function(errbacks) {
-    var newN = sqrt(this.n);
-    var newD = sqrt(this.d);
-    if (isRational(newN) && isRational(newD) &&
-        equals(floor(newN), newN) &&
-        equals(floor(newD), newD)) {
-      return Rational.makeInstance(newN, newD, errbacks);
+    if (this.isNonNegative()) {
+      var newN = sqrt(this.n);
+      var newD = sqrt(this.d);
+      if (isRational(newN) && isRational(newD) &&
+          equals(floor(newN), newN) &&
+            equals(floor(newD), newD)) {
+        return Rational.makeInstance(newN, newD, undefined, errbacks);
+      } else {
+        return divide(newN, newD, errbacks);
+      }
     } else {
-      return divide(newN, newD, errbacks);
+      return timesI(this.negate().sqrt());
     }
   };
 
   Rational.prototype.abs = function(errbacks) {
     return Rational.makeInstance(abs(this.n, errbacks),
-                                 this.d, errbacks);
+                                 this.d, undefined, errbacks);
   };
 
   Rational.prototype.floor = function(errbacks) {
@@ -1649,10 +1864,10 @@ define("pyret-base/js/js-numbers", function() {
 
   Rational.prototype.roundEven = function(errbacks) {
     // rounds half-integers to even
-    var halfintp = equals(this.d, 2, errbacks);
+    var halfintp = equals(this.d, 2);
     var negativep = _integerLessThan(this.n, 0);
     var n = this.n;
-    if (negativep) n = negate(n, errbacks);
+    if (negativep) n = negate(n);
     var quo = _integerQuotient(n, this.d);
     if (halfintp) {
       if (_integerIsOne(_integerModulo(quo, 2)))
@@ -1737,7 +1952,7 @@ define("pyret-base/js/js-numbers", function() {
       if (isRational(newN) && isRational(newD) &&
           equals(floor(newN), newN, errbacks) &&
           equals(floor(newD), newD, errbacks)) {
-        return Rational.makeInstance(newN, newD, errbacks);
+        return Rational.makeInstance(newN, newD, undefined, errbacks);
       } else {
         return divide(newN, newD, errbacks);
      }
@@ -1789,6 +2004,8 @@ define("pyret-base/js/js-numbers", function() {
     return new Roughnum(n, errbacks);
   };
 
+  Roughnum.pi = Roughnum.makeInstance(Math.PI);
+
   Roughnum.prototype.isFinite = function() {
     //actually always true, as we don't store overflows
     return (isFinite(this.n));
@@ -1809,8 +2026,17 @@ define("pyret-base/js/js-numbers", function() {
     return '~' + this.n.toString();
   };
 
+  Roughnum.prototype.toSchemeString = function() {
+    return '#i' + this.n.toString();
+  };
+
   Roughnum.prototype.equals = function(other, errbacks) {
     errbacks.throwIncomparableValues("roughnums cannot be compared for equality");
+  };
+
+  Roughnum.prototype.schemeEquals = function(other, errbacks) {
+    return (other instanceof Roughnum &&
+      this.n === other.n);
   };
 
   Roughnum.prototype.isRational = function() {
@@ -1831,6 +2057,14 @@ define("pyret-base/js/js-numbers", function() {
     return true;
   };
 
+  Roughnum.prototype.isComplexRational = function() {
+    return false;
+  }
+
+  Roughnum.prototype.isComplexRoughnum = function() {
+    return true;
+  }
+
   Roughnum.prototype.isPositive = function() {
     return this.n > 0;
   };
@@ -1846,6 +2080,27 @@ define("pyret-base/js/js-numbers", function() {
   Roughnum.prototype.isNonPositive = function() {
     return this.n <= 0;
   };
+
+  Roughnum.prototype.realPart = function() {
+    return this
+  }
+
+  Roughnum.prototype.imagPart = function() {
+    return 0;
+  }
+
+  Roughnum.prototype.magnitude = function() {
+    return this
+  }
+
+  Roughnum.prototype.angle = function() {
+    if (this.isNegative) { return 0 }
+    return Roughnum.pi
+  }
+
+  Roughnum.prototype.conjugate = function() {
+    return this
+  }
 
   Roughnum.prototype.add = function(other, errbacks) {
     return Roughnum.makeInstance(this.n + other.n, errbacks);
@@ -1869,6 +2124,14 @@ define("pyret-base/js/js-numbers", function() {
 
   Roughnum.prototype.toFixnum = function() {
     return this.n;
+  };
+
+  Roughnum.prototype.toComplexRoughnum = function() {
+    return ComplexRoughnum.makeInstance(this.n);
+  };
+
+  Roughnum.prototype.toComplexRational = function() {
+    return ComplexRational.makeInstance(fromString(this.n.toString()));
   };
 
   Roughnum.prototype.toRoughnum = function(errbacks) {
@@ -1958,7 +2221,11 @@ define("pyret-base/js/js-numbers", function() {
   };
 
   Roughnum.prototype.sqrt = function(errbacks) {
-    return Roughnum.makeInstance(Math.sqrt(this.n), errbacks);
+    if (this.n >= 0) {
+      return Roughnum.makeInstance(Math.sqrt(this.n), errbacks);
+    } else {
+      return timesI(Roughnum.makeInstance(Math.sqrt(-this.n), errbacks));
+    }
   };
 
   Roughnum.prototype.abs = function(errbacks) {
@@ -1985,7 +2252,11 @@ define("pyret-base/js/js-numbers", function() {
   };
 
   Roughnum.prototype.sin = function(errbacks){
-    return Roughnum.makeInstance(Math.sin(this.n), errbacks);
+    if ((this.n % Math.PI) === 0) {
+      return 0
+    } else {
+      return Roughnum.makeInstance(Math.sin(this.n), errbacks);
+    }
   };
 
   Roughnum.prototype.expt = function(a, errbacks){
@@ -2011,15 +2282,745 @@ define("pyret-base/js/js-numbers", function() {
     return asin(this.n, errbacks);
   };
 
+  // ComplexRational
+
+  var ComplexRational = function(r, i) {
+    if (!i) { i = 0; }
+    this.r = r;
+    this.i = i;
+  }
+
+  ComplexRational.makeInstance = function(a, b, polarP) {
+    if (b === undefined) b = 0;
+    if (!polarP) {
+      return new ComplexRational(a, b);
+    } else {
+      return new ComplexRational(
+        toRational(multiply(a, cos(b))), toRational(multiply(a, sin(b))));
+    }
+  }
+
+  var plusI = ComplexRational.makeInstance(0, 1);
+  var minusI = ComplexRational.makeInstance(0, -1);
+  var timesI = function(x) {
+    return multiply(x, plusI);
+  };
+
+  ComplexRational.prototype.toString = function() {
+    return this.r.toString() +
+      (isNegative(this.i) ? "" : "+") +
+      this.i.toString() + "i";
+  }
+
+  ComplexRational.prototype.toSchemeString = function() {
+    var result = this.r.toString();
+    if (!equalsAnyZero(this.i)) {
+      result += (isNegative(this.i) ? "" : "+") +
+                this.i.toString() + "i";
+    }
+    return result;
+  };
+
+  ComplexRational.prototype.toFixnum = function() {
+    if (!(this.isReal())) {
+      throwRuntimeError("toFixnum: expects real number");
+    }
+    return toFixnum(this.r);
+  }
+
+  ComplexRational.prototype.toRational = function() {
+    if (!(this.isReal())) {
+      throwRuntimeError("toRational: expects real number");
+    }
+    return toRational(this.r);
+  }
+
+  ComplexRational.prototype.toRoughnum = function() {
+    if (!(this.isReal())) {
+      throwRuntimeError("toRoughnum: expects real number");
+    }
+    return toRoughnum(this.r);
+  }
+
+  ComplexRational.prototype.toComplexRational = function() {
+    return this;
+  }
+
+  ComplexRational.prototype.toComplexRoughnum = function() {
+    return ComplexRoughnum.makeInstance(toFixnum(this.r), toFixnum(this.i));
+  }
+
+  ComplexRational.prototype.isInteger = function() {
+    return _integerIsZero(this.i) && isInteger(this.r);
+  }
+
+  ComplexRational.prototype.isRational = function() {
+    return eqv(this.i, 0);
+  }
+
+  ComplexRational.prototype.isRoughnum = function() {
+    return false;
+  }
+
+  ComplexRational.prototype.isComplexRational = function() {
+    return true
+  }
+
+  ComplexRational.prototype.isComplexRoughnum = function() {
+    return false
+  }
+
+  ComplexRational.prototype.isFinite = function() {
+    // no overflows
+    return true;
+  }
+
+  ComplexRational.prototype.isExact = function() {
+    return true;
+  }
+
+  ComplexRational.prototype.isReal = ComplexRational.prototype.isRational
+
+  ComplexRational.prototype.isPositive = function() {
+    throwRuntimeError("complex numbers can't be compared to 0");
+  }
+
+  ComplexRational.prototype.isNonNegative = function() {
+    throwRuntimeError("complex numbers can't be compared to 0");
+  }
+
+  ComplexRational.prototype.isNegative = function() {
+    throwRuntimeError("complex numbers can't be compared to 0");
+  }
+
+  ComplexRational.prototype.isNonPositive = function() {
+    throwRuntimeError("complex numbers can't be compared to 0");
+  }
+
+  ComplexRational.prototype.realPart = function() {
+    return this.r;
+  }
+
+  ComplexRational.prototype.imagPart = function() {
+    return this.i;
+  }
+
+  ComplexRational.prototype.magnitude = function() {
+    return sqrt(add(
+      multiply(this.r,this.r),
+      multiply(this.i,this.i)))
+  }
+
+  ComplexRational.prototype.angle = function() {
+    if (this.isReal()) { return angle(this.r) }
+    if (equals(0, this.r)) {
+      var halfpi = halve(Roughnum.pi)
+      return greaterThan(this.i, 0) ?
+        halfpi : negate(halfpi)
+    }
+    var tmp = atan(divide(abs(this.i), abs(this.r)))
+    if (greaterThan(this.r, 0)) {
+      return greaterThan(this.i,0) ?
+        tmp : negate(tmp)
+    }
+    return greaterThan(this.i, 0) ?
+      subtract(Roughnum.pi, tmp) : subtract(tmp, Roughnum.pi)
+  }
+
+  ComplexRational.prototype.conjugate = function() {
+    return ComplexRational.makeInstance(
+      this.r, negate(this.i))
+  }
+
+  ComplexRational.prototype.ceiling = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("ceiling: expects argument to be real number", this);
+    }
+    return ceiling(this.r);
+  }
+
+  ComplexRational.prototype.floor = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("floor: expects argument to be real number", this);
+    }
+    return floor(this.r);
+  }
+
+  ComplexRational.prototype.round = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("round: expects argument to be real number", this); //really?
+    }
+    return round(this.r);
+  }
+
+  ComplexRational.prototype.equals = function(other) {
+    return (equals(this.r, other.r) &&
+      equals(this.i, other.i))
+  }
+
+  ComplexRational.prototype.schemeEquals = ComplexRational.prototype.equals;
+
+  ComplexRational.prototype.greaterThan = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError(">: expects argument to be real numbers", this, other);
+    }
+    return greaterThan(this.r, other.r);
+  }
+
+  ComplexRational.prototype.greaterThanOrEqual = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError(">=: expects argument to be real numbers", this, other);
+    }
+    return greaterThanOrEqual(this.r, other.r);
+  }
+
+  ComplexRational.prototype.lessThan = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError("<: expects argument to be real numbers", this, other);
+    }
+    return lessThan(this.r, other.r);
+  }
+
+  ComplexRational.prototype.lessThanOrEqual = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError("<=: expects argument to be real numbers", this, other);
+    }
+    return lessThanOrEqual(this.r, other.r);
+  }
+
+  ComplexRational.prototype.greaterThan = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError(">: expects argument to be real numbers", this, other);
+    }
+    return greaterThan(this.r, other.r);
+  }
+
+  ComplexRational.prototype.abs = function() { // = magnitude?
+    if (!this.isReal()) {
+      throwRuntimeError("abs: expects argument to be real number", this);
+    }
+    return abs(this.r);
+  }
+
+  ComplexRational.prototype.numerator = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("numerator: expects argument to be real number", this);
+    }
+    return numerator(this.r);
+  }
+
+  ComplexRational.prototype.denominator = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("denominator: expects argument to be real number", this);
+    }
+    return denominator(this.r);
+  }
+
+  ComplexRational.prototype.add = function(other) {
+    return ComplexRational.makeInstance(add(this.r, other.r),
+                                        add(this.i, other.i));
+  }
+
+  ComplexRational.prototype.subtract = function(other) {
+    return ComplexRational.makeInstance(subtract(this.r, other.r),
+                                        subtract(this.i, other.i));
+  }
+
+  ComplexRational.prototype.negate = function() {
+    return ComplexRational.makeInstance(negate(this.r), negate(this.i));
+  }
+
+  ComplexRational.prototype.multiply = function(other) {
+    if (other.isReal()) {
+      return ComplexRational.makeInstance(
+        multiply(this.r, other.r),
+        multiply(this.i, other.r));
+    }
+    return ComplexRational.makeInstance(
+      subtract(multiply(this.r,other.r), multiply(this.i,other.i)),
+      add(multiply(this.r,other.i), multiply(this.i,other.r)));
+  }
+
+  ComplexRational.prototype.divide = function(other) {
+    if (other.isReal()) {
+      return ComplexRational.makeInstance(
+        divide(this.r, other.r),
+        divide(this.i, other.r))
+    }
+    return divide(
+      multiply(this, conjugate(other)),
+      add(multiply(other.r,other.r), multiply(other.i,other.i)))
+  }
+
+  ComplexRational.prototype.integerSqrt = function() {
+    if (this.isInteger()) {
+      return integerSqrt(this.r);
+    } else {
+      throwRuntimeError("integerSqrt: expects argument to be an integer", this);
+    }
+  }
+
+  ComplexRational.prototype.sqrt = function() {
+    if (this.isReal()) {
+      return sqrt(this.r);
+    }
+
+    var rPlusX = add(this.magnitude(), this.r);
+    var r = sqrt(halve(rPlusX));
+    var i = divide(this.i, sqrt(multiply(rPlusX, 2)));
+    return makeComplexNumber(r, i);
+  }
+
+  ComplexRational.prototype.log = function() {
+    var m = this.magnitude();
+    var theta = this.angle();
+    var result = add(log(m), timesI(theta));
+    return result;
+  }
+
+  ComplexRational.prototype.tan = function() {
+    return divide(this.sin(), this.cos());
+  }
+
+  ComplexRational.prototype.atan = function() {
+    if (equals(this, plusI) || equals(this, minusI)) {
+      throwRuntimeError(neginf);
+    }
+    return multiply(plusI,
+                    multiply(Rational.makeInstance(1,2),
+                             log(divide(
+                               add(plusI, this),
+                               add(plusI, negate(this))))));
+  }
+
+  ComplexRational.prototype.cos = function() {
+    if (this.isReal()) {
+      return cos(this.r);
+    }
+    var iz = timesI(this);
+    var izNegate = negate(iz);
+    return halve(add(exp(iz), exp(izNegate)));
+  }
+
+  ComplexRational.prototype.sin = function() {
+    if (this.isReal()) {
+      return sin(this.r);
+    }
+    var iz = timesI(this);
+    var izNegate = negate(iz);
+    var z2 = makeComplexNumber(0, 2);
+    var expNegate = subtract(exp(iz), exp(izNegate));
+    return divide(expNegate, z2);
+  }
+
+  ComplexRational.prototype.expt = function(y) {
+    if (isInteger(y) && greaterThanOrEqual(y, 0)) {
+      return fastExpt(this, y);
+    }
+    var y_log_x = multiply(y, this.log())
+    return exp(y_log_x)
+  }
+
+  ComplexRational.prototype.exp = function() {
+    var r = exp(this.r);
+    var cosA = cos(this.i);
+    var sinA = sin(this.i);
+    return multiply(r, makeComplexNumber(cosA, sinA));
+  }
+
+  ComplexRational.prototype.acos = function() {
+    if (this.isReal()) {
+      return acos(this.r);
+    }
+    var piHalf = halve(Roughnum.pi);
+    var iz = timesI(this);
+    var root = sqrt(subtract(1, sqr(this)));
+    var l = timesI(log(add(iz, root)));
+    return add(piHalf, l);
+  }
+
+  ComplexRational.prototype.asin = function() {
+    if (this.isReal()) {
+      return asin(this.r);
+    }
+    return multiply(2, atan(divide(this,
+                                   add(1, sqrt(subtract(1, sqr(this)))))));
+  }
+
+  // ComplexRoughnums
+
+  var ComplexRoughnum = function(r, i) {
+    if (!i) { i = 0; }
+    this.r = r;
+    this.i = i;
+  }
+
+  ComplexRoughnum.makeInstance = function (a, b, polarP) {
+    if (b === undefined) b = 0;
+    a = toFixnum(a);
+    b = toFixnum(b);
+    if (!isFinite(a) || !isFinite(b))
+      throwRuntimeError('complex roughnum overflow error');
+    if (!polarP)
+      return new ComplexRoughnum(a, b);
+    return new ComplexRoughnum(a * cos(b), a * sin(b));
+  }
+
+  ComplexRoughnum.prototype.toString = function() {
+    return "~" + this.r.toString() +
+      (this.i < 0 ? "" : "+") +
+      this.i.toString() + "i";
+  };
+
+  ComplexRoughnum.prototype.toSchemeString = function() {
+    var result = '#i' + this.r.toString();
+    if (!equalsAnyZero(this.i)) {
+      result += (isNegative(this.i) ? "" : "+") +
+                this.i.toString() + "i";
+    }
+    return result;
+  };
+
+  ComplexRoughnum.prototype.toFixnum = function() {  // REDO
+    throwRuntimeError("can't convert complex to fixnum")
+  }
+
+  ComplexRoughnum.prototype.toRational = function() {
+    if (!(this.isReal())) {
+      throwRuntimeError("toRational: expects real number");
+    }
+    return toRational(this.r);
+  }
+
+  ComplexRoughnum.prototype.toRoughnum = function() {
+    if (!(this.isReal())) {
+      throwRuntimeError("toRoughnum: expects real number");
+    }
+    return toRoughnum(this.r);
+  }
+
+  ComplexRoughnum.prototype.toComplexRational = function() {
+    return ComplexRational.makeInstance(fromString(this.r.toString()),
+                                        fromString(this.i.toString()));
+  }
+
+  ComplexRoughnum.prototype.toComplexRoughnum = function() {
+    return this;
+  }
+
+  ComplexRoughnum.prototype.isInteger = function() {
+    return false;
+  }
+
+  ComplexRoughnum.prototype.isRational = function() {
+    return false;
+  }
+
+  ComplexRoughnum.prototype.isRoughnum = function() {
+    return eqv(this.i, 0);
+  }
+
+  ComplexRoughnum.prototype.isComplexRational = function() {
+    return false;
+  }
+
+  ComplexRoughnum.prototype.isComplexRoughnum = function() {
+    return true;
+  }
+
+  ComplexRoughnum.prototype.isFinite = function() {
+    // no overflows
+    return true;
+  }
+
+  ComplexRoughnum.prototype.isExact = function() {
+    return false;
+  }
+
+  ComplexRoughnum.prototype.isReal = ComplexRoughnum.prototype.isRoughnum
+
+  ComplexRoughnum.prototype.isPositive = function() {
+    throwRuntimeError("complex numbers can't be compared to 0");
+  }
+
+  ComplexRoughnum.prototype.isNonNegative = function() {
+    throwRuntimeError("complex numbers can't be compared to 0");
+  }
+
+  ComplexRoughnum.prototype.isNegative = function() {
+    throwRuntimeError("complex numbers can't be compared to 0");
+  }
+
+  ComplexRoughnum.prototype.isNonPositive = function() {
+    throwRuntimeError("complex numbers can't be compared to 0");
+  }
+
+  ComplexRoughnum.prototype.realPart = function() {
+    return toRoughnum(this.r);
+  }
+
+  ComplexRoughnum.prototype.imagPart = function() {
+    return toRoughnum(this.i);
+  }
+
+  ComplexRoughnum.prototype.magnitude = function() {
+    return toRoughnum(
+      sqrt(this.r*this.r + this.i*this.i))
+  }
+
+  ComplexRoughnum.prototype.angle = function() {
+    if (this.isReal()) {
+      return toComplexRoughnum(angle(this.r))
+    }
+    if (equals(0, this.r)) {
+      var halfpi = halve(Roughnum.pi)
+      return greaterThan(this.i, 0) ?
+        toComplexRoughnum(halfpi) : toComplexRoughnum(negate(halfpi))
+    }
+    var tmp = atan(divide(abs(this.i), abs(this.r)))
+    if (greaterThan(this.r, 0)) {
+      return greaterThan(this.i,0) ?
+        toComplexRoughnum(tmp) : toComplexRoughnum(negate(tmp))
+    }
+    return greaterThan(this.i, 0) ?
+      toComplexRoughnum(subtract(Roughnum.pi, tmp)) :
+      toComplexRoughnum(subtract(tmp, Roughnum.pi))
+  }
+
+  ComplexRoughnum.prototype.conjugate = function() {
+    return ComplexRoughnum.makeInstance(
+      this.r, -this.i)
+  }
+
+  ComplexRoughnum.prototype.ceiling = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("ceiling: expects argument to be real number", this);
+    }
+    return ceiling(this.r);
+  }
+
+  ComplexRoughnum.prototype.floor = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("floor: expects argument to be real number", this);
+    }
+    return floor(this.r);
+  }
+
+  ComplexRoughnum.prototype.round = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("round: expects argument to be real number", this); //really?
+    }
+    return round(this.r);
+  }
+
+  ComplexRoughnum.prototype.equals = function(other, aUnionFind) {
+    throwRuntimeError("complex roughnums can't be compared for equality");
+  }
+
+  ComplexRoughnum.prototype.schemeEquals = function(other, errbacks) {
+    return (this.r === other.r && this.i === other.i);
+  };
+
+  ComplexRoughnum.prototype.greaterThan = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError(">: expects argument to be real numbers", this, other);
+    }
+    return greaterThan(this.r, other.r);
+  }
+
+  ComplexRoughnum.prototype.greaterThanOrEqual = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError(">=: expects argument to be real numbers", this, other);
+    }
+    return greaterThanOrEqual(this.r, other.r);
+  }
+
+  ComplexRoughnum.prototype.lessThan = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError("<: expects argument to be real numbers", this, other);
+    }
+    return lessThan(this.r, other.r);
+  }
+
+  ComplexRoughnum.prototype.lessThanOrEqual = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError("<=: expects argument to be real numbers", this, other);
+    }
+    return lessThanOrEqual(this.r, other.r);
+  }
+
+  ComplexRoughnum.prototype.greaterThan = function(other) {
+    if (!this.isReal() || !other.isReal()) {
+      throwRuntimeError(">: expects argument to be real numbers", this, other);
+    }
+    return greaterThan(this.r, other.r);
+  }
+
+  ComplexRoughnum.prototype.abs = function() { // = magnitude?
+    if (!this.isReal()) {
+      throwRuntimeError("abs: expects argument to be real number", this);
+    }
+    return abs(this.r);
+  }
+
+  ComplexRoughnum.prototype.numerator = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("numerator: expects argument to be real number", this);
+    }
+    return numerator(this.r);
+  }
+
+  ComplexRoughnum.prototype.denominator = function() {
+    if (!this.isReal()) {
+      throwRuntimeError("denominator: expects argument to be real number", this);
+    }
+    return denominator(this.r);
+  }
+
+  ComplexRoughnum.prototype.add = function(other) {
+    return ComplexRoughnum.makeInstance(this.r + other.r,
+                                        this.i + other.i);
+  }
+
+  ComplexRoughnum.prototype.subtract = function(other) {
+    return ComplexRoughnum.makeInstance(this.r - other.r,
+                                        this.i - other.i);
+  }
+
+  ComplexRoughnum.prototype.negate = function() {
+    return ComplexRoughnum.makeInstance(-this.r, -this.i);
+  }
+
+  ComplexRoughnum.prototype.multiply = function(other) {
+    return ComplexRoughnum.makeInstance(this.r * other.r - this.i * other.i,
+                                        this.r * other.i + this.i * other.r);
+  }
+
+  ComplexRoughnum.prototype.divide = function(other) {
+    if (other.isReal()) {
+      return ComplexRoughnum.makeInstance(
+        this.r/other.r, this.i/other.r)
+    }
+    return toComplexRoughnum(divide(
+      multiply(this, conjugate(other)),
+      other.r*other.r + other.i*other.i))
+  }
+
+  ComplexRoughnum.prototype.integerSqrt = function() {
+    if (this.isInteger()) {
+      return toComplexRoughnum(integerSqrt(this.r));
+    } else {
+      throwRuntimeError("integerSqrt: expects argument to be an integer", this);
+    }
+  }
+
+  ComplexRoughnum.prototype.sqrt = function() {
+    if (this.isReal()) {
+      return toComplexRoughnum(sqrt(this.r));
+    }
+
+    var rPlusX = add(this.magnitude(), this.r);
+    var r = sqrt(halve(rPlusX));
+    var i = divide(this.i, sqrt(multiply(rPlusX, 2)));
+    return toComplexRoughnum(makeComplexNumber(r, i));
+  }
+
+  ComplexRoughnum.prototype.log = function() {
+    var m = this.magnitude();
+    var theta = this.angle();
+
+    var result = add(log(m), timesI(theta));
+    return toComplexRoughnum(result);
+  }
+
+  ComplexRoughnum.prototype.tan = function() {
+    return toComplexRoughnum(divide(this.sin(), this.cos()));
+  }
+
+  ComplexRoughnum.prototype.atan = function() {
+    return toComplexRoughnum(multiply(plusI,
+                    multiply(Rational.makeInstance(1,2),
+                             log(divide(
+                               add(plusI, this),
+                               add(plusI, negate(this)))))));
+  }
+
+  ComplexRoughnum.prototype.cos = function() {
+    if (this.isReal()) {
+      return toComplexRoughnum(cos(this.r));
+    }
+    var iz = timesI(this);
+    var izNegate = negate(iz);
+    return toComplexRoughnum(halve(add(exp(iz), exp(izNegate))));
+  }
+
+  ComplexRoughnum.prototype.sin = function() {
+    if (this.isReal()) {
+      return toComplexRoughnum(sin(this.r));
+    }
+    var iz = timesI(this);
+    var izNegate = negate(iz);
+    var z2 = makeComplexNumber(0, 2);
+    var expNegate = subtract(exp(iz), exp(izNegate));
+    return toComplexRoughnum(divide(expNegate, z2));
+  }
+
+  ComplexRoughnum.prototype.expt = function(y) {
+    if (isInteger(y) && greaterThanOrEqual(y, 0)) {
+      return toComplexRoughnum(fastExpt(this, y));
+    }
+    var y_log_x = multiply(y, this.log())
+    return toComplexRoughnum(exp(y_log_x))
+  }
+
+  ComplexRoughnum.prototype.exp = function() {
+    var r = exp(this.r);
+    var cosA = cos(this.i);
+    var sinA = sin(this.i);
+    return toComplexRoughnum(multiply(r, makeComplexNumber(cosA, sinA)));
+  }
+
+  ComplexRoughnum.prototype.acos = function() {
+    if (this.isReal()) {
+      return acos(this.r);
+    }
+    var piHalf = halve(Roughnum.pi);
+    var iz = timesI(this);
+    var root = sqrt(subtract(1, sqr(this)));
+    var l = timesI(log(add(iz, root)));
+    return toComplexRoughnum(add(piHalf, l));
+  }
+
+  ComplexRoughnum.prototype.asin = function() {
+    if (this.isReal()) {
+      return toComplexRoughnum(asin(this.r));
+    }
+    var oneNegateThisSq = subtract(1, sqr(this));
+    var sqrtOneNegateThisSq = sqrt(oneNegateThisSq);
+    return toComplexRoughnum(multiply(2, atan(divide(this, add(1, sqrtOneNegateThisSq)))));
+  }
+
+  //
+
   var rationalRegexp = new RegExp("^([+-]?\\d+)/(\\d+)$");
+  var mixedfracRegexp = new RegExp("^([+-]?\\d+)[&](\\d+)/(\\d+)$");
   var digitRegexp = new RegExp("^[+-]?\\d+$");
   var flonumRegexp = new RegExp("^([-+]?)(\\d+\)((?:\\.\\d*)?)((?:[Ee][-+]?\\d+)?)$");
 
+  var roughnumMixedfracRegexp = new RegExp("^~([+-]?\\d+)[&](\\d+)/(\\d+)$");
+  var roughnumRatRegexp = new RegExp("^~([-+]?\\d+)/(\\d+)$");
+  // pyret prefers \d+.\d+
+  var roughnumDecRegexp = new RegExp("^~([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)$");
 
-  var roughnumDecRegexp = new RegExp("^~([-+]?\\d+(?:\\.\\d+)?(?:[Ee][-+]?\\d+)?)$");
+  var complexroughnumRectRegexp = new RegExp("^~([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)([-+]\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)[iIjJ]$");
+  var complexroughnumPolarRegexp = new RegExp("^~([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)@([-+]?\\d*(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)$");
 
-  var roughnumRatRegexp = new RegExp("^~([+-]?\\d+)/(\\d+)$");
+  var unsignedRationalOrDecimal = "(?:\\d+/\\d+|\\d+(?:\\.\\d*)?(?:[Ee][-+]?\\d+)?)";
 
+  var complexrationalRectRegexp = new RegExp("^([-+]?" + unsignedRationalOrDecimal + ")([-+]" +
+                                             unsignedRationalOrDecimal + ")[iIjJ]$");
+  var complexrationalPolarRegexp = new RegExp("^([-+]?" + unsignedRationalOrDecimal + ")@([-+]?" +
+                                              unsignedRationalOrDecimal + ")$");
 
   var scientificPattern = new RegExp("^([+-]?\\d*\\.?\\d*)[Ee]([+]?\\d+)$");
 
@@ -2037,7 +3038,13 @@ define("pyret-base/js/js-numbers", function() {
     var aMatch = x.match(rationalRegexp);
     if (aMatch) {
       return Rational.makeInstance(fromString(aMatch[1]),
-                                   fromString(aMatch[2]), errbacks);
+                                   fromString(aMatch[2]));
+    }
+
+    aMatch = x.match(mixedfracRegexp);
+    if (aMatch) {
+      return Rational.makeInstance(fromString(aMatch[2]),
+        fromString(aMatch[3]), fromString(aMatch[1]));
     }
 
     aMatch = x.match(flonumRegexp);
@@ -2077,7 +3084,7 @@ define("pyret-base/js/js-numbers", function() {
       var finalDen = denominatorTen;
       var finalNum = _integerAdd(_integerMultiply(beforeDecimal, denominatorTen), afterDecimal);
       if (negativeP) {
-        finalNum = negate(finalNum, errbacks);
+        finalNum = negate(finalNum);
       }
       //
       if (!equals(exponent, 1)) {
@@ -2087,7 +3094,12 @@ define("pyret-base/js/js-numbers", function() {
           finalNum = _integerMultiply(finalNum, exponent);
         }
       }
-      return Rational.makeInstance(finalNum, finalDen, errbacks);
+      return Rational.makeInstance(finalNum, finalDen, undefined, errbacks);
+    }
+
+    aMatch = x.match(roughnumMixedfracRegexp);
+    if (aMatch) {
+      return Rational.makeInstance(fromString(aMatch[2]), fromString(aMatch[3]), fromString(aMatch[1])).toRoughnum();
     }
 
     aMatch = x.match(roughnumRatRegexp);
@@ -2098,7 +3110,27 @@ define("pyret-base/js/js-numbers", function() {
 
     aMatch = x.match(roughnumDecRegexp);
     if (aMatch) {
-      return Roughnum.makeInstance(Number(aMatch[1]), errbacks);
+      return Roughnum.makeInstance(Number(aMatch[1]));
+    }
+
+    aMatch = x.match(complexroughnumRectRegexp);
+    if (aMatch) {
+      return ComplexRoughnum.makeInstance(Number(aMatch[1]), Number(aMatch[2]));
+    }
+
+    aMatch = x.match(complexroughnumPolarRegexp);
+    if (aMatch) {
+      return ComplexRoughnum.makeInstance(Number(aMatch[1]), Number(aMatch[2]), 1);
+    }
+
+    aMatch = x.match(complexrationalRectRegexp);
+    if (aMatch) {
+      return ComplexRational.makeInstance(fromString(aMatch[1]), fromString(aMatch[2]));
+    }
+
+    aMatch = x.match(complexrationalPolarRegexp);
+    if (aMatch) {
+      return ComplexRational.makeInstance(fromString(aMatch[1]), fromString(aMatch[2]), 1);
     }
 
     return false; // if all else fails
@@ -2113,11 +3145,15 @@ define("pyret-base/js/js-numbers", function() {
 
     function schemeRationalRegexp(digits) { return new RegExp("^([+-]?["+digits+"]+)/(["+digits+"]+)$"); }
 
-    function matchComplexRegexp(radix, x, errbacks) {
+    function schemeMixedFracRegexp(digits) {
+      return new RegExp("^([-+]?[" + digits + "]+)&([" + digits + "]+)/([" + digits + "]+)$");
+    }
+
+    function matchComplexRegexp(radix, x) {
 	var sign = "[+-]";
 	var maybeSign = "[+-]?";
-	var digits = digitsForRadix(radix, errbacks)
-	var expmark = "["+expMarkForRadix(radix, errbacks)+"]"
+	var digits = digitsForRadix(radix)
+	var expmark = "["+expMarkForRadix(radix)+"]"
 	var digitSequence = "["+digits+"]+"
 
 	var unsignedRational = digitSequence+"/"+digitSequence
@@ -2136,13 +3172,13 @@ define("pyret-base/js/js-numbers", function() {
 	var unsignedRealOrSpecial = "(?:" + unsignedReal + "|" + special + ")"
 	var real = "(?:" + maybeSign + unsignedReal + "|" + sign + special + ")"
 
-	var alt1 = new RegExp("^(" + rational + ")"
+	var alt1 = new RegExp("^(" + rational + ")()"
                              + "(" + sign + unsignedRational + "?)"
                              + "i$");
-	var alt2 = new RegExp("^(" + real + ")?"
+	var alt2 = new RegExp("^(" + real + ")?()"
                              + "(" + sign + unsignedRealOrSpecial + "?)"
                              + "i$");
-	var alt3 = new RegExp("^(" + real + ")@(" + real + ")$");
+	var alt3 = new RegExp("^(" + real + ")(@)(" + real + ")$");
 
 	var match1 = x.match(alt1)
 	var match2 = x.match(alt2)
@@ -2177,17 +3213,17 @@ define("pyret-base/js/js-numbers", function() {
 			  ")["+exp_mark+"]([+-]?["+digits+"]+))$");
     }
 
-    function digitsForRadix(radix, errbacks) {
+    function digitsForRadix(radix) {
 	return radix === 2  ? "01" :
 	       radix === 8  ? "0-7" :
 	       radix === 10 ? "0-9" :
 	       radix === 16 ? "0-9a-fA-F" :
-	       errbacks.throwInternalError("digitsForRadix: invalid radix", this, radix)
+	       throwRuntimeError("digitsForRadix: invalid radix", this, radix)
     }
-    function expMarkForRadix(radix, errbacks) {
+    function expMarkForRadix(radix) {
 	return (radix === 2 || radix === 8 || radix === 10) ? "defsl" :
 	       (radix === 16)                               ? "sl" :
-	       errbacks.throwInternalError("expMarkForRadix: invalid radix", this, radix)
+	       throwRuntimeError("expMarkForRadix: invalid radix", this, radix)
     }
 
     function Exactness(i) {
@@ -2210,9 +3246,9 @@ define("pyret-base/js/js-numbers", function() {
 	var exactness = typeof exactness === 'undefined' ? Exactness.def :
 			exactness === true               ? Exactness.on :
 			exactness === false              ? Exactness.off :
-	   /* else */  errbacks.throwInternalError( "exactness must be true or false"
-                                                   , this
-                                                   , r) ;
+	   /* else */  throwRuntimeError( "exactness must be true or false"
+                                        , this
+                                        , r) ;
 
 	var hMatch = x.toLowerCase().match(hashModifiersRegexp)
 	if (hMatch) {
@@ -2248,30 +3284,53 @@ define("pyret-base/js/js-numbers", function() {
 	return fromSchemeStringRaw(numberString, radix, exactness, mustBeANumberp, errbacks)
     };
 
-    function fromSchemeStringRaw(x, radix, exactness, mustBeANumberp, errbacks) {
-	var cMatch = matchComplexRegexp(radix, x, errbacks);
-	if (cMatch) {
-          throw "Complex Numbers are not supported in Pyret";
-	}
+    function makeComplexNumber(a, b, polarP) {
+      if (isRoughnum(a) || isRoughnum(b)) {
+        return ComplexRoughnum.makeInstance(a, b, polarP);
+      } else {
+        return ComplexRational.makeInstance(a, b, polarP);
+      }
+    }
 
+    function fromSchemeStringRaw(x, radix, exactness, mustBeANumberp, errbacks) {
+	var cMatch = matchComplexRegexp(radix, x);
+	if (cMatch) {
+          var cMatch3 = cMatch[3];
+          if (cMatch3 === "+") cMatch3 = "1";
+          else if (cMatch3 === "-") cMatch3 = "-1";
+          return makeComplexNumber(fromSchemeStringRawNoComplex(cMatch[1],
+                                                                radix,
+                                                                exactness),
+                                                                fromSchemeStringRawNoComplex(cMatch3,
+                                                                                             radix,
+                                                                                             exactness),
+                                                                                             cMatch[2]);
+	}
         return fromSchemeStringRawNoComplex(x, radix, exactness, mustBeANumberp, errbacks)
     }
 
     function fromSchemeStringRawNoComplex(x, radix, exactness, mustBeANumberp, errbacks) {
 	var aMatch = x.match(schemeRationalRegexp(digitsForRadix(radix, errbacks)));
 	if (aMatch) {
-	  return Rational.makeInstance( fromSchemeStringRawNoComplex( aMatch[1]
-                                                                      , radix
-                                                                      , exactness
-                                                                      , errbacks
-                                                                    )
+	    return Rational.makeInstance( fromSchemeStringRawNoComplex( aMatch[1]
+                                                                , radix
+                                                                , exactness
+              , errbacks
+                                                                )
                                         , fromSchemeStringRawNoComplex( aMatch[2]
-                                                                        , radix
-                                                                        , exactness
-                                                                        , errbacks
-                                                                      )
-                                        , errbacks);
+                                                                , radix
+                                                                , exactness
+                                          , errbacks
+                                                                )
+            , undefined, errbacks);
 	}
+
+        aMatch = x.match(schemeMixedFracRegexp(digitsForRadix(radix)));
+        if (aMatch) {
+          return Rational.makeInstance(fromSchemeStringRawNoComplex(aMatch[2], radix, exactness),
+            fromSchemeStringRawNoComplex(aMatch[3], radix, exactness),
+            fromSchemeStringRawNoComplex(aMatch[1], radix, exactness));
+        }
 
         if (x === '+nan.0' ||
             x === '-nan.0' ||
@@ -2914,6 +3973,7 @@ define("pyret-base/js/js-numbers", function() {
 
   // public
   BigInteger.prototype.toString = bnToString;
+  BigInteger.prototype.toSchemeString = bnToString;
   BigInteger.prototype.negate = bnNegate;
   BigInteger.prototype.abs = bnAbs;
   BigInteger.prototype.compareTo = bnCompareTo;
@@ -3538,6 +4598,7 @@ define("pyret-base/js/js-numbers", function() {
   BigInteger.prototype.signum = bnSigNum;
   BigInteger.prototype.toByteArray = bnToByteArray;
   BigInteger.prototype.equals = bnEquals;
+  BigInteger.prototype.schemeEquals = bnEquals;
   BigInteger.prototype.min = bnMin;
   BigInteger.prototype.max = bnMax;
   BigInteger.prototype.and = bnAnd;
@@ -3607,10 +4668,6 @@ define("pyret-base/js/js-numbers", function() {
     return buf.join('');
   };
 
-  BigInteger.prototype.isFinite = function() {
-    return true;
-  };
-
   BigInteger.prototype.isInteger = function() {
     return true;
   };
@@ -3619,14 +4676,26 @@ define("pyret-base/js/js-numbers", function() {
     return true;
   };
 
+  BigInteger.prototype.isRoughnum = function() {
+    return false;
+  };
+
+  BigInteger.prototype.isComplexRational = function() {
+    return true
+  };
+
+  BigInteger.prototype.isComplexRoughnum = function() {
+    return false;
+  };
+
+  BigInteger.prototype.isFinite = function() {
+    return true;
+  };
+
   BigInteger.prototype.isExact = BigInteger.prototype.isRational;
 
   BigInteger.prototype.isReal = function() {
     return true;
-  };
-
-  BigInteger.prototype.isRoughnum = function() {
-    return false;
   };
 
   BigInteger.prototype.isPositive = function() {
@@ -3645,8 +4714,29 @@ define("pyret-base/js/js-numbers", function() {
     return this.compareTo(BigInteger.ZERO) <= 0;
   };
 
+  BigInteger.prototype.realPart = function() {
+    return this
+  }
+
+  BigInteger.prototype.imagPart = function() {
+    return 0
+  }
+
+  BigInteger.prototype.magnitude = function() {
+    return this
+  }
+
+  BigInteger.prototype.angle = function() {
+    if (this.isNegative) { return 0 }
+    return Roughnum.pi
+  }
+
+  BigInteger.prototype.conjugate = function() {
+    return this
+  }
+
   BigInteger.prototype.toRational = function() {
-    return this;
+    return new Rational(this);
   };
 
   BigInteger.prototype.toExact = BigInteger.prototype.toRational;
@@ -3658,6 +4748,14 @@ define("pyret-base/js/js-numbers", function() {
     var r = Number(String(a[0]) + 'e' + String(a[1]));
     //console.log('returning', r);
     return r;
+  }
+
+  BigInteger.prototype.toComplexRoughnum = function() {
+    return ComplexRoughnum.makeInstance(this.toFixnum());
+  }
+
+  BigInteger.prototype.toComplexRational = function() {
+    return ComplexRational.makeInstance(this);
   }
 
   BigInteger.prototype.toRoughnum = function(errbacks) {
@@ -3684,13 +4782,16 @@ define("pyret-base/js/js-numbers", function() {
   // WARNING NOTE: we override the old version of divide.
   BigInteger.prototype.divide = function(other, errbacks) {
     var quotientAndRemainder = bnDivideAndRemainder.call(this, other);
+    var q = quotientAndRemainder[0];
+    var r = quotientAndRemainder[1];
+    var result;
     if (quotientAndRemainder[1].compareTo(BigInteger.ZERO) === 0) {
-      return quotientAndRemainder[0];
+      result = quotientAndRemainder[0];
     } else {
-      var result = add(quotientAndRemainder[0],
-                       Rational.makeInstance(quotientAndRemainder[1], other, errbacks), errbacks);
-      return result;
+      var frac = Rational.makeInstance(quotientAndRemainder[1], other, undefined, errbacks);
+      result = add(quotientAndRemainder[0], frac, errbacks);
     }
+    return result;
   };
 
   BigInteger.prototype.numerator = function() {
@@ -3730,15 +4831,19 @@ define("pyret-base/js/js-numbers", function() {
     // Get an approximation using integerSqrt, and then start another
     // Newton-Raphson search if necessary.
     BigInteger.prototype.sqrt = function(errbacks) {
-      var approx = this.integerSqrt(errbacks), fix;
-      if (eqv(sqr(approx, errbacks), this, errbacks)) {
-        return approx;
-      }
-      fix = toFixnum(this);
-      if (isFinite(fix)) {
-        return Roughnum.makeInstance(Math.sqrt(fix), errbacks);
+      if (this.isNonNegative()) {
+        var approx = this.integerSqrt(errbacks), fix;
+        if (eqv(sqr(approx, errbacks), this, errbacks)) {
+          return approx;
+        }
+        fix = toFixnum(this);
+        if (isFinite(fix)) {
+          return Roughnum.makeInstance(Math.sqrt(fix), errbacks);
+        } else {
+          return approx;
+        }
       } else {
-        return approx;
+        return timesI(this.negate().sqrt());
       }
     };
   })();
@@ -3965,16 +5070,23 @@ define("pyret-base/js/js-numbers", function() {
   Numbers['fromFixnum'] = fromFixnum;
   Numbers['fromString'] = fromString;
   Numbers['fromSchemeString'] = fromSchemeString;
+  Numbers['toSchemeString'] = toSchemeString;
   Numbers['makeBignum'] = makeBignum;
   Numbers['makeRational'] = Rational.makeInstance;
   Numbers['makeRoughnum'] = Roughnum.makeInstance;
+  Numbers['makeComplexRational'] = ComplexRational.makeInstance;
+  Numbers['makeComplexRoughnum'] = ComplexRoughnum.makeInstance;
 
+  Numbers['onThrowRuntimeError'] = onThrowRuntimeError;
+  Numbers['setThrowRuntimeError'] = setThrowRuntimeError;
   Numbers['isPyretNumber'] = isPyretNumber;
   Numbers['isRational'] = isRational;
   Numbers['isReal'] = isReal;
   Numbers['isExact'] = isExact;
   Numbers['isInteger'] = isInteger;
   Numbers['isRoughnum'] = isRoughnum;
+  Numbers['isComplexRational'] = isComplexRational;
+  Numbers['isComplexRoughnum'] = isComplexRoughnum;
   Numbers['isPositive'] = isPositive;
   Numbers['isNegative'] = isNegative;
   Numbers['isNonPositive'] = isNonPositive;
@@ -3982,14 +5094,21 @@ define("pyret-base/js/js-numbers", function() {
 
   Numbers['toFixnum'] = toFixnum;
   Numbers['toExact'] = toExact;
+  Numbers['toSchemeExact'] = toSchemeExact;
+  Numbers['toSchemeInexact'] = toSchemeInexact;
   Numbers['toRational'] = toRational;
   Numbers['toRoughnum'] = toRoughnum;
+  Numbers['toComplexRational'] = toComplexRational;
+  Numbers['toComplexRoughnum'] = toComplexRoughnum;
 
   Numbers['add'] = add;
   Numbers['subtract'] = subtract;
   Numbers['multiply'] = multiply;
   Numbers['divide'] = divide;
+  Numbers['negate'] = negate;
+  Numbers['halve'] = halve;
   Numbers['equals'] = equals;
+  Numbers['schemeEquals'] = schemeEquals;
   Numbers['equalsAnyZero'] = equalsAnyZero;
   Numbers['eqv'] = eqv; // why is this being exported?
   Numbers['roughlyEquals'] = roughlyEquals;
@@ -4006,6 +5125,11 @@ define("pyret-base/js/js-numbers", function() {
   Numbers['integerSqrt'] = integerSqrt;
   Numbers['sqrt'] = sqrt;
   Numbers['abs'] = abs;
+  Numbers['realPart'] = realPart;
+  Numbers['imagPart'] = imagPart;
+  Numbers['magnitude'] = magnitude;
+  Numbers['angle'] = angle;
+  Numbers['conjugate'] = conjugate;
   Numbers['quotient'] = quotient;
   Numbers['remainder'] = remainder;
   Numbers['floor'] = floor;
@@ -4033,8 +5157,10 @@ define("pyret-base/js/js-numbers", function() {
   Numbers['BigInteger'] = BigInteger;
   Numbers['Rational'] = Rational;
   Numbers['Roughnum'] = Roughnum;
+  Numbers['ComplexRoughnum'] = ComplexRoughnum;
+  Numbers['ComplexRational'] = ComplexRational;
   Numbers['FloatPoint'] = Roughnum; //FIXME
-  Numbers['Complex'] = Roughnum; //FIXME
+  Numbers['Complex'] = ComplexRational; //FIXME
 
   Numbers['MIN_FIXNUM'] = MIN_FIXNUM;
   Numbers['MAX_FIXNUM'] = MAX_FIXNUM;

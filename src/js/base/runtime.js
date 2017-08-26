@@ -172,7 +172,6 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       delete parameters[param];
     }
 
-
     /**
        Get the brands on an object
 
@@ -214,18 +213,38 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
     */
     function isBase(obj) { return obj instanceof PBase; }
 
-    function renderValueSkeleton(val, values) {
+    function renderValueSkeleton(val, values, isPatch) {
       if (thisRuntime.ffi.isVSValue(val)) { return values.pop(); } // double-check order!
       else if (thisRuntime.ffi.isVSStr(val)) { return thisRuntime.unwrap(thisRuntime.getField(val, "s")); }
       else if (thisRuntime.ffi.isVSCollection(val)) {
         var name = thisRuntime.unwrap(thisRuntime.getField(val, "name"));
+        var isPatchList = isPatch && (name === 'list');
+        var isPatchVector = isPatch && (name === 'array');
         var items = thisRuntime.ffi.toArray(thisRuntime.getField(val, "items"));
-        var s = "[" + name + ": ";
+        var s;
+        if (isPatchList) {
+          s = '(list ';
+        } else if (isPatchVector) {
+          s = '(vector ';
+        } else {
+          s = "[" + name + ": ";
+        }
         for (var i = 0; i < items.length; i++) {
-          if (i > 0) { s += ", "; }
+          if (i > 0) {
+            if (isPatch) {
+              s += ' ';
+            } else {
+              s += ", ";
+            }
+          }
           s += renderValueSkeleton(items[i], values);
         }
-        return s + "]";
+        if (isPatch) {
+          s += ')';
+        } else {
+          s += "]";
+        }
+        return s;
       } else if (thisRuntime.ffi.isVSConstr(val)) {
         var name = thisRuntime.unwrap(thisRuntime.getField(val, "name"));
         var items = thisRuntime.ffi.toArray(thisRuntime.getField(val, "args"));
@@ -300,7 +319,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
         }
         s += " }";
         return s;
-        
+
       },
       "object": function(val, pushTodo) {
         var keys = [];
@@ -392,6 +411,13 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
 
     ReprMethods["_tostring"] = Object.create(DefaultReprMethods);
 
+    ReprMethods['_toPatchString'] = Object.create(DefaultReprMethods);
+    ReprMethods['_toPatchString']['render-valueskeleton'] = function(top) {
+      var skel = top.extra.skeleton;
+      top.extra.skeleton = undefined;
+      return renderValueSkeleton(skel, top.done, true);
+    };
+
     ReprMethods["$cli"] = Object.create(DefaultReprMethods);
     ReprMethods["$cli"]["function"] = function(val) { return "<function:" + val.name + ">"; }
     ReprMethods["$cli"]["method"] = function(val) { return "<method:" + val.name + ">"; }
@@ -431,7 +457,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
         if (val.$constrFor !== undefined) {
           thisRuntime.ffi.throwLookupConstructorNotObject(makeSrcloc(loc), val.$constrFor, field);
         }
-        thisRuntime.ffi.throwLookupNonObject(makeSrcloc(loc), val, field); 
+        thisRuntime.ffi.throwLookupNonObject(makeSrcloc(loc), val, field);
       }
       var fieldVal = val.dict[field];
       if(fieldVal === undefined) {
@@ -618,6 +644,11 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
     */
     function isString(obj) {
       return typeof obj === 'string';
+    }
+
+    //for Patch
+    function _patch_single_char_string_p(obj) {
+      return isString(obj) && obj.length === 1;
     }
 
     /**Makes a PString using the given s
@@ -1030,7 +1061,6 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       return true;
     }
 
-
     /*********************
             Object
     **********************/
@@ -1188,7 +1218,15 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
     function makeArray(arr) {
       return arr;
     }
- 
+
+    function P_patch_box(v) {
+      this.val = v;
+    }
+
+    function _patch_boxp(b) {
+      return thisRuntime.isOpaque(b) && b.val instanceof P_patch_box;
+    }
+
     /************************
           Type Checking
     ************************/
@@ -1222,6 +1260,12 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       isMethod = isMethod || false;
       if (expected !== args.length) {
         throw thisRuntime.ffi.throwArityErrorC([source], expected, args, isMethod);
+      }
+    }
+    var checkArityAtLeast = function(expected, args, source) {
+      // should this use isMethod? -- ds26gte
+      if (args.length < expected) {
+        throw thisRuntime.ffi.throwArityErrorC([source], expected, args);
       }
     }
     var checkArityC = function(cloc, expected, args, isMethod) {
@@ -1266,6 +1310,10 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
     var checkMethod = makeCheckType(isMethod, "Method");
     var checkOpaque = makeCheckType(isOpaque, "Opaque");
     var checkPyretVal = makeCheckType(isPyretVal, "Pyret Value");
+
+    //for Patch
+    var checkPatchCharacter = makeCheckType(_patch_single_char_string_p, "Character");
+    var checkPatchBox = makeCheckType(_patch_boxp, "Box");
 
     var checkWrapBoolean = function(val) {
       checkBoolean(val);
@@ -1326,6 +1374,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
     // Stolen from https://github.com/dyoo/whalesong/blob/master\
     // /whalesong/js-assembler/runtime-src/baselib-strings.js
     var replaceUnprintableStringChars = function (s) {
+      //console.log('doing pyl/replaceUnprintableStringChars', s);
       var ret = [], i;
       for (i = 0; i < s.length; i++) {
         var val = s.charCodeAt(i);
@@ -1340,7 +1389,9 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
         case 34: ret.push('\\"'); break;
         case 92: ret.push('\\\\'); break;
         default:
-          if (val >= 32 && val <= 126) {
+          if ((val >= 32 && val <= 126) ||
+              (val >= 0xc0 && val <= 0x3d2)
+          ) {
             ret.push( s.charAt(i) );
           }
           else {
@@ -1829,7 +1880,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
     // rel is a flag that indicates whether the tolerance should be
     // interpreted as _absolute_ (two numbers are equal +/- tol) or _relative_
     // (two numbers are equal +/- n * tol, where tol is between 0 and 1)
-    function equal3(left, right, alwaysFlag, tol, rel) {
+    function equal3(left, right, alwaysFlag, tol, rel, patchP) {
       if(tol === undefined) { // means that we aren't doing any kind of within
         var isIdentical = identical3(left, right);
         if (!thisRuntime.ffi.isNotEqual(isIdentical)) { return isIdentical; } // if Equal or Unknown...
@@ -1852,7 +1903,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
             return;
           }
         }
-// throw new Error("Internal error: tried to 
+// throw new Error("Internal error: tried to
       }
       function cachePair(obj1, obj2) {
         cache.left.push(obj1);
@@ -1882,6 +1933,12 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
                   toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight);
                 }
               } else if (jsnums.roughlyEquals(curLeft, curRight, tol, NumberErrbacks)) {
+                continue;
+              } else {
+                toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight);
+              }
+            } else if (patchP) {
+              if (jsnums.schemeEquals(curLeft, curRight, NumberErrbacks)) {
                 continue;
               } else {
                 toCompare.curAns = thisRuntime.ffi.notEqual.app(current.path, curLeft, curRight);
@@ -2200,6 +2257,18 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
         return equal3(v1, v2, true);
       }, equalityToBool, "equal-always");
     };
+
+    // JS function from Pyret values to Pyret booleans (or throws)
+    function schemeEqualAlways(v1, v2) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal-always"], 2, $a); }
+      if(typeof v1 === "number" || typeof v1 === "string" || typeof v1 === "boolean") {
+        return v1 === v2;
+      }
+      return safeCall(function() {
+        return equal3(v1, v2, true, false, false, true);
+      }, equalityToBool, "equal-always");
+    };
+
     // JS function from Pyret values to Pyret equality answers
     function equalNow3(left, right) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal-now3"], 2, $a, false); }
@@ -2487,7 +2556,6 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       });
     }
 
-
     function _checkAnn(compilerLoc, ann, val) {
       if (isCheapAnnotation(ann)) {
         var result = ann.check(compilerLoc, val);
@@ -2744,8 +2812,6 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       });
     }
 
-
-
     function PTupleAnn(locs, anns) {
       this.locs = locs;
       this.anns = anns;
@@ -2758,7 +2824,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       this.refinement = hasRefinement;
       this.isCheap = isCheap;
     }
-    
+
     function makeTupleAnn(locs, anns) {
       return new PTupleAnn(locs, anns);
     }
@@ -2841,9 +2907,6 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
     /* PTupleAnn.prototype.createTupleLengthMismatch = function(loc, val, annLength, tupLength) {
        ffi.contractFail(loc, ffi.makeTupleLengthMismatch(loc, val, annLength, tupleLength);
        }; */
-
-
-
 
     function PRecordAnn(fields, locs, anns) {
       this.fields = fields;
@@ -3623,7 +3686,6 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       throwInternalError: function(msg) { thisRuntime.ffi.throwInternalError(msg); },
     };
 
-
     var plus = function(l, r) {
       if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["_plus"], 2, $a, true); }
       if (thisRuntime.isNumber(l) && thisRuntime.isNumber(r)) {
@@ -3921,7 +3983,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       for(var i = 0; i < keys.length; i++) {
         obj[keys[i]] = arr[i];
       }
-      
+
       return makeObject(obj);
     };
 
@@ -4370,7 +4432,6 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       return foldFun();
     };
 
-
     var string_substring = function(s, min, max) {
       if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["string-substring"], 3, $a, false); }
       thisRuntime.checkArgsInternal("Strings", "string-substring",
@@ -4385,7 +4446,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       if(jsnums.greaterThan(max, string_length(s), NumberErrbacks)) {
         thisRuntime.ffi.throwMessageException("substring: max index " + String(max) + " is larger than the string length " + String(string_length(s)));
       }
-      return thisRuntime.makeString(s.substring(jsnums.toFixnum(min, NumberErrbacks), 
+      return thisRuntime.makeString(s.substring(jsnums.toFixnum(min, NumberErrbacks),
                                                 jsnums.toFixnum(max, NumberErrbacks)));
     }
     var string_replace = function(s, find, replace) {
@@ -4839,6 +4900,29 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
         [thisRuntime.Number]);
       return thisRuntime.makeNumberBig(jsnums.toRoughnum(n, NumberErrbacks));
     }
+    var num_to_complexrational = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-to-complexrational"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeNumberBig(jsnums.toComplexRational(n));
+    }
+    var num_to_complexroughnum = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-to-complexroughnum"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeNumberBig(jsnums.toComplexRoughnum(n));
+    }
+
+    var num_realpart = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-realpart"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeNumberBig(jsnums.realPart(n));
+    }
+
+    var num_imagpart = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-imagpart"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeNumberBig(jsnums.imagPart(n));
+    }
+
     var num_to_fixnum = function(n) {
       if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["num-to-fixnum"], 1, $a, false); }
       thisRuntime.checkArgsInternal("Numbers", "num-fixnum",
@@ -4934,6 +5018,1033 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
     var time_now = function() {
       if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["time-now"], 0, $a, false); }
       return new Date().getTime();
+    }
+
+    // primitives for Patch
+
+    var _patch_procedure_arity = function(f) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["procedure-arity"], 1, $a); }
+      checkFunction(f);
+      return makeNumber(f.arity);
+    };
+
+    var _patch_void = function() {
+      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["void"], 0, $a); }
+      return nothing;
+    };
+
+    var _patch_error = function(f) {
+      var argsn = arguments.length;
+      if (argsn === 0) {
+        throw thisRuntime.ffi.throwArityErrorC(["error"], 1, []);
+      }
+      checkString(f);
+      var errstring = f;
+      if (argsn > 1) {
+        errstring += ": ";
+        var args = [];
+        for (var i = 1; i < argsn; i++) {
+          args.push(arguments[i]);
+        }
+        errstring += _patch_format.apply(null, args);
+      }
+      thisRuntime.ffi.throwMessageException(errstring);
+    };
+
+    var _patch_dead_code_function = function() {
+      return nothing;
+    };
+
+    var _patch_identity = function(x) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["identity"], 1, $a); }
+      return x;
+    };
+
+    var _patch_check_within = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["check-within"], 3, $a); }
+      return safeCall(function() {
+        return equal3(actVal, expVal, true, absTol, false, true);
+      }, function(ans) {
+        if (!thisRuntime.ffi.isEqual(ans)) {
+          _patch_display("check-within: actual value " +
+            toReprJS(actVal, ReprMethods._toPatchString) +
+            " is not within " +
+            toReprJS(absTol, ReprMethods._toPatchString) +
+            " of expected value " +
+            toReprJS(expVal, ReprMethods._toPatchString)
+          );
+        }
+        return nothing;
+      }, "check-within");
+    };
+
+    var _patch_equal_tilde = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["equal~?"], 3, $a); }
+      checkNumNonNegative(absTol);
+      return equalWithin(absTol).app(actVal, expVal);
+    };
+
+    var _patch_false_p = function(x) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["false?"], 1, $a); }
+      return !x;
+    };
+
+    var _patch_boolean_p = function(x) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["boolean?"], 1, $a); }
+      return isBoolean(x);
+    };
+
+    var _patch_boolean_eq = function(x, y) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["boolean=?"], 2, $a); }
+      checkBoolean(x); checkBoolean(y);
+      return (x === y);
+    };
+
+    var _patch_integer_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["integer?"], 1, $a); }
+      return isNumber(n) && jsnums.isInteger(n);
+    };
+
+    var _patch_rational_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["rational?"], 1, $a); }
+      return isNumber(n) && jsnums.isRational(n);
+    };
+
+    var _patch_real_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["real?"], 1, $a); }
+      return isNumber(n) && jsnums.isReal(n);
+    };
+
+    var _patch_exact_to_inexact = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["exact->inexact"], 1, $a); }
+      checkNumber(n);
+      return jsnums.toSchemeInexact(n);
+    };
+
+    var _patch_inexact_to_exact = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["inexact->exact"], 1, $a); }
+      checkNumber(n);
+      return jsnums.toSchemeExact(n);
+    };
+
+    var _patch_num_equal_tilde = function(actVal, expVal, absTol) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["=~"], 3, $a); }
+      thisRuntime.checkNumber(actVal);
+      thisRuntime.checkNumber(expVal);
+      checkNumNonNegative(absTol);
+      return jsnums.roughlyEquals(actVal, expVal, absTol);
+    };
+
+    var _patch_zero_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["zero?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeBoolean(jsnums.equalsAnyZero(n))
+    };
+
+    var _patch_even_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["even?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      if (!jsnums.isInteger(n)) {
+        thisRuntime.ffi.throwMessageException("even?: " + n + " is not an integer");
+      }
+      return jsnums.equalsAnyZero(jsnums.modulo(n, 2));
+    };
+
+    var _patch_odd_p = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["odd?"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      if (!jsnums.isInteger(n)) {
+        thisRuntime.ffi.throwMessageException("odd?: " + n + " is not an integer");
+      }
+      return !jsnums.equalsAnyZero(jsnums.modulo(n, 2));
+    };
+
+    var _patch_add1 = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["add1"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return jsnums.add(n, 1);
+    };
+
+    var _patch_sub1 = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["sub1"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return jsnums.subtract(n, 1);
+    };
+
+    var _patch_plus = function() {
+      var result = 0;
+      var i, j;
+      for (i = 0; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.add(result, j);
+      }
+      return result;
+    };
+
+    var _patch_minus = function(n) {
+      if (arguments.length < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["-"], 1, []);
+      }
+      if (arguments.length === 1) {
+        thisRuntime.checkNumber(n);
+        return jsnums.subtract(0, n);
+      }
+      thisRuntime.checkNumber(n);
+      var result = n;
+      var i, j;
+      for (i = 1; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.subtract(result, j);
+      }
+      return result;
+    };
+
+    var _patch_times = function() {
+      var result = 1;
+      var i, j;
+      for (i = 0; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.multiply(result, j);
+      }
+      return result;
+    };
+
+    var _patch_divide = function(n) {
+      if (arguments.length < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["/"], 1, []);
+      }
+      if (arguments.length === 1) {
+        thisRuntime.checkNumber(n);
+        return jsnums.divide(1, n);
+      }
+      thisRuntime.checkNumber(n);
+      var result = n;
+      var i, j;
+      for (i = 1; i < arguments.length; i++) {
+        j = arguments[i];
+        thisRuntime.checkNumber(j);
+        result = jsnums.divide(result, j);
+      }
+      return result;
+    };
+
+    var _patch_quotient = function(x, y) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["quotient"], 2, $a); }
+      checkNumber(x); checkNumber(y);
+      return thisRuntime.makeNumber(jsnums.quotient(x, y));
+    };
+
+    var _patch_remainder = function(x, y) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["remainder"], 2, $a); }
+      checkNumber(x); checkNumber(y);
+      return thisRuntime.makeNumber(jsnums.remainder(x, y));
+    };
+
+    var _patch_eq = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["="], 2, [arguments[0]]);
+      }
+      thisRuntime.checkNumber(arguments[0]);
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i+1]);
+        if (!jsnums.schemeEquals(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_lt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["<"], 2, [arguments[0]]);
+      }
+      thisRuntime.checkNumber(arguments[0]);
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i+1]);
+        if (!jsnums.lessThan(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_gt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC([">"], 2, [arguments[0]]);
+      }
+      thisRuntime.checkNumber(arguments[0]);
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i+1]);
+        if (!jsnums.greaterThan(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_le = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["<="], 2, [arguments[0]]);
+      }
+      thisRuntime.checkNumber(arguments[0]);
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i+1]);
+        if (!jsnums.lessThanOrEqual(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_ge = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC([">="], 2, [arguments[0]]);
+      }
+      thisRuntime.checkNumber(arguments[0]);
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkNumber(arguments[i+1]);
+        if (!jsnums.greaterThanOrEqual(arguments[i], arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_max = function(l) {
+      var argLen = arguments.length;
+      if (argLen < 2) {
+        throw thisRuntime.ffi.throwArityErrorC(["max"], 2, [l]);
+      }
+      thisRuntime.checkNumber(l);
+      var result = l;
+      for (var i = 1; i < argLen; i++) {
+        var b = arguments[i];
+        thisRuntime.checkNumber(b);
+        if (jsnums.greaterThan(b, result, NumberErrbacks)) {
+          result = b;
+        }
+      }
+      return result;
+    };
+
+    var _patch_min = function(l) {
+      var argLen = arguments.length;
+      if (argLen < 2) {
+        throw thisRuntime.ffi.throwArityErrorC(["min"], 2, [l]);
+      }
+      thisRuntime.checkNumber(l);
+      var result = l;
+      for (var i = 1; i < argLen; i++) {
+        var b = arguments[i];
+        thisRuntime.checkNumber(b);
+        if (jsnums.lessThan(b, result, NumberErrbacks)) {
+          result = b;
+        }
+      }
+      return result;
+    };
+
+    var _patch_sgn = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["sgn"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      if (jsnums.equalsAnyZero(n)) {
+        return 0;
+      } else if (jsnums.isPositive(n)) {
+        return 1;
+      } else {
+        return -1;
+      }
+    };
+
+    var _patch_gcd = function() {
+      var $a = new Array(arguments.length);
+      var j;
+      for (var $i = 0; $i < arguments.length; $i++) {
+        j = arguments[$i];
+        thisRuntime.checkNumber(j);
+        $a[$i] = j;
+      }
+      return jsnums.gcd(0, $a);
+    };
+
+    var _patch_lcm = function() {
+      var $a = new Array(arguments.length);
+      var j;
+      for (var $i = 0; $i < arguments.length; $i++) {
+        j = arguments[$i];
+        thisRuntime.checkNumber(j);
+        $a[$i] = j;
+      }
+      return jsnums.lcm(1, $a);
+    };
+
+    var _patch_numerator = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["numerator"], 1, $a); }
+      checkNumber(n);
+      return jsnums.numerator(n);
+    };
+
+    var _patch_denominator = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["denominator"], 1, $a); }
+      checkNumber(n);
+      return jsnums.denominator(n);
+    };
+
+    var _patch_current_seconds = function() {
+      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["current-seconds"], 0, $a); }
+      return makeNumber(Math.floor(Date.now()/1000));
+    };
+
+    var _patch_random = function(n) {
+      if (arguments.length > 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["random"], 0, $a); }
+      if (n) {
+        checkNumber(n);
+        if (!(jsnums.isInteger(n) && jsnums.isPositive(n))) {
+          thisRuntime.ffi.throwMessageException("random: " + n + " is not a positive integer")
+        }
+        return makeNumber(Math.floor(jsnums.toFixnum(n) * rng()));
+      } else {
+        return makeNumber(rng());
+      }
+    };
+
+    var _patch_sinh = function(x) {
+      thisRuntime.checkNumber(x);
+      return jsnums.halve(jsnums.subtract(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
+    };
+
+    var _patch_cosh = function(x) {
+      thisRuntime.checkNumber(x);
+      return jsnums.halve(jsnums.add(jsnums.exp(x), jsnums.exp(jsnums.negate(x))));
+    };
+
+    var _patch_string_eq = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string=?", 2, [arguments[0]]);
+      }
+      thisRuntime.checkString(arguments[0]);
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i+1]);
+        if (arguments[i] !== arguments[i+1]) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_string_lt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string<?", 2, [arguments[0]]);
+      }
+      thisRuntime.checkString(arguments[0]);
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i+1]);
+        if (!(arguments[i] < arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_string_gt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string>?", 2, [arguments[0]]);
+      }
+      thisRuntime.checkString(arguments[0]);
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i+1]);
+        if (!(arguments[i] > arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_string_le = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string<=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] <= arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_string_ge = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string>=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i] >= arguments[i+1])) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_string_ci_eq = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (arguments[i].toLowerCase() !== arguments[i+1].toLowerCase()) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_string_ci_lt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci<?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() < arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_string_ci_gt = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci>?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() > arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_string_ci_le = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci<=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() <= arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_string_ci_ge = function(l, r) {
+      var lastIndex = arguments.length - 1;
+      if (lastIndex < 1) {
+        throw thisRuntime.ffi.throwArityErrorC("string-ci>=?", 2, [arguments[0]]);
+      }
+      for (var i = 0; i < lastIndex; i++) {
+        thisRuntime.checkString(arguments[i]);
+        if (!(arguments[i].toLowerCase() >= arguments[i+1].toLowerCase())) {
+          return thisRuntime.makeBoolean(false);
+        }
+      }
+      return thisRuntime.makeBoolean(true);
+    };
+
+    var _patch_substring = function(s, min, max) {
+      if (max === undefined) {
+        max = string_length(s);
+      }
+      return string_substring(s, min, max)
+    };
+
+    var _patch_string_to_number = function(s, b) {
+      if (arguments.length > 2) {
+        var $a = new Array(arguments.length);
+        for (var $i = 0; $i < arguments.length; $i++) {
+          $a[$i] = arguments[$i];
+        }
+        throw thisRuntime.ffi.throwArityErrorC(["string->number"], 2, $a);
+      }
+      checkString(s);
+      if (!b) {
+        b = 10;
+      }
+      checkNumber(b);
+      if (jsnums.equals(b, 2)) {
+        s = "#b" + s;
+      } else if (jsnums.equals(b, 8)) {
+        s = "#o" + s;
+      } else if (jsnums.equals(b, 16)) {
+        s = "#x" + s;
+      } else if (!jsnums.equals(b, 10)) {
+        thisRuntime.ffi.throwMessageException("string->number: base " + b + " is not 2, 8, 10, or 16");
+      }
+      return jsnums.fromSchemeString(s);
+
+    };
+
+    var _patch_number_to_string = function(n) {
+      if (arguments.length > 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["number->string"], 0, $a); }
+      checkNumber(n);
+      return jsnums.toSchemeString(n);
+    };
+
+    var _patch_string = function() {
+      var result = "";
+      var c;
+      for (var i = 0; i < arguments.length; i++) {
+        c = arguments[i];
+        checkPatchCharacter(c);
+        result = result.concat(c);
+      }
+      return thisRuntime.makeString(result);
+    };
+
+    var _patch_make_string = function(n, c) {
+      if (arguments.length !== 2) { var $a = new Array(arguments.length); for (var $i = 0; $i < arguments.length; $i++) { $a[$i] = arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["make-string"], 2, $a); }
+      checkNumInteger(n); checkNumNonNegative(n);
+      checkPatchCharacter(c);
+      var len = jsnums.toFixnum(n);
+      var result = '';
+      for (var i = 0; i < len; i++) {
+        result = result.concat(c);
+      }
+      return thisRuntime.makeString(result);
+    };
+
+    var _patch_string_append = function() {
+      var result = "";
+      var s;
+      for (var i = 0; i < arguments.length; i++) {
+        s = arguments[i];
+        thisRuntime.checkString(s);
+        result = result.concat(s);
+      }
+      return thisRuntime.makeString(result);
+    };
+
+    var _patch_list_to_string = function(L) {
+      thisRuntime.checkList(L);
+      var ra = thisRuntime.ffi.toArray(L);
+      if (!ra.every(function(elt) { return _patch_single_char_string_p(elt); })) {
+        thisRuntime.ffi.throwMessageException("list->string: " + L + " is not a list of characters");
+      } else {
+        return thisRuntime.makeString(ra.join(""));
+      }
+    };
+
+    var _patch_char_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char?"], 1, $a); }
+      return _patch_single_char_string_p(c);
+    };
+
+    var _patch_char_alphabetic_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-alphabetic?"], 1, $a); }
+      checkPatchCharacter(c);
+      return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
+    };
+
+    var _patch_char_lower_case_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-lower-case?"], 1, $a); }
+      checkPatchCharacter(c);
+      return (c >= 'a' && c <= 'z');
+    };
+
+    var _patch_char_upper_case_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-upper-case?"], 1, $a); }
+      checkPatchCharacter(c);
+      return (c >= 'A' && c <= 'Z');
+    };
+
+    var _patch_char_numeric_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-numeric?"], 1, $a); }
+      checkPatchCharacter(c);
+      return (c >= '0' && c <= '9');
+    };
+
+    var _patch_char_whitespace_p = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char-whitespace?"], 1, $a); }
+      checkPatchCharacter(c);
+      var n = c.charCodeAt(0);
+      return (n===9 || n===10 || n===12 || n===13 || n===32);
+    };
+
+    var _patch_char_to_integer = function(c) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["char->integer"], 1, $a); }
+      checkPatchCharacter(c);
+      return thisRuntime.makeNumber(c.charCodeAt(0));
+    };
+
+    var _patch_integer_to_char = function(n) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["integer->char"], 1, $a); }
+      thisRuntime.checkNumber(n);
+      return thisRuntime.makeString(String.fromCharCode(n));
+    };
+
+    var _patch_format = function(f) {
+      var argsn = arguments.length;
+      if (argsn === 0) {
+        throw thisRuntime.ffi.throwArityErrorC(["format"], 1, []);
+      }
+      checkString(f);
+      var n = f.length;
+      var j = 1;
+      var s = "";
+      var i = 0;
+      var c;
+      while (i < n) {
+        c = f[i];
+        if (c === '~') {
+          i++;
+          if (i === n) {
+            thisRuntime.ffi.throwMessageException("format: format " + f + " too short");
+          }
+          c = f[i];
+          if (c === '~') {
+            s += c;
+          } else if (j >= argsn) {
+            thisRuntime.ffi.throwMessageException("format: format " + f + " too long");
+          } else if (c === 'a') {
+            s += arguments[j]; j++;
+          } else if (c === 's') {
+            s += "\"" + arguments[j] + "\""; j++;
+          } else {
+            thisRuntime.ffi.throwMessageException("format: unknown directive " + c);
+          }
+        } else {
+          s += c;
+        }
+        i++;
+      }
+      if (j < argsn) {
+        thisRuntime.ffi.throwMessageException("format: format " + f + " too short");
+      }
+      return s;
+    };
+
+    var _patch_make_cxr = function(s_rev) {
+      var s0 = s_rev.split("").reverse().join("");
+      return makeFunction(function(l) {
+        if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["cxr"], 1, $a); }
+        thisRuntime.checkList(l);
+        var x, ign;
+        var s = s0;
+        while (s !== "") {
+          x = s[0];
+          s = s.substring(1);
+          if (!thisRuntime.ffi.isList(l)) {
+            thisRuntime.ffi.throwMessageException("cxr: " + l + " is not a list");
+          } else if (x === "a") {
+            l = thisRuntime.getField(l, "first");
+          } else if (x === "d") {
+            l = thisRuntime.getField(l, "rest");
+          }
+        }
+        return l;
+      }, "_patch_c" + s_rev + "r");
+    };
+
+    var _patch_append = function() {
+      var result = [];
+      var L;
+      for (var i = 0; i < arguments.length; i++) {
+        L = arguments[i];
+        thisRuntime.checkList(L);
+        result = result.concat(thisRuntime.ffi.toArray(L));
+      }
+      return thisRuntime.ffi.makeList(result);
+    };
+
+    var _patch_apply_variadic_fun = function(f, args) {
+      return f.app.apply(null, args);
+    };
+
+    var _patch_apply = function(f) {
+      if (arguments.length < 2) {
+        var $a = new Array(arguments.length);
+        for (var $i = 0; $i < arguments.length; $i++) {
+          $a[$i] = arguments[$i];
+        }
+        throw thisRuntime.ffi.throwArityErrorC(["apply"], 2, $a);
+      }
+      checkFunction(f);
+      var argsn = arguments.length - 1;
+      var args = arguments[argsn];
+      thisRuntime.checkList(args);
+      var rargs = thisRuntime.ffi.toArray(args);
+      for (var i = argsn - 1; i >= 1; i--) {
+        rargs.unshift(arguments[i]);
+      }
+      return f.app.apply(null, rargs);
+    };
+
+    var _patch_compose = function(f, g) {
+      if (arguments.length !== 2) { var $a = new Array(arguments.length); for (var $i = 0; $i < arguments.length; $i++) { $a[$i] = arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["compose"], 2, $a); }
+      checkFunction(f);
+      checkFunction(g);
+      return makeFunction(function() {
+        return f.app(g.app.apply(null, arguments));
+      });
+    };
+
+    var _patch_map = function(f) {
+      checkFunction(f);
+      var num_args = arguments.length - 1;
+      if (num_args < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(['map'], 1, [f]);
+      }
+      var arg_arrays = new Array(num_args);
+      for (var j = 0; j < num_args; j++) {
+        arg_arrays[j] = thisRuntime.ffi.toArray(arguments[j+1]);
+      }
+      var num_fcalls = arg_arrays[0].length;
+      var result = new Array(num_fcalls);
+
+      // i ranges over num_fcalls
+      // j ranges over num_args
+      return thisRuntime.safeCall(
+        function() {
+          return thisRuntime.eachLoop(
+            thisRuntime.makeFunction(
+              function(i) {
+                var ith_fcall_args = new Array(num_args);
+                for (var j = 0; j < num_args; j++) {
+                  ith_fcall_args[j] = arg_arrays[j][i];
+                }
+                return thisRuntime.safeCall(
+                  function() {
+                    return f.app.apply(null, ith_fcall_args);
+                  }, function(ith_result) {
+                    result[i] = ith_result;
+                    return result;
+                  }, '_patch_map_2');
+              }), 0, num_fcalls);
+        }, function (_) {
+          return thisRuntime.ffi.makeList(result);
+        }, '_patch_map');
+    };
+
+    var _patch_for_each = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["for-each"], 1, [f]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length; // check each arg array same length?
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        f.app.apply(null, jth_arg_selection);
+      }
+      return nothing;
+    };
+
+    var _patch_andmap = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["andmap"], 1, [f]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var result = true;
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        result = result && f.app.apply(null, jth_arg_selection);
+        if (!result) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    var _patch_ormap = function(f) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 1;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["ormap"], 1, [f]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+1]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var result = false;
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        result = result || f.app.apply(null, jth_arg_selection);
+        if (result) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    var _patch_foldl = function(f, b) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 2;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["foldl"], 2, [f, b]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+2]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var base = b;
+      var jth_arg_selection;
+      for (var j = 0; j < arg_array_length; j++) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        jth_arg_selection.push(base);
+        base = f.app.apply(null, jth_arg_selection);
+      }
+      return base;
+    };
+
+    var _patch_foldr = function(f, b) {
+      checkFunction(f);
+      var num_arg_arrays = arguments.length - 2;
+      if (num_arg_arrays < 1) {
+        throw thisRuntime.ffi.throwArityErrorC(["foldr"], 2, [f, b]);
+      }
+      var arg_arrays = new Array(num_arg_arrays);
+      for (var i = 0; i < num_arg_arrays; i++) {
+        arg_arrays[i] = thisRuntime.ffi.toArray(arguments[i+2]);
+      }
+      var arg_array_length = arg_arrays[0].length;
+      var base = b;
+      var jth_arg_selection;
+      for (var j = arg_array_length - 1; j >= 0; j--) {
+        jth_arg_selection = new Array(num_arg_arrays);
+        for (var i = 0; i < num_arg_arrays; i++) {
+          jth_arg_selection[i] = arg_arrays[i][j];
+        }
+        jth_arg_selection.push(base);
+        base = f.app.apply(null, jth_arg_selection);
+      }
+      return base;
+    };
+
+    var _patch_range = function(start, stop, delta) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["range"], 3, $a); }
+      checkNumber(start);
+      checkNumber(stop);
+      checkNumber(delta);
+      if (jsnums.schemeEquals(delta, 0)) {
+        thisRuntime.ffi.throwMessageException('range: an interval of 0 would produce an infinite list');
+      } else {
+        var result = [];
+        for (var i = start; jsnums.lessThan(i, stop); i = jsnums.add(i, delta)) {
+          result.push(i);
+        }
+      }
+      return thisRuntime.ffi.makeList(result);
+    };
+
+    function _patch_box(v) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["box"], 1, $a); }
+      return thisRuntime.makeOpaque(new P_patch_box(v));
+    }
+
+    function _patch_unbox(b) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["unbox"], 1, $a); }
+      checkPatchBox(b);
+      return b.val.val;
+    }
+
+    function _patch_set_box(b, v) {
+      if (arguments.length !== 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["set-box!"], 2, $a); }
+      checkPatchBox(b);
+      b.val.val = v;
+      return nothing;
+    }
+
+    function _patch_display(val) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["display"], 1, $a); }
+      //console.log('doing _patch_display', val);
+      if (isString(val)) {
+        theOutsideWorld.stdout(val);
+        return nothing;
+      }
+      else {
+        return thisRuntime.safeCall(function() {
+          return toReprJS(val, ReprMethods._toPatchString);
+        }, function(repr) {
+          theOutsideWorld.stdout(repr);
+          return nothing;
+        });
+      }
+    }
+
+    function _patch_make_hash() {
+      if (arguments.length !== 0) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["make-hash"], 0, $a); }
+      return thisRuntime.ffi._patch_make_hash();
+    }
+
+    function _patch_hash_p(val) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash?"], 1, $a); }
+      return thisRuntime.ffi._patch_hash_p(val);
+    }
+
+    function _patch_hash_ref(h, k, d) {
+      if (arguments.length < 2) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash-ref"], 2, $a); }
+      var result = thisRuntime.ffi._patch_hash_ref(h, k, d);
+      if (arguments.length === 2 && result === undefined) {
+        thisRuntime.ffi.throwMessageException('hash-ref: no value found for key ' + k);
+      } else {
+        return result;
+      }
+    }
+
+    function _patch_hash_set(h, k, v) {
+      if (arguments.length !== 3) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash-set!"], 3, $a); }
+      return thisRuntime.ffi._patch_hash_set(h, k, v);
+    }
+
+    function _patch_struct_p(v) {
+      if (arguments.length !== 1) { var $a=new Array(arguments.length); for (var $i=0;$i<arguments.length;$i++) { $a[$i]=arguments[$i]; } throw thisRuntime.ffi.throwArityErrorC(["hash?"], 1, $a); }
+      return !!((v instanceof Object) &&
+        v.dict && v.brands && v.$name && v.$mut_fields_mask && v.$arity && v.$constructor);
     }
 
     function loadBuiltinModules(modules, startName, withModules) {
@@ -5428,7 +6539,6 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       'spy': makeFunction(spy, "spy")
     });
 
-
     function traceValue(loc, val) {
       if(!thisRuntime.hasParam("onTrace")) { return val; }
       var callback = thisRuntime.getParam("onTrace");
@@ -5525,13 +6635,143 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       // NOTE(joe): this one different because the predicate is added when Table is loaded
       // (see handalone.js)
       'is-table': makeFunction(function(v) {
-        return thisRuntime.isTable(v); 
+        return thisRuntime.isTable(v);
       }, "is-tuple"),
 
       'run-task': makeFunction(execThunk, "run-task"),
 
       'gensym': gensym,
       'random': makeFunction(random, "random"),
+
+      "_patch_false": false,
+      "_patch_true": true,
+      "_patch_pi": jsnums.toRoughnum(Math.PI),
+      "_patch_tau": jsnums.toRoughnum(2*Math.PI),
+      "_patch_e": jsnums.toRoughnum(Math.E),
+
+      "_patch_apply": makeFunction(_patch_apply, "_patch_apply"),
+      "_patch_compose": makeFunction(_patch_compose, "_patch_compose"),
+      "_patch_identity": makeFunction(_patch_identity, "_patch_identity"),
+      "_patch_procedure_arity": makeFunction(_patch_procedure_arity, "_patch_procedure_arity"),
+      "_patch_void": makeFunction(_patch_void, "_patch_void"),
+
+      "_patch_cosh": makeFunction(_patch_cosh, "_patch_cosh"),
+      "_patch_current_seconds": makeFunction(_patch_current_seconds, "_patch_current_seconds"),
+      "_patch_denominator": makeFunction(_patch_denominator, "_patch_denominator"),
+      "_patch_divide": makeFunction(_patch_divide, "_patch_divide"),
+      "_patch_eq": makeFunction(_patch_eq, "_patch_eq"),
+      "_patch_even_p": makeFunction(_patch_even_p, "_patch_even_p"),
+      "_patch_gcd": makeFunction(_patch_gcd, "_patch_gcd"),
+      "_patch_ge": makeFunction(_patch_ge, "_patch_ge"),
+      "_patch_gt": makeFunction(_patch_gt, "_patch_gt"),
+      "_patch_integer_p": makeFunction(_patch_integer_p, "_patch_integer_p"),
+      "_patch_lcm": makeFunction(_patch_lcm, "_patch_lcm"),
+      "_patch_le": makeFunction(_patch_le, "_patch_le"),
+      "_patch_lt": makeFunction(_patch_lt, "_patch_lt"),
+      "_patch_max": makeFunction(_patch_max, "_patch_max"),
+      "_patch_min": makeFunction(_patch_min, "_patch_min"),
+      "_patch_minus": makeFunction(_patch_minus, "_patch_minus"),
+      "_patch_num_equal_tilde": makeFunction(_patch_num_equal_tilde, "_patch_num_equal_tilde"),
+      "_patch_numerator": makeFunction(_patch_numerator, "_patch_numerator"),
+      "_patch_odd_p": makeFunction(_patch_odd_p, "_patch_odd_p"),
+      "_patch_add1": makeFunction(_patch_add1, "_patch_add1"),
+      "_patch_sub1": makeFunction(_patch_sub1, "_patch_sub1"),
+      "_patch_plus": makeFunction(_patch_plus, "_patch_plus"),
+      "_patch_quotient": makeFunction(_patch_quotient, "_patch_quotient"),
+      "_patch_random": makeFunction(_patch_random, "_patch_random"),
+      "_patch_rational_p": makeFunction(_patch_rational_p, "_patch_rational_p"),
+      "_patch_real_p": makeFunction(_patch_real_p, "_patch_real_p"),
+      "_patch_remainder": makeFunction(_patch_remainder, "_patch_remainder"),
+      "_patch_sgn": makeFunction(_patch_sgn, "_patch_sgn"),
+      "_patch_sinh": makeFunction(_patch_sinh, "_patch_sinh"),
+      "_patch_times": makeFunction(_patch_times, "_patch_times"),
+      "_patch_zero_p": makeFunction(_patch_zero_p, "_patch_zero_p"),
+      '_patch_exact_to_inexact': makeFunction(_patch_exact_to_inexact, '_patch_exact_to_inexact'),
+      '_patch_inexact_to_exact': makeFunction(_patch_inexact_to_exact, '_patch_inexact_to_exact'),
+
+      "_patch_false_p": makeFunction(_patch_false_p, "_patch_false_p"),
+      "_patch_boolean_p": makeFunction(_patch_boolean_p, "_patch_boolean_p"),
+      "_patch_boolean_eq": makeFunction(_patch_boolean_eq, "_patch_boolean_eq"),
+
+      "_patch_list_to_string": makeFunction(_patch_list_to_string, "_patch_list_to_string"),
+      "_patch_string": makeFunction(_patch_string, "_patch_string"),
+      '_patch_make_string': makeFunction(_patch_make_string, '_patch_make_string'),
+      "_patch_string_append": makeFunction(_patch_string_append, "_patch_string_append"),
+      "_patch_string_ci_eq": makeFunction(_patch_string_ci_eq, "_patch_string_ci_eq"),
+      "_patch_string_ci_ge": makeFunction(_patch_string_ci_ge, "_patch_string_ci_ge"),
+      "_patch_string_ci_gt": makeFunction(_patch_string_ci_gt, "_patch_string_ci_gt"),
+      "_patch_string_ci_le": makeFunction(_patch_string_ci_le, "_patch_string_ci_le"),
+      "_patch_string_ci_lt": makeFunction(_patch_string_ci_lt, "_patch_string_ci_lt"),
+      "_patch_string_eq": makeFunction(_patch_string_eq, "_patch_string_eq"),
+      "_patch_string_ge": makeFunction(_patch_string_ge, "_patch_string_ge"),
+      "_patch_string_gt": makeFunction(_patch_string_gt, "_patch_string_gt"),
+      "_patch_string_le": makeFunction(_patch_string_le, "_patch_string_le"),
+      "_patch_string_lt": makeFunction(_patch_string_lt, "_patch_string_lt"),
+      "_patch_string_to_number": makeFunction(_patch_string_to_number, "_patch_string_to_number"),
+      '_patch_number_to_string': makeFunction(_patch_number_to_string, '_patch_number_to_string'),
+      "_patch_substring": makeFunction(_patch_substring, "_patch_substring"),
+
+      "_patch_char_alphabetic_p": makeFunction(_patch_char_alphabetic_p, "_patch_char_alphabetic_p"),
+      "_patch_char_lower_case_p": makeFunction(_patch_char_lower_case_p, "_patch_char_lower_case_p"),
+      "_patch_char_numeric_p": makeFunction(_patch_char_numeric_p, "_patch_char_numeric_p"),
+      "_patch_char_p": makeFunction(_patch_char_p, "_patch_char_p"),
+      "_patch_char_to_integer": makeFunction(_patch_char_to_integer, "_patch_char_to_integer"),
+      "_patch_char_upper_case_p": makeFunction(_patch_char_upper_case_p, "_patch_char_upper_case_p"),
+      "_patch_char_whitespace_p": makeFunction(_patch_char_whitespace_p, "_patch_char_whitespace_p"),
+      "_patch_integer_to_char": makeFunction(_patch_integer_to_char, "_patch_integer_to_char"),
+      "_patch_format": makeFunction(_patch_format, "_patch_format"),
+
+      "_patch_caaar": _patch_make_cxr("aaa"),
+      "_patch_caadr": _patch_make_cxr("aad"),
+      "_patch_caar": _patch_make_cxr("aa"),
+      "_patch_cadar": _patch_make_cxr("ada"),
+      "_patch_caddr": _patch_make_cxr("add"),
+      "_patch_cadr": _patch_make_cxr("ad"),
+      "_patch_car": _patch_make_cxr("a"),
+      "_patch_cdaar": _patch_make_cxr("daa"),
+      "_patch_cdadr": _patch_make_cxr("dad"),
+      "_patch_cdar": _patch_make_cxr("da"),
+      "_patch_cddar": _patch_make_cxr("dda"),
+      "_patch_cdddr": _patch_make_cxr("ddd"),
+      "_patch_cddr": _patch_make_cxr("dd"),
+      "_patch_cdr": _patch_make_cxr("d"),
+
+      "_patch_first":   _patch_make_cxr("a"),
+      "_patch_second":  _patch_make_cxr("ad"),
+      "_patch_third":   _patch_make_cxr("add"),
+      "_patch_fourth":  _patch_make_cxr("addd"),
+      "_patch_fifth":   _patch_make_cxr("adddd"),
+      "_patch_sixth":   _patch_make_cxr("addddd"),
+      "_patch_seventh": _patch_make_cxr("adddddd"),
+      "_patch_eighth":  _patch_make_cxr("addddddd"),
+
+      "_patch_append": makeFunction(_patch_append, "_patch_append"),
+      "_patch_map": makeFunction(_patch_map, "_patch_map"),
+      "_patch_for_each": makeFunction(_patch_for_each, "_patch_for_each"),
+      "_patch_andmap": makeFunction(_patch_andmap, "_patch_andmap"),
+      "_patch_ormap": makeFunction(_patch_ormap, "_patch_ormap"),
+      "_patch_foldl": makeFunction(_patch_foldl, "_patch_foldl"),
+      "_patch_foldr": makeFunction(_patch_foldr, "_patch_foldr"),
+      "_patch_range": makeFunction(_patch_range, "_patch_range"),
+
+      "_patch_box": makeFunction(_patch_box, "_patch_box"),
+      "_patch_boxp": mkPred(_patch_boxp),
+      "_patch_unbox": makeFunction(_patch_unbox, "_patch_unbox"),
+      "_patch_set_box": makeFunction(_patch_set_box, "_patch_set_box"),
+
+      "_patch_display": makeFunction(_patch_display, "_patch_display"),
+
+      "_patch_error": makeFunction(_patch_error, "_patch_error"),
+      "_patch_dead_code_function": makeFunction(_patch_dead_code_function, "_patch_dead_code_function"),
+      "_patch_check_within": makeFunction(_patch_check_within, "_patch_check_within"),
+      "_patch_equal_tilde": makeFunction(_patch_equal_tilde, "_patch_equal_tilde"),
+
+      "_patch_make_hash": makeFunction(_patch_make_hash, "_patch_make_hash"),
+      "_patch_hash_p": makeFunction(_patch_hash_p, "_patch_hash_p"),
+      "_patch_hash_ref": makeFunction(_patch_hash_ref, "_patch_hash_ref"),
+      "_patch_hash_set": makeFunction(_patch_hash_set, "_patch_hash_set"),
+
+      "_patch_struct_p": makeFunction(_patch_struct_p, "_patch_struct_p"),
 
       '_plus': makeFunction(plus, "_plus"),
       '_minus': makeFunction(minus, "_minus"),
@@ -5571,6 +6811,10 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       'num-exact': makeFunction(num_exact, "num-exact"),
       'num-to-rational': makeFunction(num_to_rational, "num-to-rational"),
       'num-to-roughnum': makeFunction(num_to_roughnum, "num-to-roughnum"),
+      'num-to-complexrational': makeFunction(num_to_complexrational, "num-to-complexrational"),
+      'num-to-complexroughnum': makeFunction(num_to_complexroughnum, "num-to-complexroughnum"),
+      'num-realpart': makeFunction(num_realpart, 'num-realpart'),
+      'num-imagpart': makeFunction(num_imagpart, 'num-imagpart'),
       'num-to-fixnum': makeFunction(num_to_fixnum, "num-to-fixnum"),
       'num-is-integer': makeFunction(num_is_integer, "num-is-integer"),
       'num-is-rational': makeFunction(num_is_rational, "num-is-rational"),
@@ -5677,7 +6921,6 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
 
       'traceValue': traceValue,
       'spy': spy,
-
 
       'traceEnter': traceEnter,
       'traceExit': traceExit,
@@ -5940,6 +7183,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       'checkOpaque' : checkOpaque,
       'checkPyretVal' : checkPyretVal,
       'checkArity': checkArity,
+      'checkArityAtLeast': checkArityAtLeast,
       'checkArityC': checkArityC,
       'checkConstructorArityC': checkConstructorArityC,
       'checkTuple' : checkTuple,
@@ -6088,6 +7332,5 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
   }
 
   return  {'makeRuntime' : makeRuntime};
-
 
 });

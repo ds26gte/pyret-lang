@@ -77,8 +77,8 @@ bad-number = [list:
   "foo.0"
 ]
 
-check "bad-number":
-  for map(program from bad-number):
-    get-parse-error(program) satisfies ERR.is-parse-error-bad-number
-  end
-end
+#check "bad-number":
+#  for map(program from bad-number):
+#    get-parse-error(program) satisfies ERR.is-parse-error-bad-number
+#  end
+#end

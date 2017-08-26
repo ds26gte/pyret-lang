@@ -66,7 +66,7 @@ data RuntimeError:
       else if src-available(self.loc):
         # If the location information in the struct isn't enough
         # we can parse the span at the srcloc to tease apart its
-        # components. 
+        # components.
         cases(O.Option) maybe-ast(self.loc):
           | some(ast) =>
             # If we can parse
@@ -201,7 +201,7 @@ data RuntimeError:
     end
   | update-non-existent-field(loc, obj, objloc, field, fieldloc) with:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
-      if self.loc.is-builtin():        
+      if self.loc.is-builtin():
         [ED.error:
           ed-simple-intro("reference update expression", self.loc),
           [ED.para:
@@ -475,7 +475,7 @@ data RuntimeError:
       if self.loc.is-builtin():
         [ED.error:
           ed-simple-intro("tuple lookup expression", self.loc),
-          [ED.para: 
+          [ED.para:
             ED.text("The left side was a tuple of "),
             ED.ed-components(self.len),
             ED.text(", smaller than the given position ("),
@@ -500,7 +500,7 @@ data RuntimeError:
             [ED.error:
               ed-intro("tuple lookup expression", self.loc, 0, true),
               ED.cmcode(self.loc),
-              [ED.para: 
+              [ED.para:
                 ED.text("The left side was a tuple of "),
                 ED.ed-components(self.len),
                 ED.text(", smaller than the given position ("),
@@ -510,7 +510,7 @@ data RuntimeError:
       else:
         [ED.error:
           ed-simple-intro("tuple lookup expression", self.loc),
-          [ED.para: 
+          [ED.para:
             ED.text(" failed because the left side was a tuple of "),
             ED.ed-components(self.len),
             ED.text(", smaller than the given position ("),
@@ -521,7 +521,7 @@ data RuntimeError:
     method render-reason(self):
       [ED.error:
         ed-simple-intro("tuple lookup expression", self.loc),
-        [ED.para: 
+        [ED.para:
           ED.text(" failed because the left side was a tuple of "),
           ED.ed-components(self.len),
           ED.text(", smaller than the given position ("),
@@ -658,7 +658,7 @@ data RuntimeError:
             ED.ed-components(self.length),
             ED.text(":")],
           ED.embed(self.tup)]
-      end 
+      end
     end
   | lookup-non-object(loc, non-obj, field :: String) with:
     method render-fancy-reason(self, maybe-stack-loc, src-available, maybe-ast):
@@ -1940,7 +1940,7 @@ data RuntimeError:
       this-str = if num-args == 1: "this " else: "these " end
       arg-str = if num-args == 1: " argument:" else: " arguments:" end
       exp-arg-str = if self.fun-def-arity == 1: " argument" else: " arguments" end
-      
+
       ED.maybe-stack-loc(
         if self.fun-def-loc.is-builtin():
           0
@@ -2020,7 +2020,7 @@ data RuntimeError:
       if self.loc.is-builtin():
         [ED.error:
           [ED.para:
-            ED.text("The identifier "), 
+            ED.text("The identifier "),
             ED.code(ED.text(self.name)),
             ED.text(" is unbound in "),
             ED.loc(self.loc)],
@@ -2038,7 +2038,7 @@ data RuntimeError:
       else:
         [ED.error:
           [ED.para:
-            ED.text("The identifier "), 
+            ED.text("The identifier "),
             ED.code(ED.text(self.name)),
             ED.text(" in "),
             ED.loc(self.loc),
@@ -2049,7 +2049,7 @@ data RuntimeError:
       if self.loc.is-builtin():
         [ED.error:
           [ED.para:
-            ED.text("The identifier "), 
+            ED.text("The identifier "),
             ED.code(ED.text(self.name)),
             ED.text(" is unbound in "),
             ED.loc(self.loc)],
@@ -2057,7 +2057,7 @@ data RuntimeError:
       else:
         [ED.error:
           [ED.para:
-            ED.text("The identifier "), 
+            ED.text("The identifier "),
             ED.code(ED.text(self.name)),
             ED.text(" in "),
             ED.loc(self.loc),
@@ -2083,7 +2083,7 @@ data RuntimeError:
           | some(loc) =>
             if loc.is-builtin():
               [ED.sequence:
-                [ED.para: 
+                [ED.para:
                   ED.text("An array interaction, "),
                   ED.code(ED.text(self.method-name)),
                   ED.text(", in "),
@@ -2105,7 +2105,7 @@ data RuntimeError:
                   ED.text(self.reason)]]
             else:
               [ED.sequence:
-                [ED.para: 
+                [ED.para:
                   ED.text("An array interaction, "),
                   ED.code(ED.text(self.method-name)),
                   ED.text(", in "),
@@ -2118,7 +2118,7 @@ data RuntimeError:
             end
           | none =>
             [ED.sequence:
-              [ED.para: 
+              [ED.para:
                 ED.text("An array interaction, "),
                 ED.code(ED.text(self.method-name)),
                 ED.text("It expects that the index passed to it is an integer within the bounds of the array. ")],
@@ -2133,7 +2133,7 @@ data RuntimeError:
         lam(loc):
           if loc.is-builtin():
             [ED.error:
-              [ED.para: 
+              [ED.para:
                 ED.text("An array interaction, "),
                 ED.code(ED.text(self.method-name)),
                 ED.text(", in "),
@@ -2146,7 +2146,7 @@ data RuntimeError:
               please-report-bug()]
           else:
             [ED.error:
-              [ED.para: 
+              [ED.para:
                 ED.text("An array interaction, "),
                 ED.code(ED.text(self.method-name)),
                 ED.text(", in "),
@@ -2159,7 +2159,7 @@ data RuntimeError:
           end
         end,
         [ED.error:
-          [ED.para: 
+          [ED.para:
             ED.text("An array interaction, "),
             ED.code(ED.text(self.method-name)),
             ED.text(" expects that the index passed to it is an integer within the bounds of the array. ")],
@@ -2440,10 +2440,43 @@ data ParseError:
         [ED.para: ED.text("Is there something there that shouldn’t be?")]
       ]
     end
+  | patch-parse-error(msg, args, locs) with:
+    method render-fancy-reason(self, src-available):
+      msg-split = string-split-all(self.msg, ",,")
+      msg-first = msg-split.take(1).map(ED.text)
+      msg-rest = msg-split.drop(1)
+      msg-rest-clumps = ED.map3(lam(a, b, c):
+        [ED.list:
+         ED.highlight(ED.text(b),[ED.locs: a],0),
+        # ED.loc-display(a, "check-highlight",
+        #   ED.highlight(ED.text(b),[ED.locs: self.locs.first],0)),
+         ED.text(c)]
+      end, self.locs, self.args, msg-rest)
+      final-msg = msg-rest-clumps.foldl(lam(cur, bas): bas.append(cur) end, msg-first)
+      [ED.error:
+        ED.h-sequence(final-msg, " ")
+        ]
+    end,
+    method render-reason(self):
+      msg-split = string-split-all(self.msg, ",,")
+      msg-first = msg-split.take(1).map(ED.text)
+      msg-rest = msg-split.drop(1)
+      msg-rest-clumps = ED.map3(lam(a, b, c):
+        [ED.list:
+         ED.highlight(ED.text(b),[ED.locs: a],0),
+        # ED.loc-display(a, "check-highlight",
+        #    ED.highlight(ED.text(b),[ED.locs: self.locs.first],0)),
+         ED.text(c)]
+      end, self.locs, self.args, msg-rest)
+      final-msg = msg-rest-clumps.foldl(lam(cur, bas): bas.append(cur) end, msg-first)
+      [ED.error:
+        ED.h-sequence(final-msg, " ")
+        ]
+    end
   | parse-error-eof(loc) with:
     method render-fancy-reason(self, src-available):
       if src-available(self.loc):
-        [ED.error: 
+        [ED.error:
           [ED.para:
             ED.text("Pyret didn't expect your program to "),
             ED.highlight(ED.text("end"),[ED.locs: self.loc],-1),
@@ -2452,7 +2485,7 @@ data ParseError:
           [ED.para:
             ED.text("You may be missing an \"end\", or closing punctuation like \")\" or \"]\" somewhere in your program.")]]
       else:
-        [ED.error: 
+        [ED.error:
           [ED.para:
             ED.text("Pyret didn't expect your program to end (at "),
             ED.loc(self.loc),
@@ -2467,7 +2500,7 @@ data ParseError:
   | parse-error-unterminated-string(loc) with:
     method render-fancy-reason(self, src-available):
       if src-available(self.loc):
-        [ED.error: 
+        [ED.error:
           [ED.para:
             ED.text("Pyret thinks the string ")],
           ED.cmcode(self.loc),
@@ -2476,7 +2509,7 @@ data ParseError:
             ED.code(ED.text("```")),
             ED.text(" instead of quotation marks.")]]
       else:
-        [ED.error: 
+        [ED.error:
           [ED.para:
             ED.text("Pyret thinks the string at "),
             ED.loc(self.loc),
@@ -2494,7 +2527,7 @@ data ParseError:
   | parse-error-bad-operator(loc) with:
     method render-fancy-reason(self, src-available):
       if src-available(self.loc):
-        [ED.error: 
+        [ED.error:
           [ED.para:
             ED.text("The "),
             ED.highlight(ED.text("operator"), [ED.locs: self.loc], 0)],
@@ -2502,7 +2535,7 @@ data ParseError:
           [ED.para:
             ED.text(" must have whitespace separating it from its operands.")]]
       else:
-        [ED.error: 
+        [ED.error:
           [ED.para:
             ED.text("The operator at "),
             ED.loc(self.loc),
@@ -2518,14 +2551,14 @@ data ParseError:
   | parse-error-bad-number(loc) with:
     method render-fancy-reason(self, src-available):
       if src-available(self.loc):
-        [ED.error: 
+        [ED.error:
           [ED.para:
             ED.text("Pyret thinks ")],
           ED.cmcode(self.loc),
           [ED.para:
             ED.text(" is probably a number, but number literals in Pyret require at least one digit before the decimal point.")]]
       else:
-        [ED.error: 
+        [ED.error:
           [ED.para:
             ED.text("Pyret thinks your program has a number at "),
             ED.loc(self.loc),

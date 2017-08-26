@@ -89,7 +89,6 @@ j-break = J.j-break
 j-while = J.j-while
 j-for = J.j-for
 
-
 left = E.left
 right = E.right
 type Either = E.Either
@@ -115,6 +114,7 @@ type ModuleResult = Any
 type Provides = CS.Provides
 
 type Locator = {
+  dialect :: (-> String),
 
   # In milliseconds-since-epoch format
   get-modified-time :: (-> Number),
@@ -155,10 +155,9 @@ type Locator = {
   _equals :: Method
 }
 
-
-
 fun string-locator(uri :: URI, s :: String):
   {
+    method dialect(self): "pyret" end,
     method needs-compile(self, _): true end,
     method get-modified-time(self): 0 end,
     method get-options(self, options): options end,
@@ -201,6 +200,10 @@ fun get-dependencies(p :: PyretCode, uri :: URI) -> List<CS.Dependency>:
   for map(s from parsed.imports.map(get-import-type)):
     AU.import-to-dep(s)
   end
+end
+
+fun patch-surface-parse(defs, name):
+  P.patch-surface-parse(defs, name)
 end
 
 fun get-standard-dependencies(p :: PyretCode, uri :: URI) -> List<CS.Dependency>:
@@ -324,8 +327,13 @@ fun is-builtin-module(uri :: String) -> Boolean:
   string-index-of(uri, "builtin://") == 0
 end
 
+fun is-builtin-or-patch-module(uri :: String) -> Boolean:
+  (string-index-of(uri, "builtin://") == 0) or
+  (string-index-of(uri, "wescheme-collection://") == 0)
+end
+
 fun compile-module(locator :: Locator, provide-map :: SD.StringDict<CS.Provides>, modules, options) -> {Loadable; List} block:
-  G.reset()
+  #G.reset() #commented for patch --ds26gte
   A.global-names.reset()
   #print("Compiling module: " + locator.uri() + "\n")
   env = CS.compile-env(locator.get-globals(), provide-map)
@@ -362,12 +370,20 @@ fun compile-module(locator :: Locator, provide-map :: SD.StringDict<CS.Provides>
       ast := nothing
       add-phase("Added nothing", ast-ended)
       ast-ended := AU.wrap-toplevels(ast-ended)
-      var wf = W.check-well-formed(ast-ended)
+      var wf = W.check-well-formed(ast-ended, locator.dialect())
       ast-ended := nothing
       add-phase("Checked well-formedness", wf)
+        #ds26gte debug
+      #print("check-mode= ")
+      #print(options.check-mode)
+      #print("\n")
       checker = if options.check-mode and not(is-builtin-module(locator.uri())):
+      #ds26gte debug
+        #print("desugar-checking " + locator.uri() + "\n")
         CH.desugar-check
       else:
+      #ds26gte debug
+        #print("skipping desugar for " + locator.uri() + "\n")
         CH.desugar-no-checks
       end
       cases(CS.CompileResult) wf block:
@@ -375,6 +391,10 @@ fun compile-module(locator :: Locator, provide-map :: SD.StringDict<CS.Provides>
           var wf-ast = wf.code
           wf := nothing
           var checked = checker(wf-ast)
+          #ds26gte debug
+          #print("checked=\n")
+          #print(checked)
+          #print("\n")
           wf-ast := nothing
           add-phase(if options.check-mode: "Desugared (with checks)" else: "Desugared (skipping checks)" end, checked)
           var imported = AU.wrap-extra-imports(checked, libs)
@@ -508,7 +528,7 @@ fun make-standalone(wl, compiled, options):
   natives = for fold(natives from empty, w from wl):
     w.locator.get-native-modules().map(_.path) + natives
   end
-  
+
   var all-compile-problems = empty
   static-modules = j-obj(for C.map_list(w from wl):
       loadable = compiled.modules.get-value-now(w.locator.uri())
