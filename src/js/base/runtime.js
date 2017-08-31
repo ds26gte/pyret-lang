@@ -1262,10 +1262,10 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
         throw thisRuntime.ffi.throwArityErrorC([source], expected, args, isMethod);
       }
     }
-    var checkArityAtLeast = function(expected, args, source) {
-      // should this use isMethod? -- ds26gte
+    var checkArityAtLeast = function(expected, args, source, isMethod) {
+      isMethod = isMethod || false;
       if (args.length < expected) {
-        throw thisRuntime.ffi.throwArityErrorC([source], expected, args);
+        throw thisRuntime.ffi.throwArityErrorC([source], expected, args, isMethod);
       }
     }
     var checkArityC = function(cloc, expected, args, isMethod) {

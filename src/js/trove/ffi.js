@@ -137,6 +137,7 @@
     }
 
     var checkArity = runtime.checkArity;
+    var checkArityAtLeast = runtime.checkArityAtLeast;
 
 /* NOTE(joe): skipping checker
     function checkResultsSummary(checkResults) {
@@ -675,6 +676,7 @@
       cases: cases,
 
       checkArity: checkArity,
+      checkArityAtLeast: checkArityAtLeast,
 
       /*checkResultsSummary: checkResultsSummary,*/
 
