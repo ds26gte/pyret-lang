@@ -17,6 +17,10 @@
     var link = RUNTIME.getField(lists, "link");
     var empty = RUNTIME.getField(lists, "empty");
 
+    const toks = tokenizer.Tokenizer;
+
+    var makeToken = toks.makeToken;
+
     //var data = "#lang pyret\n\nif (f(x) and g(y) and h(z) and i(w) and j(u)): true else: false end";
     function makePyretPos(fileName, p) {
       var n = RUNTIME.makeNumber;
@@ -890,6 +894,7 @@
         },
         'app-args': function(node) {
           // (app-args LPAREN opt-comma-binops RPAREN)
+          //console.log('doing app-args', JSON.stringify(node));
           return tr(node.kids[1]);
         },
         'opt-comma-binops': function(node) {
@@ -1008,6 +1013,7 @@
         },
         'app-expr': function(node) {
           // (app-expr f args)
+          //console.log('doing app-expr', JSON.stringify(node));
           return RUNTIME.getField(ast, 's-app')
             .app(pos(node.pos), tr(node.kids[0]), tr(node.kids[1]));
         },
@@ -1391,7 +1397,6 @@
     function parseDataRaw(data, fileName) {
       var message = "";
       try {
-        const toks = tokenizer.Tokenizer;
         const grammar = parser.PyretGrammar;
         toks.tokenizeFrom(data);
         // while (toks.hasNext())
@@ -1421,6 +1426,7 @@
         if (countParses === 1) {
           var ast = grammar.constructUniqueParse(parsed);
           //ds26gte debug
+          //console.log('py_ast=', ast);
           //console.log('py_ast_j = ', JSON.stringify(ast));
           //          console.log(ast.toString());
           return RUNTIME.ffi.makeRight(translate(ast, fileName));
@@ -1464,7 +1470,9 @@
       RUNTIME.ffi.checkArity(2, arguments, "surface-parse", false);
       RUNTIME.checkString(data);
       RUNTIME.checkString(fileName);
+      //console.log('calling parseDataRaw');
       var result = parseDataRaw(RUNTIME.unwrap(data), RUNTIME.unwrap(fileName));
+      //console.log('retfrom parseDataRaw');
       return RUNTIME.ffi.cases(RUNTIME.ffi.isEither, "is-Either", result, {
         left: function(err) {
           var exn = RUNTIME.getField(err, "exn");
@@ -1478,11 +1486,81 @@
       });
     }
 
+    function pyretizePatchLoc(patchLoc) {
+      if (!patchLoc.source) {
+        patchLoc.source = '';
+      }
+      return patchLoc;
+    }
+
+    function patchJsonParse(str) {
+      //console.log('doing patchJsonParse', str);
+      var o = JSON.parse(str);
+      console.log('initial jsonparse done', o);
+      function helperArray(a) {
+        //console.log('doing helperArray', a);
+        var n = a.length;
+        for (var i = 0; i < n; i++) {
+          var subo = a[i];
+          if (typeof subo === 'object') {
+            //can't be an array
+            if (subo.key) {
+              //console.log('afound a token', subo);
+              a[i] = makeToken(subo.name, subo.value, pyretizePatchLoc(subo.pos));
+              //console.log('adid the token');
+            } else if (subo.startRow) {
+              //console.log('afound a loc');
+              a[i] = pyretizePatchLoc(subo);
+              //console.log('adid the loc');
+            } else {
+              //console.log('afound a subo');
+              a[i] = helper(subo);
+              //console.log('adid the subo');
+            }
+          }
+        }
+        return a;
+      }
+      function helper(o) {
+        for (var name in o) {
+          //console.log('doing', name, o[name])
+          var subo = o[name];
+          if (typeof subo === 'object') {
+            if (Array.isArray(subo)) {
+              //console.log('found an array');
+              o[name] = helperArray(subo);
+              //subo.forEach(helper);
+              //console.log('did the array');
+            } else if (subo.key) {
+              //console.log('found a token');
+              o[name] = makeToken(subo.name, subo.value, pyretizePatchLoc(subo.pos));
+              //console.log('did the token');
+            } else if (subo.startRow) {
+              //console.log('found a loc');
+              o[name] = pyretizePatchLoc(subo);
+              //console.log('did the loc', o[name]);
+            } else {
+              //console.log('found a subobject');
+              o[name] = helper(subo);
+              //console.log('did the subobject');
+            }
+          }
+          //console.log('done', name, subo);
+        }
+        return o;
+      }
+      var res = helper(o);
+      //console.log('patchJsonParse returning', res);
+      return res;
+    }
+
+
     function parsePatch(data, fileName) {
+      console.log('doing parsePatch!!!')
       RUNTIME.ffi.checkArity(2, arguments, "patch-surface-parse");
       RUNTIME.checkString(data);
       RUNTIME.checkString(fileName);
-      var data_unser = JSON.parse(RUNTIME.unwrap(data));
+      var data_unser = patchJsonParse(RUNTIME.unwrap(data));
       //console.log('calling parsePatchDataRaw');
       var result = parsePatchDataRaw(data_unser, RUNTIME.unwrap(fileName));
       //console.log('retfrom parsePatchDataRaw');
