@@ -482,7 +482,7 @@
     }
     function makePatchParseException(errMsg, errArgsList, errLocsList) {
       // does this need to use raise like the rest? --ds26gte
-      console.log('doing makePatchParseException', errMsg, errArgsList, errLocsList);
+      //console.log('doing makePatchParseException', errMsg, errArgsList, errLocsList);
       return runtime.makePyretFailException(err("patch-parse-error")(errMsg,
         errArgsList, errLocsList));
     }
