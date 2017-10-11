@@ -372,6 +372,19 @@
       raise(err("arity-mismatch")(funLoc, arity, args, isMethod));
     }
 
+    function throwRowLengthMismatch(colnames, providedVals) {
+      runtime.checkTable(colnames);
+      runtime.checkArray(providedVals);
+      raise(err("row-length-mismatch")(colnames, providedVals));
+    }
+
+    function throwColLengthMismatch(colname, expected, actual, value) {
+      runtime.checkString(colname);
+      runtime.checkNumber(actual);
+      runtime.checkNumber(expected);
+      raise(err("col-length-mismatch")(colname, expected, actual, value));
+    }
+
     function throwArityErrorC(funLoc, arity, args, isMethod) {
       var loc = runtime.makeSrcloc(funLoc);
       var argsPyret = makeList(args);
@@ -608,6 +621,8 @@
       throwUninitializedIdMkLoc: throwUninitializedIdMkLoc,
       throwArityError: throwArityError,
       throwArityErrorC: throwArityErrorC,
+      throwRowLengthMismatch: throwRowLengthMismatch,
+      throwColLengthMismatch: throwColLengthMismatch,
       throwConstructorArityErrorC: throwConstructorArityErrorC,
       throwCasesArityError: throwCasesArityError,
       throwCasesArityErrorC: throwCasesArityErrorC,
@@ -715,6 +730,7 @@
       isValueSkeleton: function(v) { return runtime.unwrap(runtime.getField(VS, "is-ValueSkeleton").app(v)); },
       isVSValue: function(v) { return runtime.unwrap(runtime.getField(VS, "is-vs-value").app(v)); },
       isVSTable: function(v) { return runtime.unwrap(runtime.getField(VS, "is-vs-table").app(v)); },
+      isVSRow: function(v) { return runtime.unwrap(runtime.getField(VS, "is-vs-row").app(v)); },
       isVSCollection: function(v) { return runtime.unwrap(runtime.getField(VS, "is-vs-collection").app(v)); },
       isVSConstr: function(v) { return runtime.unwrap(runtime.getField(VS, "is-vs-constr").app(v)); },
       isVSStr: function(v) { return runtime.unwrap(runtime.getField(VS, "is-vs-str").app(v)); },
@@ -736,6 +752,7 @@
         var isValueSkeleton = runtime.getField(VS, "is-ValueSkeleton");
         var isValue = runtime.getField(VS, "is-vs-value");
         var isTable = runtime.getField(VS, "is-vs-table");
+        var isRow = runtime.getField(VS, "is-vs-row");
         var isCollection = runtime.getField(VS, "is-vs-collection");
         var isConstr = runtime.getField(VS, "is-vs-constr");
         var isStr = runtime.getField(VS, "is-vs-str");
@@ -752,7 +769,11 @@
               arr.push(runtime.getField(cur, "v"));
             } else if (runtime.unwrap(isCollection.app(cur)) === true) {
               Array.prototype.push.apply(worklist, toArray(runtime.getField(cur, "items")));
+            } else if (runtime.unwrap(isRow.app(cur)) === true) {
+              Array.prototype.push.apply(worklist, runtime.getField(cur, "headers"));
+              Array.prototype.push.apply(worklist, runtime.getField(cur, "values"));
             } else if (runtime.unwrap(isTable.app(cur)) === true) {
+              Array.prototype.push.apply(worklist, runtime.getField(cur, "headers"));
               runtime.getField(cur, "rows").forEach(function(row){
                 Array.prototype.push.apply(worklist, row); });
             } else if (runtime.unwrap(isConstr.app(cur)) === true) {

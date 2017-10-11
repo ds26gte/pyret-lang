@@ -86,6 +86,7 @@ j-unop = J.j-unop
 j-decr = J.j-decr
 j-incr = J.j-incr
 j-not = J.j-not
+j-typeof = J.j-typeof
 j-instanceof = J.j-instanceof
 j-ternary = J.j-ternary
 j-null = J.j-null
@@ -287,7 +288,7 @@ fun check-fun(sourcemap-loc, variable-loc, f) block:
       J.j-sourcenode(sourcemap-loc, sourcemap-loc.source,
         j-method(rt-field("ffi"), "throwNonFunApp", [clist: variable-loc, f]))
   end
-  j-if1(j-unop(j-parens(rt-method("isFunction", [clist: f])), j-not),
+  j-if1(j-binop(j-unop(j-parens(j-dot(f, "app")), j-typeof), j-neq, j-str("function")),
     j-block1(j-expr(call)))
 end
 
@@ -842,9 +843,17 @@ fun compile-split-method-app(l, compiler, opt-dest, obj, methname, args, opt-bod
   compiled-args = CL.map_list(lam(a): a.visit(compiler).exp end, args)
   # num-args = args.length()
 
+  argcount = compiled-args.length()
+
+  helper-name = if argcount <= 7:
+    "maybeMethodCall" + to-string(argcount)
+  else:
+    "maybeMethodCall"
+  end
+
   if J.is-j-id(compiled-obj):
     call = wrap-with-srcnode(l,
-      rt-method("maybeMethodCall",
+      rt-method(helper-name,
         cl-append([clist: compiled-obj,
             j-str(methname),
             compiler.get-loc(l)],
@@ -1792,7 +1801,7 @@ fun compile-provided-type(typ):
         [clist: j-str("tyapp"), compile-provided-type(base),
           j-list(true, CL.map_list(compile-provided-type, args))])
     | t-top(_, _) => j-str("tany")
-      # | t-bot(_) =>
+    | t-bot(_) => j-str("tbot")
     | t-record(fields, l, _) =>
       j-list(false,
         [clist: j-str("record"), j-obj(for cl-map-sd(key from fields):
@@ -2050,7 +2059,10 @@ fun compile-module(self, l, imports-in, prog, freevars, provides, env, flatness-
       "requires", j-list(true, module-locators-as-js),
       "provides", provides-obj,
       "nativeRequires", j-list(true, [clist:]),
-      "theModule", if compiler.options.collect-all: the-module else: J.j-str(module-and-map.code) end,
+      "theModule",
+        if compiler.options.collect-all: the-module
+        else if compiler.options.module-eval == false: J.j-raw-code(module-and-map.code)
+        else: J.j-str(module-and-map.code) end,
       "theMap", J.j-str(module-and-map.map)
       ]
   end

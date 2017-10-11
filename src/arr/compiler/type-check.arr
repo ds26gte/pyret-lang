@@ -1,8 +1,11 @@
 provide *
 provide-types *
 
+import type-logger as LOG
+
 import error as ERR
 import ast as A
+import srcloc as SL
 import string-dict as SD
 import file("ast-util.arr") as AU
 import file("type-structs.arr") as TS
@@ -103,6 +106,9 @@ var test-inference-data :: Option<{name :: Name,
                                    loc :: Loc,
                                    existential :: Type }> = none
 
+var misc-test-inference-data :: Option<Name> = none
+
+
 #######################################################
 
 fun option-bind<X, Y>(f :: (X -> Option<Y>), maybe-thing :: Option<X>) -> Option<Y>:
@@ -162,7 +168,12 @@ fun type-check(program :: A.Program, compile-env :: C.CompileEnvironment, module
     else:
       uri = globvs.get-value(g)
       # TODO(joe): type-check vars by making them refs
-      context.set-global-types(context.global-types.set(A.s-global(g).key(), compile-env.mods.get-value(uri).values.get-value(g).t))
+
+      if (g == "_"):
+        context
+      else:
+        context.set-global-types(context.global-types.set(A.s-global(g).key(), compile-env.mods.get-value(uri).values.get-value(g).t))
+      end
     end
   end, context)
   shadow context = globts.fold-keys(lam(g, shadow context):
@@ -170,19 +181,23 @@ fun type-check(program :: A.Program, compile-env :: C.CompileEnvironment, module
       context
     else:
       uri = globts.get-value(g)
-      cases(Option<C.Provides>) compile-env.mods.get(uri):
-        | some(provs) =>
-          t = cases(Option<Type>) provs.aliases.get(g):
-            | none =>
-              cases(Option<Type>) provs.data-definitions.get(g):
-                | none => raise("Key " + g + " not found in " + torepr(provs))
-                | some(v) => v
-              end
-            | some(v) => v
-          end
-          context.set-aliases(context.aliases.set(A.s-type-global(g).key(), t))
-        | none =>
-          raise("Could not find module " + torepr(uri) + " in " + torepr(compile-env.mods) + " in " + torepr(program.l))
+      if (g == "_"):
+        context
+      else:
+        cases(Option<C.Provides>) compile-env.mods.get(uri):
+          | some(provs) =>
+            t = cases(Option<Type>) provs.aliases.get(g):
+              | none =>
+                cases(Option<Type>) provs.data-definitions.get(g):
+                  | none => raise("Key " + g + " not found in " + torepr(provs))
+                  | some(v) => t-name(TS.builtin-uri, A.s-type-global(g), SL.builtin("global"), false)
+                end
+              | some(v) => v
+            end
+            context.set-aliases(context.aliases.set(A.s-type-global(g).key(), t))
+          | none =>
+            raise("Could not find module " + torepr(uri) + " in " + torepr(compile-env.mods) + " in " + torepr(program.l))
+        end
       end
     end
   end, context)
@@ -234,20 +249,26 @@ fun type-check(program :: A.Program, compile-env :: C.CompileEnvironment, module
                 | some(typ) => new-global-types.set(v.key(), typ)
               end
             end, new-global-types)
-            typing-context(new-global-types, new-aliases, context.data-types, context.modules, new-module-names, context.binds, context.constraints, context.info)
+            typing-context(new-global-types, new-aliases, context.data-types, context.modules, new-module-names, context.binds, context.constraints, context.info, context.misc)
           | else => raise("type checker received incomplete import")
         end
       end, context)
 
       # print("\n\n")
       # each(lam(x) block:
-      #  print(x)
-      #  print("\n")
+      #   print(x)
+      #   print("\n")
       # end, body.tosource().pretty(72))
 
       tc-result = checking(body, t-top(l, false), true, context)
-      cases(TypingResult) tc-result:
+      cases(TypingResult) tc-result block:
         | typing-result(new-body, _, shadow context) =>
+
+          context.misc.keys-list().each(lam(key) block:
+            {fun-examples; fun-name} = context.misc.get-value(key)
+            TCS.misc-test-inference(fun-examples, fun-name)
+          end)
+
           folded-info = gather-provides(_provide, context)
           cases(FoldResult<TCInfo>) folded-info:
             | fold-result(info, _) =>
@@ -293,7 +314,7 @@ fun _checking(e :: Expr, expect-type :: Type, top-level :: Boolean, context :: C
     if is-t-existential(expect-type) or is-t-top(expect-type):
       check-synthesis(e, expect-type, top-level, context)
     else:
-      cases(Expr) e:
+      cases(Expr) e block:
         | s-module(l, answer, defined-values, defined-types, provided-values, provided-types, checks) =>
           checking(answer, expect-type, false, context)
             .bind(lam(new-answer, _, shadow context):
@@ -445,9 +466,25 @@ fun _checking(e :: Expr, expect-type :: Type, top-level :: Boolean, context :: C
         | s-op(loc, op, l, r) =>
           raise("checking for s-op not implemented")
         | s-check-test(loc, op, refinement, l, r) =>
-          collect-example(e, context).typing-bind(lam(_, shadow context):
-            typing-result(e, expect-type, context)
-          end)
+          if is-some(test-inference-data):
+            collect-example(e, context).typing-bind(lam(_, shadow context):
+              typing-result(e, expect-type, context)
+            end)
+          else:
+            shadow context = misc-collect-example(e, context)
+
+            synthesis(l, false, context).bind(lam(_, left-type, shadow context):
+              cases(Option<Expr>) r:
+                | some(shadow r) =>
+                  synthesis(r, false, context).bind(lam(_, right-type, shadow-context):
+                    shadow context = context.add-constraint(left-type, right-type)
+                    typing-result(e, expect-type, context)
+                  end)
+                | none =>
+                  typing-result(e, expect-type, context)
+              end
+            end)
+          end
         | s-check-expr(l, expr, ann) =>
           synthesis(expr, false, context) # XXX: this should probably use the annotation instead
         | s-paren(l, expr) =>
@@ -703,11 +740,30 @@ fun _synthesis(e :: Expr, top-level :: Boolean, context :: Context) -> TypingRes
     | s-op(loc, op, l, r) =>
       raise("synthesis for s-op not implemented")
     | s-check-test(loc, op, refinement, l, r) =>
-      collect-example(e, context).typing-bind(lam(_, shadow context):
-        result-type = new-existential(loc, false)
-        shadow context = context.add-variable(result-type)
-        typing-result(e, result-type, context)
-      end)
+      if is-some(test-inference-data):
+        collect-example(e, context).typing-bind(lam(_, shadow context):
+          result-type = new-existential(loc, false)
+          shadow context = context.add-variable(result-type)
+          typing-result(e, result-type, context)
+        end)
+      else:
+        shadow context = misc-collect-example(e, context)
+        synthesis(l, false, context).bind(lam(_, left-type, shadow context):
+          cases(Option<Expr>) r:
+            | some(shadow r) =>
+              synthesis(r, false, context).bind(lam(_, right-type, shadow-context):
+                shadow context = context.add-constraint(left-type, right-type)
+                result-type = new-existential(loc, false)
+                shadow context = context.add-variable(result-type)
+                typing-result(e, result-type, context)
+              end)
+            | none =>
+              result-type = new-existential(loc, false)
+              shadow context = context.add-variable(result-type)
+              typing-result(e, result-type, context)
+          end
+        end)
+      end
     | s-check-expr(l, expr, ann) =>
       synthesis(expr, false, context) # XXX: this should probably use the annotation instead
     | s-paren(l, expr) =>
@@ -755,7 +811,7 @@ fun _synthesis(e :: Expr, top-level :: Boolean, context :: Context) -> TypingRes
         end)
       end
 
-      map-fold-result(process, values).typing-bind(lam(result, shadow context):
+      map-fold-result(process, values, context).typing-bind(lam(result, shadow context):
         {new-values; value-types} = split(result)
         meet-branch-types(value-types, l, context).typing-bind(lam(array-type, shadow context):
           new-array = A.s-array(l, new-values)
@@ -920,7 +976,9 @@ context :: Context) -> FoldResult<List<A.LetrecBind>>:
       shadow context = context.add-level()
       brander-type = t-name(local, namet, l, false)
       t-vars = params.map(t-var(_, l, false))
-      map-fold-result(collect-variants, variants, context).bind(lam(initial-variant-types, shadow context):
+      applied-brander-type = if is-empty(t-vars): brander-type else: t-app(brander-type, t-vars, l, false) end
+
+      map-fold-result(collect-variant-constructor, variants, context).bind(lam(initial-variant-types, shadow context):
         predicate-type = if is-empty(t-vars):
           t-arrow([list: brander-type], t-boolean(l), l, false)
         else:
@@ -939,45 +997,47 @@ context :: Context) -> FoldResult<List<A.LetrecBind>>:
             fold-result(A.s-letrec-bind(binding.l, binding.b, new-value), context.add-binding(binding.b.id.key(), result-type))
           end)
         end, bindings, context).bind(lam(new-bindings, shadow context):
-          collect-members(fields, true, context).bind(lam(initial-shared-field-types, shadow context):
-            initial-data-type = t-data(name, t-vars, initial-variant-types, initial-shared-field-types, l)
-            shadow context = context.set-data-types(context.data-types.set(namet.key(), initial-data-type))
-            shadow context = merge-common-fields(initial-variant-types, l, context)
-            map-fold-result(lam(variant, shadow context):
-              check-variant(variant, initial-data-type.get-variant-value(variant.name), brander-type, t-vars, context)
-            end, variants, context).bind(lam(new-variant-types, shadow context):
-              variant-type-fields = new-variant-types.map(lam(var-type):
-                var-type.fields.foldr(lam({field-name; field-type}, all-fields):
-                  all-fields.set(field-name, field-type)
-                end, var-type.with-fields)
-              end)
-              variants-meet = cases(List<TypeMembers>) variant-type-fields:
-                | empty => empty
-                | link(first, rest) =>
-                  cases(List<TypeMembers>) rest:
-                    | empty => first
-                    | link(_, _) =>
-                      rest.foldr(meet-fields(_, _, l, context), first)
-                  end
-              end
-              extended-shared-field-types = variants-meet.fold-keys(lam(key, extended-shared-field-types):
-                extended-shared-field-types.set(key, variants-meet.get-value(key))
-              end, initial-shared-field-types)
-              shared-data-type = t-data(name, t-vars, new-variant-types, extended-shared-field-types, l)
-              shadow context = context.set-data-types(context.data-types.set(namet.key(), shared-data-type))
-              foldr-fold-result(lam(field, shadow context, new-shared-field-types):
-                check-shared-field(field, initial-shared-field-types, brander-type, context).bind(lam(field-type, shadow context):
-                  fold-result(new-shared-field-types.set(field.name, field-type), context)
+          map-fold-result(collect-variant, variants, context).bind(lam(shadow initial-variant-types, shadow context):
+            collect-members(fields, true, context).bind(lam(initial-shared-field-types, shadow context):
+              initial-data-type = t-data(name, t-vars, initial-variant-types, initial-shared-field-types, l)
+              shadow context = context.set-data-types(context.data-types.set(namet.key(), initial-data-type))
+              shadow context = merge-common-fields(initial-variant-types, l, context)
+              map-fold-result(lam(variant, shadow context):
+                check-variant(variant, initial-data-type.get-variant-value(variant.name), brander-type, t-vars, context)
+              end, variants, context).bind(lam(new-variant-types, shadow context):
+                variant-type-fields = new-variant-types.map(lam(var-type):
+                  var-type.fields.foldr(lam({field-name; field-type}, all-fields):
+                    all-fields.set(field-name, field-type)
+                  end, var-type.with-fields)
                 end)
-              end, fields, context, SD.make-string-dict()).bind(lam(new-shared-field-types, shadow context):
-                final-shared-field-types = variants-meet.fold-keys(lam(key, final-shared-field-types):
-                  final-shared-field-types.set(key, variants-meet.get-value(key))
-                end, new-shared-field-types)
-                final-data-type = t-data(name, t-vars, new-variant-types, final-shared-field-types, l)
-                context.solve-level().bind(lam(solution, shadow context):
-                  solved-data-type = solution.apply-data-type(final-data-type)
-                  shadow context = context.set-data-types(context.data-types.set(namet.key(), solved-data-type))
-                  fold-result(link(data-type-bind, new-bindings), context)
+                variants-meet = cases(List<TypeMembers>) variant-type-fields:
+                  | empty => empty
+                  | link(first, rest) =>
+                    cases(List<TypeMembers>) rest:
+                      | empty => first
+                      | link(_, _) =>
+                        rest.foldr(meet-fields(_, _, l, context), first)
+                    end
+                end
+                extended-shared-field-types = variants-meet.fold-keys(lam(key, extended-shared-field-types):
+                  extended-shared-field-types.set(key, variants-meet.get-value(key))
+                end, initial-shared-field-types)
+                shared-data-type = t-data(name, t-vars, new-variant-types, extended-shared-field-types, l)
+                shadow context = context.set-data-types(context.data-types.set(namet.key(), shared-data-type))
+                foldr-fold-result(lam(field, shadow context, new-shared-field-types):
+                  check-shared-field(field, initial-shared-field-types, applied-brander-type, context).bind(lam(field-type, shadow context):
+                    fold-result(new-shared-field-types.set(field.name, field-type), context)
+                  end)
+                end, fields, context, SD.make-string-dict()).bind(lam(new-shared-field-types, shadow context):
+                  final-shared-field-types = variants-meet.fold-keys(lam(key, final-shared-field-types):
+                    final-shared-field-types.set(key, variants-meet.get-value(key))
+                  end, new-shared-field-types)
+                  final-data-type = t-data(name, t-vars, new-variant-types, final-shared-field-types, l)
+                  context.solve-level().bind(lam(solution, shadow context):
+                    solved-data-type = solution.apply-data-type(final-data-type)
+                    shadow context = context.set-data-types(context.data-types.set(namet.key(), solved-data-type))
+                    fold-result(link(data-type-bind, new-bindings), context)
+                  end)
                 end)
               end)
             end)
@@ -1078,7 +1138,37 @@ fun to-type-member(member :: A.Member, typ :: Type, self-type :: Type, type-chec
   end
 end
 
-fun collect-variants(variant :: A.Variant, context :: Context) -> FoldResult<TypeVariant>:
+fun collect-variant-constructor(variant :: A.Variant, context :: Context) -> FoldResult<TypeVariant>:
+  cases(A.Variant) variant:
+    | s-variant(l, constr-loc, name, members, with-members) =>
+      fun process-member(member, shadow context):
+        wrap = cases(A.VariantMemberType) member.member-type:
+          | s-normal => lam(x): x.set-loc(member.l) end
+          | s-mutable => lam(x): t-ref(x.set-loc(member.l), member.l, false) end
+        end
+        to-type(member.bind.ann, context).bind(lam(maybe-type, shadow context):
+          cases(Option<Type>) maybe-type:
+            | none => fold-errors([list: C.cant-typecheck("No type annotation provided on member", l)])
+            | some(typ) =>
+              fold-result(wrap(typ), context)
+          end
+        end)
+      end
+
+      foldr-fold-result(lam(member, shadow context, type-members):
+        process-member(member, context)
+          .bind(lam(member-type, shadow context):
+            fold-result(link({member.bind.id.toname(); member-type}, type-members), context)
+          end)
+      end, members, context, empty).bind(lam(type-members, shadow context):
+        fold-result(t-variant(name, type-members, [string-dict: ], l), context)
+      end)
+    | s-singleton-variant(l, name, with-members) =>
+      fold-result(t-singleton-variant(name, [string-dict: ], l), context)
+  end
+end
+
+fun collect-variant(variant :: A.Variant, context :: Context) -> FoldResult<TypeVariant>:
   cases(A.Variant) variant:
     | s-variant(l, constr-loc, name, members, with-members) =>
       fun process-member(member, shadow context):
@@ -1509,7 +1599,7 @@ fun handle-letrec-bindings(binds :: List<A.LetrecBind>, top-level :: Boolean, co
           | s-letrec-bind(l2, b, value) =>
             expected-type = collected-types.get-value(b.id.key())
             cases(Option) context.constraints.example-types.get(expected-type.key()) block:
-              | some({_; partial-type; _; _}) =>
+              | some({_; partial-type; _; _; _}) =>
                 test-inference-data := some({name: b.id,
                                              arg-types: partial-type.arg-types,
                                              ret-type: partial-type.ret-type,
@@ -1526,17 +1616,39 @@ fun handle-letrec-bindings(binds :: List<A.LetrecBind>, top-level :: Boolean, co
                   raise("the right hand side should be a lambda")
                 end
               | none =>
+
+                cases(Option) context.misc.get(b.id.key()):
+                  | some(thing) =>
+                    misc-test-inference-data := some(b.id)
+                  | none =>
+                    nothing
+                end
+
                 shadow context = context.add-level()
                 free-vars = expected-type.free-variables()
                 shadow context = context.add-variable-set(free-vars)
-                checking(value, expected-type, false, context).bind(lam(new-ast, new-type, shadow context):
+                result = checking(value, expected-type, false, context).bind(lam(new-ast, new-type, shadow context):
                   context.solve-level().typing-bind(lam(solution, shadow context):
                     shadow context = context.substitute-in-binds(solution)
                     shadow new-type = solution.generalize(solution.apply(new-type))
                     shadow context = context.add-binding(b.id.key(), new-type)
-                    typing-result(new-ast, new-type, context)
+                    if A.is-s-lam(value):
+                      cases(Option<Expr>) value._check:
+                        | some(check-block) =>
+                          checking(check-block, t-top(value._check-loc.value, false), false, context).bind(lam(_, _, shadow context):
+                            typing-result(new-ast, new-type, context)
+                          end)
+                        | none =>
+                          typing-result(new-ast, new-type, context)
+                      end
+                    else:
+                      typing-result(new-ast, new-type, context)
+                    end
                   end)
                 end)
+
+                misc-test-inference-data := none
+                result
             end
         end
       end, bindings-to-type, context)
@@ -1587,18 +1699,28 @@ fun collect-letrec-bindings(binds :: List<A.LetrecBind>, top-level :: Boolean, c
                     collect-bindings(lam-args, context).bind(lam(arg-coll, shadow context) block:
                       cases(Option<Expr>) _check:
                         | some(check-block) =>
-                          lam-to-type(arg-coll, lam-l, lam-params, lam-args, lam-ann, false, context).bind(lam(lam-type, temp-context):
+                          lam-to-type(arg-coll, lam-l, lam-params, lam-args, lam-ann, false, context).bind(lam(lam-type, shadow context) block:
+
+                            log-payload = "{"
+                              + "'function-name': " + "'" + first-bind.b.id.toname() + "'" + ","
+                              + "'annotated-type': " + "'" + tostring(lam-type) + "'" + ","
+                              + "'check-block': " + "'" + check-block.tosource().pretty(72).join-str("\n") + "'" + ","
+                              + "}"
+                            LOG.log("initial-test-inference-data", log-payload)
+
                             cases(Type) lam-type block:
                               | t-arrow(temp-args, temp-ret, temp-l, _) =>
                                 if lam-type.free-variables().size() > 0:
                                   new-exists = new-existential(temp-l, true)
-                                  shadow temp-context = temp-context.add-variable(new-exists)
-                                  shadow temp-context = temp-context.add-example-variable(new-exists, temp-args, temp-ret, temp-l, checking(first-bind.value, _, top-level, _))
-                                  fold-result(new-exists, temp-context)
+                                  shadow context = context.add-variable(new-exists)
+                                  shadow context = context.add-example-variable(new-exists, temp-args, temp-ret, temp-l, checking(first-bind.value, _, top-level, _), first-bind.b.id.toname())
+                                  fold-result(new-exists, context)
                                 else:
-                                  lam-to-type(arg-coll, lam-l, lam-params, lam-args, lam-ann, top-level, context)
+                                  shadow context = context.add-misc-example-variable(first-bind.b.id.key(), first-bind.b.id.toname())
+                                  fold-result(lam-type, context)
                                 end
                               | else =>
+                                shadow context = context.add-misc-example-variable(first-bind.b.id.key(), first-bind.b.id.toname())
                                 lam-to-type(arg-coll, lam-l, lam-params, lam-args, lam-ann, top-level, context)
                             end
                           end)
@@ -2043,8 +2165,14 @@ fun gather-provides(_provide :: A.Provide, context :: Context) -> FoldResult<TCI
         if info.types.has-key(value-key):
           fold-result(info, context)
         else:
-          typ = context.info.types.get-value(value-key).set-inferred(false)
-          fold-result(TCS.tc-info(info.types.set(value-key, typ), info.aliases, info.data-types), context)
+          cases(Option<Type>) context.info.types.get(value-key):
+            | some(typ) =>
+              shadow typ = typ.set-inferred(false)
+              fold-result(TCS.tc-info(info.types.set(value-key, typ), info.aliases, info.data-types), context)
+            | none =>
+              typ = context.global-types.get-value(value-key).set-inferred(false)
+              fold-result(TCS.tc-info(info.types.set(value-key, typ), info.aliases, info.data-types), context)
+          end
         end
       end, values, context, initial-info)
       fold-values-info.bind(lam(values-info, shadow context):
@@ -2302,6 +2430,60 @@ fun collect-example(e :: Expr%(is-s-check-test), context :: Context) -> FoldResu
             | else => fold-result(nothing, context)
           end
         | else => fold-result(nothing, context)
+      end
+  end
+end
+
+fun misc-collect-example(e :: Expr%(is-s-check-test), context :: Context) -> Context:
+  cases(Option) misc-test-inference-data:
+    | none => context
+    | some(fun-name) =>
+      cases(A.Expr) e:
+        | s-check-test(l, op, refinement, lhs, rhs) =>
+          cases(A.CheckOp) op:
+            | s-op-is(_) =>
+              cases(Option<A.Expr>) refinement:
+                | some(_) => context
+                | none =>
+                  cases(A.Expr) lhs:
+                    | s-app(_, _fun, args) =>
+                      maybe-id = cases(A.Expr) _fun:
+                        | s-id(_, id) => some(id)
+                        | s-id-var(_, id) => some(id)
+                        | s-id-letrec(_, id, _) => some(id)
+                        | else => none
+                      end
+                      cases(Option<Name>) maybe-id block:
+                        | none => context
+                        | some(id) =>
+                          if fun-name == id block:
+                            fold-arg-types = args.foldr(lam(arg, fold-result-args):
+                              fold-result-args.bind(lam(result-args, shadow context):
+                                synthesis(arg, false, context).fold-bind(lam(_, result-type, shadow context):
+                                  fold-result(link(result-type, result-args), context)
+                                end)
+                              end)
+                            end, fold-result(empty, context))
+                            fold-ret-type = fold-arg-types.bind(lam(arg-types, shadow context):
+                              synthesis(rhs.value, false, context).fold-bind(lam(_, result-type, shadow context):
+                                fold-result({arg-types; result-type}, context)
+                              end)
+                            end)
+                            cases(FoldResult) fold-ret-type:
+                              | fold-result({arg-types; result-type}, shadow context) =>
+                                context.add-misc-example-type(fun-name.key(), t-arrow(arg-types, result-type, A.dummy-loc, false))
+                              | fold-errors(_) => context
+                            end
+                          else:
+                            context
+                          end
+                      end
+                    | else => context
+                  end
+              end
+            | else => context
+          end
+        | else => context
       end
   end
 end
