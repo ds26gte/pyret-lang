@@ -346,8 +346,8 @@ module-const-arrays = t-module("builtin://arrays",
     "array-set-now", t-forall([list: tva], t-arrow([list: t-big-array-app(tva), t-number, tva], t-nothing)),
     "array-get-now", t-forall([list: tva], t-arrow([list: t-big-array-app(tva), t-number], tva)),
     "array-length", t-forall([list: tva], t-arrow([list: t-big-array-app(tva)], t-number)),
-    "array-to-list-now", t-forall([list: tva], t-arrow([list: t-big-array-app(tva)], t-list-app(tva)))
-    "make-vector", t-forall([list: tva], t-arrow([list: t-number, t-big-array-app(tva)], mk-array(tva)))
+    "array-to-list-now", t-forall([list: tva], t-arrow([list: t-big-array-app(tva)], t-list-app(tva))),
+    "make-vector", t-forall([list: tva], t-arrow([list: t-number, tva], t-big-array-app(tva)))
   ]),
   SD.make-string-dict()
     .set("Array", t-data(
