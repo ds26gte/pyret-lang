@@ -715,6 +715,10 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       /**@type {Function}*/
       this.app   = fun;
 
+      /**@type {number}*/
+      this.arity = arity || fun.length;
+      //still needed for Patch
+
       /**@type {string}*/
       this.name = name || "<anonymous function>";
     }
