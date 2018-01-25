@@ -2471,7 +2471,7 @@ data ParseError:
       end, self.locs, self.args, msg-rest)
       final-msg = msg-rest-clumps.foldl(lam(cur, bas): bas.append(cur) end, msg-first)
       [ED.error:
-        ED.h-sequence(final-msg, " ")
+        [ED.para: ED.h-sequence(final-msg, " ")]
         ]
     end,
     method render-reason(self):
@@ -2487,7 +2487,7 @@ data ParseError:
       end, self.locs, self.args, msg-rest)
       final-msg = msg-rest-clumps.foldl(lam(cur, bas): bas.append(cur) end, msg-first)
       [ED.error:
-        ED.h-sequence(final-msg, " ")
+        [ED.para: ED.h-sequence(final-msg, " ")]
         ]
     end
   | parse-error-eof(loc) with:
