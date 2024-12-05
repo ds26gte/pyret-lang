@@ -23,6 +23,27 @@
     var brandRow = runtime.namedBrander("row", ["table: row brander"]);
     var annRow   = runtime.makeBranderAnn(brandRow, "Row");
 
+    // var ann = function(name, pred) {
+    //   return runtime.makePrimitiveAnn(name, pred);
+    // }
+    //
+    // var annRawArrayOfRows = ann("RawArray<Row>", function (val) {
+    //   if (!Array.isArray(val)) return false;
+    //
+    // });
+    //
+    // var annListImage = ann("List<Image>", function(val) {
+    //   if (!runtime.ffi.isList(val)) return false;
+    //   var cur = val;
+    //   var gf = runtime.getField;
+    //   while (runtime.unwrap(ffi.isLink(cur))) {
+    //     var f = gf(cur, "first");
+    //     if (!checkImagePred(f)) return false;
+    //     cur = gf(cur, "rest");
+    //   }
+    //   return true;
+    // });
+
     var rowGetValue = runtime.makeMethod1(function(self, arg) {
         ffi.checkArity(2, arguments, "get-value", true);
         runtime.checkArgsInternal2("tables", "get-value",
@@ -143,6 +164,12 @@
 
     function isRow(val) {
       return hasBrand(brandRow,  val);
+    }
+
+    function isRawArrayOfRows(val) {
+      if (!Array.isArray(val)) return false;
+      if (!val.every(isRow)) return false;
+      return true;
     }
 
     function openTable(info) {
@@ -828,7 +855,8 @@
         makeRowFromArray: makeRowFromArray,
         openTable: openTable,
         isTable: isTable,
-        isRow: isRow
+        isRow: isRow,
+        isRawArrayOfRows: isRawArrayOfRows
       },
       {});
   }

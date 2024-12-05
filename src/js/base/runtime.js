@@ -5749,6 +5749,7 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       // NOTE(joe): this is initialized later, in postLoadHooks for data-source and for table,
       // but provided here because they show up in desugaring
       'open-table': makeFunction(function(spec) { return thisRuntime.openTable(spec); }),
+      'is-raw-array-of-rows': makeFunction(function(spec) { return thisRuntime.isRawArrayOfRows(spec); }),
       'as-loader-option': makeFunction(function(type, arg1, arg2) { return thisRuntime.asLoaderOption(type, arg1, arg2); }),
       'raw-make-row': makeFunction(function(arr) { // arr is a raw array of 2-tuples
         thisRuntime.checkArray(arr);
@@ -5881,6 +5882,9 @@ function (Namespace, jsnums, codePoint, util, exnStackParser, loader, seedrandom
       'is-row': makeFunction(function(v) {
         return thisRuntime.isRow(v);
       }, "is-row"),
+      'is-raw-array-of-rows': makeFunction(function(v) {
+        return thisRuntime.isRawArrayOfRows(v);
+      }, "is-raw-array-of-rows"),
 
       'run-task': makeFunction(execThunk, "run-task"),
 

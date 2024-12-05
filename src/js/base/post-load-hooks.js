@@ -31,6 +31,7 @@ define("pyret-base/js/post-load-hooks", function() {
         runtime["checkRow"] = runtime.makeCheckType(table.isRow, "Row");
         runtime["isTable"] = table.isTable;
         runtime["isRow"] = table.isRow;
+        runtime["isRawArrayOfRows"] = table.isRawArrayOfRows;
         runtime["checkWrapTable"] = function(val) {
           runtime.checkTable(val);
           return val;
