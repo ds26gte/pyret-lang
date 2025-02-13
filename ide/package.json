@@ -130,6 +130,10 @@
     "webpack-dev-server": "^4.15.1",
     "workbox-webpack-plugin": "^7.0.0"
   },
+  "engines": {
+    "node": ">=22.5",
+    "npm": ">=11"
+  },
   "homepage": ".",
   "description": "My webpack project"
 }
